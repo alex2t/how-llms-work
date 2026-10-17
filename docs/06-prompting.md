@@ -64,3 +64,31 @@ Whether the extra cost is worth it is decided as in Chapter 5: measure both prom
 - Make the examples look like the real inputs, and include both labels, so the model does not learn that the answer is always the same.
 - Keep the format identical in every example; the model copies the format very faithfully.
 - For an exact output format, combine the prompt with [constrained decoding](03-inference.md#constrained-decoding).
+
+## Chain-of-thought
+
+Some questions need several steps of reasoning, and a model that must give the answer as its very next token has no room to work them out. **Chain-of-thought (CoT)** prompting asks the model to write the intermediate steps first and the answer last. It matters because, for multi-step problems in maths, logic and planning, this simple change makes answers much more often correct.
+
+### Why writing the steps helps
+
+A model produces one token per forward pass, and each pass does a fixed amount of computation ([Chapter 3](03-inference.md#generation-step-by-step)). When the answer must come immediately, all the reasoning has to happen inside a single pass. When the model first writes the steps, every written step becomes part of the input for the next token: the model can read its own intermediate results, exactly as a person uses scratch paper. More output tokens means more computation spent on the problem.
+
+### Worked example
+
+The question (made-up numbers): *A customer made three purchases of €45, €120 and €80 within ten minutes. Their usual daily spend is €50. How many times their usual daily spend is this?*
+
+| Prompt style | What the model writes | Result |
+| --- | --- | --- |
+| Direct answer | `About 3 times.` | Wrong: a guess from the look of the numbers |
+| Chain-of-thought ("Think step by step, then give the answer.") | `Total: 45 + 120 + 80 = 245 euros. Ratio: 245 ÷ 50 = 4.9. Answer: 4.9 times.` | Right: 4.9 |
+
+Two ways to get a chain of thought:
+
+- **Few-shot CoT:** include solved examples that show their working, not just the answers (the method of Wei et al., 2022).
+- **Zero-shot CoT:** simply add an instruction such as "Let's think step by step." (Kojima et al., 2022).
+
+### Limits
+
+- **Longer answers cost more.** Every reasoning token is a decode step: 200 extra tokens at 7 ms each add 1.4 seconds ([Chapter 3](03-inference.md#worked-example-a-7-billion-weight-model)).
+- **Little gain on simple tasks.** Looking up a fact or labelling an obvious case needs no steps.
+- **The written steps are not guaranteed to be the real reason.** A model can write plausible steps and still reach a wrong answer, or a right answer for the wrong reason, so the steps are useful but must not be trusted blindly.
