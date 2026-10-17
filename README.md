@@ -13,7 +13,7 @@ A plain-English book on how large language models work, with worked numeric exam
 | 2 | Training: how the model learns | Written (draft) |
 | 3 | Inference and decoding | Written (draft) |
 | 4 | Quantization, efficiency and the modern Transformer | Written (draft) |
-| 5 | Evaluation: how we measure a model | Planned |
+| 5 | Evaluation: how we measure a model | In progress |
 
 The detailed task list is in [`plan.md`](plan.md).
 
@@ -57,6 +57,7 @@ One line per implemented section, newest at the bottom.
 - 2026-10-17 — Chapter 4 — What changed since 2017: the modern Transformer compared with the original, with a worked example for each change.
 - 2026-10-17 — Chapter 4 — Cheat sheet and sources: chapter complete.
 - 2026-10-17 — Chapter 3 — Links to Chapter 4 now open the exact section.
+- 2026-10-17 — Chapter 5 — Three levels of evaluation: training loss, model metrics and business outcomes, on the fraud example.
 
 ## Credits
 

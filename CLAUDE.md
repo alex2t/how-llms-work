@@ -14,7 +14,7 @@ A plain-English book that explains how large language models work, written as fi
 | 2 | Training: how the model learns | `docs/02-training.md` | Written (draft); fixes listed in `fix.md` |
 | 3 | Inference and decoding | `docs/03-inference.md` | Written (draft) |
 | 4 | Quantization, efficiency and the modern Transformer | `docs/04-quantization.md` | Written (draft) |
-| 5 | Evaluation: how we measure a model | `docs/05-evaluation.md` | Placeholder |
+| 5 | Evaluation: how we measure a model | `docs/05-evaluation.md` | In progress |
 
 `plan.md` is the single source of truth for what is done and what is left.
 
@@ -121,3 +121,4 @@ Add one line per implemented section, newest at the bottom: `YYYY-MM-DD — Chap
 - 2026-10-17 — Chapter 4 — What changed since 2017 — overview table linking each change to its Chapter 1 section; 2017 base model vs Llama 3 8B; pre-norm, RMSNorm ([2,4,6,8] example), RoPE (distance-only score), GQA (KV cache 0.52 → 0.13 MB/token), SwiGLU, context and vocabulary.
 - 2026-10-17 — Chapter 4 — Cheat sheet + Sources — 22-row cheat sheet and 13 sources; chapter complete (draft).
 - 2026-10-17 — Chapter 3 — Links to Chapter 4 (F8) — four page links pointed to exact sections; grouped-query attention linked.
+- 2026-10-17 — Chapter 5 — Big picture + Three levels of evaluation — fraud example defined (100-transaction sample with 10 fraud; real traffic 100,000/month at 2%); loss → model metrics → business outcomes table.
