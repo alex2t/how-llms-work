@@ -301,6 +301,43 @@ Benchmarks make comparison cheap and repeatable, but have real limits:
 
 The practical lesson: public benchmarks help to shortlist models, but the decision should rest on an evaluation set built from the real task, kept private so it cannot leak into training data.
 
+### Benchmark families
+
+Model announcements quote many benchmark names. Most belong to a few families, each measuring a different ability:
+
+| Family | Examples | What the model must do | How it is scored |
+| --- | --- | --- | --- |
+| General knowledge | MMLU | Answer multiple-choice exam questions in 57 subjects | Accuracy |
+| Expert knowledge | GPQA | Answer 448 graduate-level biology, physics and chemistry questions, written to be hard to look up | Accuracy |
+| School and competition maths | GSM8K, MATH, AIME | Solve word problems (GSM8K's test set has 1,319), competition problems (MATH has 12,500), or the 15 problems of an AIME exam, whose answers are whole numbers from 0 to 999 | Share of final answers that are exactly right |
+| Code | HumanEval | Write a function that passes hidden unit tests | pass@k (next subsection) |
+| Software engineering | SWE-bench | Fix real issues from GitHub projects (2,294 in the full set; a human-checked subset, SWE-bench Verified, has 500) so that the project's tests pass | Share of issues resolved |
+| Long context | Needle in a haystack, RULER | Find or combine facts placed at different depths of a long document ([Chapter 3](03-inference.md#a-bigger-window-is-not-a-perfect-memory)) | Accuracy at each length and depth |
+| Human preference | Chatbot Arena | Give the answer people prefer in blind side-by-side comparisons | Elo rating (see below) |
+
+Maths and code benchmarks are popular because answers can be **checked automatically**: a number is right or wrong, and tests pass or fail. The same property makes them useful for training reasoning models, as Chapter 6 explains.
+
+### Scoring code: pass@k
+
+Generated code is either correct or not, but the model can be asked several times, with sampling ([Chapter 3](03-inference.md#sampling-and-temperature)) giving different attempts. **pass@k** is the probability that **at least one** of k attempts is correct. It is estimated by generating n attempts per task (n at least k), counting the c correct ones, and computing:
+
+$$
+\text{pass@}k = 1 - \frac{\binom{n-c}{k}}{\binom{n}{k}}
+$$
+
+- **(n choose k)** is the number of ways to pick k attempts out of n.
+- **(n − c choose k)** is the number of ways to pick k attempts that are **all wrong**.
+- Their ratio is the chance that k randomly chosen attempts contain no correct one, so 1 minus it is the chance that at least one is correct.
+
+**Worked example:** for one task, n = 10 attempts, of which c = 3 pass the tests.
+
+| k | All-wrong choices ÷ all choices | pass@k |
+| --- | --- | --- |
+| 1 | (7 choose 1) ÷ (10 choose 1) = 7 ÷ 10 | 1 − 0.7 = **0.300** |
+| 5 | (7 choose 5) ÷ (10 choose 5) = 21 ÷ 252 | 1 − 0.083 = **0.917** |
+
+pass@1 is simply the share of correct attempts; pass@5 is much higher because five tries give five chances. The benchmark score is the average over all tasks. When comparing models, check that they are reported with the same k.
+
 ### Human evaluation
 
 People read the outputs and judge them. Two common forms:
@@ -309,6 +346,26 @@ People read the outputs and judge them. Two common forms:
 - **Pairwise comparison:** a reviewer sees two answers to the same prompt and picks the better one. People agree with each other more easily on "which is better" than on an absolute score. Public leaderboards such as Chatbot Arena rank models from many such votes.
 
 Human evaluation is the closest measure of real usefulness, but it is slow and expensive, and reviewers disagree. A common check is to have two reviewers rate the same sample and measure how often they agree.
+
+### Ranking models from votes: Elo ratings
+
+Leaderboards such as Chatbot Arena turn many pairwise votes into one ranking with an **Elo rating**, the system used to rank chess players. Each model has a rating; the difference between two ratings predicts how often one beats the other:
+
+$$
+E_A = \frac{1}{1 + 10^{(R_B - R_A)/400}}
+$$
+
+- **R\_A** and **R\_B** are the two models' ratings.
+- **E\_A** is the expected share of comparisons that model A wins.
+
+After each vote, ratings move toward the result: R\_A ← R\_A + K × (S\_A − E\_A), where **S\_A** is 1 if A won and 0 if it lost, and **K** sets the step size.
+
+**Worked example:** model A is rated 1,300 and model B 1,200.
+
+1. **Expected result:** E\_A = 1 ÷ (1 + 10^(−100/400)) = 0.640. A is expected to win 64% of comparisons, B 36%.
+2. **An upset:** a voter prefers B's answer. With K = 32, A drops to 1,300 + 32 × (0 − 0.640) = 1,279.5 and B rises to 1,200 + 32 × (1 − 0.360) = 1,220.5.
+
+A surprising result moves the ratings a lot; an expected one moves them little. A gap of 100 points always means a 64% expected win rate, whatever the absolute ratings. (Chatbot Arena now fits all votes at once with the Bradley–Terry model, the same idea as the reward model in [Chapter 2](02-training.md#inside-rlhf-training-the-reward-model), but reports the results on the same Elo-style scale.)
 
 ### LLM-as-judge
 
@@ -506,6 +563,10 @@ The same re-evaluation is needed after **any** change to the model, including on
 | Baseline / A/B test | Compare against the current process; split traffic randomly to credit the difference to the model |
 | Threshold | A business choice: trade recall against workload and customer friction |
 | Drift | Real data stops matching evaluation data; keep measuring after go-live |
+| Bits per byte | Total loss ÷ (ln 2 × bytes): compares models with different tokenizers |
+| Benchmark families | Knowledge (MMLU, GPQA), maths (GSM8K, MATH, AIME), code (HumanEval, SWE-bench), long context, human preference |
+| pass@k | Chance that at least one of k attempts is correct; 1 − (n−c choose k) ÷ (n choose k) |
+| Elo rating | A rating gap predicts win rate: 100 points ≈ 64% |
 
 ## Sources
 
@@ -518,3 +579,9 @@ The same re-evaluation is needed after **any** change to the model, including on
 - [Holistic Evaluation of Language Models (Liang et al., 2022)](https://arxiv.org/abs/2211.09110): evaluating LLMs on many tasks and criteria
 - [Judging LLM-as-a-Judge with MT-Bench and Chatbot Arena (Zheng et al., 2023)](https://arxiv.org/abs/2306.05685): LLM judges and their position, length and self-preference biases
 - [Chatbot Arena: An Open Platform for Evaluating LLMs by Human Preference (Chiang et al., 2024)](https://arxiv.org/abs/2403.04132): pairwise human comparison at scale
+- [GPQA: A Graduate-Level Google-Proof Q&A Benchmark (Rein et al., 2023)](https://arxiv.org/abs/2311.12022)
+- [Training Verifiers to Solve Math Word Problems (Cobbe et al., 2021)](https://arxiv.org/abs/2110.14168): the GSM8K benchmark
+- [Measuring Mathematical Problem Solving With the MATH Dataset (Hendrycks et al., 2021)](https://arxiv.org/abs/2103.03874)
+- [SWE-bench: Can Language Models Resolve Real-World GitHub Issues? (Jimenez et al., 2023)](https://arxiv.org/abs/2310.06770) and the [SWE-bench leaderboards](https://www.swebench.com/), including SWE-bench Verified
+- [Needle in a haystack test (Kamradt, 2023)](https://github.com/gkamradt/LLMTest_NeedleInAHaystack) and [RULER (Hsieh et al., 2024)](https://arxiv.org/abs/2404.06654): long-context benchmarks
+- [CME295: Transformers & Large Language Models, Lectures 2 and 3 (Stanford University, Afshine and Shervine Amidi)](https://cme295.stanford.edu/syllabus/): bits per byte, benchmarks and long-context topics

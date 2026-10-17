@@ -122,7 +122,7 @@ Compare the book with each lecture of Stanford's CME295 (summaries in `sources/`
 - [x] Lecture 1 — Transformer foundations, tokenization, embeddings, attention. Gap analysis in `fix.md`; L1-1 to L1-5 approved.
   - [ ] L1-1: Introduction → "Why RNNs hit a wall": the context bottleneck as a fourth problem, plus a row in the bridge table.
   - [ ] L1-2: Chapter 1 → BPE tokenizer: subsection "Word, character, subword or byte?" with a table and worked example.
-  - [ ] L1-3: Chapter 1 special-tokens table; Chapter 3 worked chat example with role tokens. (Chapter 3 part done.)
+  - [ ] L1-3: Chapter 1 special-tokens table; Chapter 3 worked chat example with role tokens.
   - [ ] L1-4: Chapter 1 → Practical consequences: short note on WordPiece and Unigram.
   - [ ] L1-5: Introduction → Word2Vec: the network and negative sampling.
 - [x] Lecture 2 — Model families, Mixture of Experts, normalisation, context, decoding, prompting. Gap analysis in `fix.md`; L2-1 to L2-7 approved.
@@ -130,7 +130,7 @@ Compare the book with each lecture of Stanford's CME295 (summaries in `sources/`
   - [ ] L2-2: new Chapter 6 "Prompting, reasoning and agents" (`docs/06-prompting.md`, added to nav): in-context learning, chain-of-thought, self-consistency.
   - [x] L2-3: Chapter 3 → new subsection "Constrained decoding" with the FRAUD / OK example.
   - [x] L2-4: Chapter 2 → new section "Another training objective: masked language modelling"; link from Chapter 1.
-  - [ ] L2-5: Chapter 3 → long-context advice; Chapter 5 → needle-in-a-haystack benchmark. (Chapter 3 part done.)
+  - [x] L2-5: Chapter 3 → long-context advice; Chapter 5 → needle-in-a-haystack benchmark.
   - [x] L2-6: Chapter 4 → RoPE: paragraph on context extension.
   - [x] L2-7: Chapter 3 → tokens-to-words-to-pages table.
 - [x] Lecture 3 — Pre-training data, SFT, LoRA, RLHF vs DPO, GRPO, distillation. Gap analysis in `fix.md`; L3-1 to L3-9 approved.
@@ -142,7 +142,8 @@ Compare the book with each lecture of Stanford's CME295 (summaries in `sources/`
   - [x] L3-6: Chapter 2 → Stage 3 expanded: reward model, KL penalty, DPO loss, 4 vs 2 models.
   - [ ] L3-7: Chapter 6 → section "Reasoning models: thinking before answering" (test-time compute, RLVR, GRPO).
   - [x] L3-8: Chapter 2 → section "Distillation"; link from Chapter 4.
-  - [ ] L3-9: Chapter 5 → benchmark families, Elo and pass@k.
+  - [x] L3-9: Chapter 5 → benchmark families, Elo and pass@k.
+  - [ ] Follow-up: link "as Chapter 6 explains" in Chapter 5 (Benchmark families) to the reasoning-models section once Chapter 6 exists.
 - [ ] Lecture 4 (when published).
 - [ ] Lecture 5 (when published).
 - [ ] Lecture 6 (when published).

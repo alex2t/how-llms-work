@@ -124,13 +124,13 @@ Reviewed 2026-10-17. Normalisation (RMSNorm, pre-norm), RoPE, attention's quadra
 
 **Decision:** Approved (user, 2026-10-17). Written 2026-10-17.
 
-#### L2-5. Long context: a bigger window is not a perfect memory `[ ]`
+#### L2-5. Long context: a bigger window is not a perfect memory `[x]`
 
 - **Missing:** the book explains the context window as a hard limit (Chapter 3) but not how well models actually use long contexts. Missing: the **needle-in-a-haystack** test (hide one fact at different depths of a long document and ask for it) and the **lost-in-the-middle** finding (facts in the middle of a long prompt are retrieved less reliably than facts near the start or end). Practical consequence: put key instructions and facts at the start or end of a long prompt.
 - **Recommendation:** existing chapters. **Chapter 3 → "The context window: a hard limit"**: a short subsection with the practical advice. **Chapter 5 → "Evaluating generative LLMs"**: needle-in-a-haystack as a long-context benchmark. Facts to be checked against the original papers (the summary's "10%–50%" region is not reliable).
 - **Priority:** Medium.
 
-**Decision:** Approved (user, 2026-10-17). Not written yet.
+**Decision:** Approved (user, 2026-10-17). Written 2026-10-17.
 
 #### L2-6. Extending the context of a trained model (RoPE scaling) `[x]`
 
@@ -224,13 +224,13 @@ Reviewed 2026-10-17. The next-token objective, teacher forcing, and supervised f
 
 **Decision:** Approved (user, 2026-10-17). Written 2026-10-17.
 
-#### L3-9. Benchmarks for maths, code and preferences; Elo and pass@k `[ ]`
+#### L3-9. Benchmarks for maths, code and preferences; Elo and pass@k `[x]`
 
 - **Missing:** Chapter 5 names MMLU, HumanEval and Chatbot Arena only. Missing: **GSM8K**, **MATH** and **AIME** (maths), **SWE-bench** (fixing real software issues); how Chatbot Arena turns votes into an **Elo rating** (a 100-point gap means the stronger model is expected to win about 64% of comparisons: 1 ÷ (1 + 10^(−100/400)) = 0.640); and **pass@k** (the chance that at least one of k attempts is correct), the usual score for code. Pass@k was noted under L1-6.
 - **Recommendation:** existing chapter. **Chapter 5 → "Evaluating generative LLMs" → "Benchmarks"**: a table of benchmark families (what each measures, how it is scored) and two short worked examples (Elo, pass@k). Benchmark sizes to be checked against their papers.
 - **Priority:** Medium.
 
-**Decision:** Approved (user, 2026-10-17). Not written yet.
+**Decision:** Approved (user, 2026-10-17). Written 2026-10-17.
 
 ---
 
