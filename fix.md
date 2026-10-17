@@ -84,6 +84,70 @@ Reviewed 2026-10-17. Lecture 1 overlaps heavily with the Introduction and Chapte
 
 **Decision:**
 
+### Lecture 2 — Model families, Mixture of Experts, normalisation, context, decoding, prompting
+
+Reviewed 2026-10-17. Normalisation (RMSNorm, pre-norm), RoPE, attention's quadratic cost, the 0.75-words-per-token rule and temperature, top-k and top-p sampling are already covered. Two topics are large enough to need real space: Mixture of Experts (in Chapter 4) and prompting and reasoning (a new chapter is recommended).
+
+#### L2-1. Mixture of Experts (MoE) `[ ]`
+
+- **Missing:** the book does not mention MoE at all, yet many large modern models use it. An MoE layer replaces the single feed-forward network with several **experts** (smaller feed-forward networks) and a **router** that sends each token to only the top-k of them (for example 2 of 8). The model has many weights in total but uses only a fraction for each token, so it gains knowledge without a matching rise in compute. Also missing: **routing collapse** (the router keeps choosing the same few experts) and the **load-balancing loss** that prevents it; **shared experts** and **fine-grained experts** in recent designs.
+- **Recommendation:** existing chapter. **Chapter 4**, a new section "**Mixture of Experts: more weights, same compute**" after "What changed since 2017", plus a row in that section's overview table. Worked example: one token, router scores for 8 experts, softmax, top-2 selection and the weighted sum; then total vs active weights for a real model (figures to be checked against its paper), and why every expert must still sit in memory, which links back to quantization.
+- **Priority:** High.
+
+**Decision:**
+
+#### L2-2. Prompting and reasoning: in-context learning, chain-of-thought, self-consistency `[ ]`
+
+- **Missing:** the Introduction mentions in one line that GPT-3 learned "from a few examples in the prompt"; nothing else in the book covers how prompts steer a model. Missing topics:
+    - **In-context learning:** zero-shot (instructions only) and few-shot (a few solved examples in the prompt); the weights do not change.
+    - **Chain-of-thought (CoT):** asking the model to write intermediate steps before the answer, which improves multi-step maths and logic.
+    - **Self-consistency:** sample several chains of thought at a temperature above 0 and take the majority answer, paying more tokens for accuracy.
+- **Recommendation:** **new chapter**, "**Chapter 6 — Prompting, reasoning and agents**". Lecture 3 adds reasoning models (`<think>` tokens, test-time compute, GRPO), and later lectures are likely to add agents, tools and retrieval, so the subject will outgrow a section. Placing it **after Chapter 5** avoids renumbering the existing files and links. Worked examples on the running examples: a zero-shot and a few-shot fraud prompt; self-consistency with 5 sampled answers and a majority vote (reusing Chapter 3's sampling), and its cost in tokens.
+- **Alternative:** a section in Chapter 3 now, moved to its own chapter later. Not recommended, since moving text needs approval again.
+- **Priority:** High.
+
+**Decision:** (also choose: new Chapter 6 after Chapter 5, or another position)
+
+#### L2-3. Constrained (guided) decoding `[ ]`
+
+- **Missing:** forcing the output to follow a format (valid JSON, a fixed list of labels, SQL syntax) by **masking** every token that would break the format at each step, then renormalising. The book's decoding rules (Chapter 3) only choose among all tokens.
+- **Recommendation:** existing chapter. **Chapter 3 → "Choosing the next token"**, a new subsection "**Constrained decoding**" after "How the rules combine". Worked example on the fraud prompt: only `FRAUD` and `OK` are allowed, every other token is masked, and the two probabilities are renormalised, the same arithmetic as top-k. Link from Chapter 5's fraud example, where a guaranteed valid label matters.
+- **Priority:** Medium.
+
+**Decision:**
+
+#### L2-4. Encoder-only models and masked language modelling (BERT) `[ ]`
+
+- **Missing:** Chapter 1's table lists encoder-only models (BERT) but never says how they are trained. Missing: **masked language modelling** (hide about 15% of the tokens and predict them from both sides), **next sentence prediction**, and the special tokens `[CLS]` (one vector for the whole text) and `[SEP]` (boundary between segments). Encoder-only models remain common for classification and for the text embeddings used in search and retrieval, which later lectures are likely to build on.
+- **Recommendation:** existing chapters. **Chapter 2**, a new section "**Another training objective: masked language modelling**" before "Stages of an LLM's life", with a worked example that masks one token of `YOUR CAT IS A LOVELY CAT`. Link to it from **Chapter 1 → "Three ways the block is used today"**.
+- **Priority:** Medium.
+
+**Decision:**
+
+#### L2-5. Long context: a bigger window is not a perfect memory `[ ]`
+
+- **Missing:** the book explains the context window as a hard limit (Chapter 3) but not how well models actually use long contexts. Missing: the **needle-in-a-haystack** test (hide one fact at different depths of a long document and ask for it) and the **lost-in-the-middle** finding (facts in the middle of a long prompt are retrieved less reliably than facts near the start or end). Practical consequence: put key instructions and facts at the start or end of a long prompt.
+- **Recommendation:** existing chapters. **Chapter 3 → "The context window: a hard limit"**: a short subsection with the practical advice. **Chapter 5 → "Evaluating generative LLMs"**: needle-in-a-haystack as a long-context benchmark. Facts to be checked against the original papers (the summary's "10%–50%" region is not reliable).
+- **Priority:** Medium.
+
+**Decision:**
+
+#### L2-6. Extending the context of a trained model (RoPE scaling) `[ ]`
+
+- **Missing:** the lecture notes that RoPE "enables context length extension". Chapter 4 explains RoPE but not how a model trained on, say, 8,192 tokens is stretched to much longer contexts (for example position interpolation, which slows the rotation so longer texts reuse the angles seen in training).
+- **Recommendation:** existing chapter. **Chapter 4 → "RoPE: rotary position embedding"**: one paragraph with a small example reusing that section's 0.1-radian rotation.
+- **Priority:** Low.
+
+**Decision:**
+
+#### L2-7. Tokens to words to pages `[ ]`
+
+- **Missing:** Chapter 1 gives the rule "about 0.75 English words per token". The lecture adds a scale that makes context sizes concrete: 1,000 tokens ≈ 750 words ≈ 1.5 pages; 100,000 tokens ≈ a novel.
+- **Recommendation:** existing chapter. **Chapter 3 → "The context window: a hard limit"**: a 4-row table converting common window sizes (8,192, 128,000, 1,000,000 tokens) into words and pages, computed rather than copied.
+- **Priority:** Low.
+
+**Decision:**
+
 ---
 
 ## Done

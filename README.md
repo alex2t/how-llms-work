@@ -73,6 +73,7 @@ One line per implemented section, newest at the bottom.
 - 2026-10-17 — Introduction — RNNs and LSTMs: how they read text in order, and the three problems attention removed.
 - 2026-10-17 — Introduction — Cheat sheet and sources: chapter complete.
 - 2026-10-17 — CME295 review — Lecture 1: compared with the book; 5 missing topics proposed in fix.md.
+- 2026-10-17 — CME295 review — Lecture 2: 7 missing topics proposed in fix.md, including Mixture of Experts and a new prompting and reasoning chapter.
 
 ## Credits
 

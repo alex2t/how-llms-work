@@ -125,7 +125,7 @@ Compare the book with each lecture of Stanford's CME295 (summaries in `sources/`
   - [ ] L1-3: Chapter 1 special-tokens table; Chapter 3 worked chat example with role tokens.
   - [ ] L1-4: Chapter 1 → Practical consequences: short note on WordPiece and Unigram.
   - [ ] L1-5: Introduction → Word2Vec: the network and negative sampling.
-- [ ] Lecture 2 — Model families, Mixture of Experts, normalisation, context, decoding, prompting.
+- [x] Lecture 2 — Model families, Mixture of Experts, normalisation, context, decoding, prompting. Gap analysis in `fix.md` (L2-1 to L2-7); waiting for decisions.
 - [ ] Lecture 3 — Pre-training data, SFT, LoRA, RLHF vs DPO, GRPO, distillation.
 - [ ] Lecture 4 (when published).
 - [ ] Lecture 5 (when published).
