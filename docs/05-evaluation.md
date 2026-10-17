@@ -420,3 +420,42 @@ The threshold from the ROC section is where model metrics and business outcomes 
 - **Threshold 0.5** meets all four targets: fraud lost €160,000, 1,356 hours, 327 complaints, €200 running cost. It is the right choice for this bank.
 
 A different bank, with more analysts or customers more tolerant of checks, could rightly choose 0.3. The model is the same; the best threshold depends on the business.
+
+## Choosing metrics for a project
+
+The previous sections described many measures. A real project needs only a few, chosen in the right order: start from what the business wants, and work down to what can be measured on the model. This checklist puts that order into steps, and fills them in for the fraud example.
+
+### The checklist
+
+1. **Objective.** Write down, in one sentence, what the business wants to achieve. Not "use an LLM", but the result it should bring.
+2. **KPIs.** Choose the few numbers that show whether the objective is met, including the ones that must **not** get worse (costs, customer experience).
+3. **Model metrics.** For each KPI, name the model metric that drives it. Avoid accuracy on imbalanced data.
+4. **Evaluation data.** Build a labelled test set from the real task, kept separate from any training or prompt-tuning data, and record the real proportion of each category.
+5. **Baseline.** Measure the current process (or a simple model) on the same data and with the same metrics.
+6. **Targets.** Set the value each KPI must reach for go-live, agreed with the business before the results are known, so the bar is not moved to fit the results.
+7. **Go-live and measurement.** Launch carefully, ideally as an A/B test, and measure the KPIs on real traffic.
+8. **Monitoring for drift.** Keep measuring after go-live, and decide in advance what triggers a review.
+
+### The checklist for the fraud example
+
+| Step | Fraud example |
+| --- | --- |
+| 1. Objective | Reduce fraud losses without raising review costs or harming customers |
+| 2. KPIs | Fraud lost per month; analyst hours; complaints; model cost |
+| 3. Model metrics | Recall (fraud lost), precision on real traffic (analyst hours), false positive rate (complaints); AUC to compare candidate models |
+| 4. Evaluation data | 100 labelled past transactions (10 fraud) for development; real traffic has 2% fraud |
+| 5. Baseline | Rules engine: recall 60%, 10,000 reviews and €370,000 total cost a month |
+| 6. Targets | Fraud lost below €200,000; below 1,500 analyst hours; below 400 complaints; model cost below €1,000 |
+| 7. Go-live | Threshold 0.5; A/B test against the rules engine for one month |
+| 8. Monitoring | Weekly: recall from confirmed fraud reports, false positive rate, complaints; review if recall drops below 70% or the false positive rate rises above 8% |
+
+### Drift: why measurement does not stop at go-live
+
+**Drift** means that the data the model sees in use slowly stops looking like the data it was evaluated on, so its real performance changes even though the model itself has not.
+
+- **Data drift:** the inputs change. New merchants, new payment methods, a holiday season.
+- **Concept drift:** the meaning of the inputs changes. Fraudsters learn which patterns get caught and change their behaviour, so yesterday's warning signs no longer apply.
+
+The model's weights are frozen at inference ([Chapter 3](03-inference.md#inference-vs-training)), so it cannot adapt on its own. Monitoring catches the drop; the response can be a new threshold, an updated prompt, fine-tuning on recent labelled cases ([Chapter 2](02-training.md#stage-2-supervised-fine-tuning-sft)), or a different model.
+
+The same re-evaluation is needed after **any** change to the model, including ones meant only to save money: a quantized version ([Chapter 4](04-quantization.md#how-to-check-a-quantized-model)) or new decoding settings ([Chapter 3](03-inference.md#typical-settings)) must be measured on the same evaluation data, against the same targets, before it replaces the model in use.
