@@ -39,6 +39,7 @@ One line per implemented section, newest at the bottom.
 - 2026-10-17 — Chapter 2 — Fixes: three numbers corrected, chapter references turned into links, home page lists all running examples.
 - 2026-10-17 — Chapter 3 — Inference vs training: what is switched off at inference, with a memory example.
 - 2026-10-17 — Chapter 3 — Generation step by step: the translation generated one token per pass, for encoder–decoder and chat models.
+- 2026-10-17 — Chapter 3 — Prefill vs decode: why the first token is slower, with a 7B-model timing example.
 
 ## Credits
 

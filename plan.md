@@ -58,7 +58,7 @@ Goal: give the reader the background needed before Chapter 1, and the story of w
 
 - [x] Inference vs training: frozen weights, no loss, no backpropagation.
 - [x] Generation step by step: the translation produced one word per time step (Ti → amo → molto → `<EOS>`), reusing the encoder output; then the same idea for decoder-only chat models.
-- [ ] Prefill (prompt processing) vs decode (token generation); why the first token is slower.
+- [x] Prefill (prompt processing) vs decode (token generation); why the first token is slower.
 - [ ] The KV cache: why earlier keys and values are stored; memory estimate.
 - [ ] Choosing the next token, on one shared probability example:
   - [ ] Greedy decoding and beam search (beam of 2 worked through).

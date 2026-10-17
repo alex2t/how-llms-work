@@ -119,3 +119,61 @@ In a chat, "the prompt" is the whole conversation so far: earlier messages, the 
 | How the answer sees the input | Cross-attention to the encoder output | Ordinary masked self-attention over the prompt |
 | Forward passes for "Ti amo molto `<EOS>`" | 1 encoder pass + 4 decoder passes | 4 passes (the first one also reads the prompt) |
 | Stops at | `<EOS>` or a length limit | End-of-answer token or a length limit |
+
+## Prefill vs decode: why the first token is slower
+
+Generation has two phases that use the hardware in very different ways. Knowing them explains two things every chat user notices: there is a pause before the first word appears, and after that the words stream out at a steady pace.
+
+### Definitions
+
+- **Prefill (prompt processing):** the first forward pass, which reads the whole prompt and produces the first output token.
+- **Decode (token generation):** every pass after that, each producing one more token.
+- **Time to first token (TTFT):** how long the user waits before the first token appears. It is mostly the prefill time.
+- **Time per output token:** how long each following token takes. Its inverse is the familiar "tokens per second".
+- **FLOP (floating-point operation):** one multiplication or addition of two numbers. Running one token through a model costs about **2 × (number of weights)** FLOPs, because each weight is used in one multiplication and one addition.
+
+### Prefill works like training
+
+The whole prompt is known before generation starts, just as the whole target sentence is known in training. So all prompt tokens go through the model **in one pass**, in parallel, with the causal mask keeping each position from seeing later ones ([Chapter 2](02-training.md#why-training-happens-in-one-time-step)). A 1,000-token prompt does not need 1,000 passes; it needs one pass over a 1,000-row matrix.
+
+Decode cannot do this. Token 2 of the answer depends on which token 1 was chosen, so each decode pass must wait for the one before it. With the KV cache (next section), each decode pass only has to process the **one new token**.
+
+### Why decode is limited by memory, not arithmetic
+
+Every forward pass has to read **all the weights** from the GPU's memory, whether it processes 1,000 tokens or 1. What changes is how much arithmetic each weight read pays for.
+
+**Worked example with the base model** (65 million weights at 4 bytes each = 260 MB):
+
+| | Prefill, 1,000-token prompt | Decode, 1 new token |
+| --- | --- | --- |
+| Weights read from memory | 260 MB | 260 MB |
+| Arithmetic: 2 × 65,000,000 × tokens | 130,000,000,000 FLOPs | 130,000,000 FLOPs |
+| Arithmetic per byte read | 500 FLOPs | 0.5 FLOPs |
+
+In prefill, each weight is read once and used for 1,000 tokens, so the GPU is busy calculating: prefill is **compute-bound** (limited by arithmetic speed). In decode, each weight is read and used for a single token, so the GPU spends most of its time waiting for memory: decode is **memory-bound** (limited by how fast memory can be read). This counts only the weights; attention adds a smaller cost that grows with the length of the text.
+
+### Worked example: a 7-billion-weight model
+
+The effect is easier to feel on a model the size of today's small open models. Assume a model with 7 billion weights stored in 16-bit format, 2 bytes each ([Chapter 4](04-quantization.md) covers number formats), and a GPU that can read 2,000 GB of memory per second and compute 500 trillion FLOPs per second. These are round illustrative figures; real GPUs vary.
+
+- Weights in memory: 7,000,000,000 × 2 bytes = **14 GB**.
+
+| | Prefill, 1,000-token prompt | Decode, 1 token |
+| --- | --- | --- |
+| Time to read the weights: 14 GB ÷ 2,000 GB/s | 7 ms | 7 ms |
+| Time for the arithmetic: 2 × 7 billion × tokens ÷ 500 trillion per second | 28 ms | 0.028 ms |
+| Time taken (the slower of the two) | **28 ms**, limited by arithmetic | **7 ms**, limited by memory |
+
+For a 1,000-token prompt and a 200-token answer:
+
+- The first token appears after about **28 ms** (prefill).
+- Each later token takes about **7 ms**, so the model streams at most 1 ÷ 0.007 ≈ **143 tokens per second**.
+- The whole answer takes about 28 ms + 200 × 7 ms = **1.43 seconds**.
+
+Prefill handled 1,000 tokens in 28 ms; decode would need 1,000 × 7 ms = 7 seconds for the same number of tokens. Per token, prefill is 250 times faster, because it reads the weights once for all of them.
+
+### What this means in practice
+
+- **Long prompts delay the first token.** Prefill time grows with the prompt length, so a 10,000-token document takes about ten times longer to process than a 1,000-token prompt before any answer appears.
+- **Streaming speed depends on memory speed and model size.** Each decode step reads every weight, so a smaller model, or the same model stored in fewer bytes per weight, generates faster. This is a main reason for quantization ([Chapter 4](04-quantization.md)).
+- **Serving many users at once is efficient.** When several users' decode steps are grouped into one batch, the weights are read once and used for all of them. The memory cost is shared, which is why providers batch requests together.
