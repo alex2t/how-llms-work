@@ -14,6 +14,17 @@ The chapter follows one question, "how many bytes does this model need, and what
 6. **What changed since 2017:** the improvements that turned the original Transformer of [Chapter 1](01-transformers.md) into today's models, several of them also aimed at efficiency.
 7. **Mixture of Experts:** models with many more weights that use only a few of them for each token.
 
+```mermaid
+flowchart LR
+  subgraph Path1["1. Shrink Every Number (Quantization)"]
+    NF["Number Formats<br/>FP32 / BF16 → INT8 / INT4"] --> Sc["Scale & Group-wise<br/>Quantization"] --> Meth["PTQ Methods<br/>GPTQ, AWQ, GGUF"]
+  end
+  subgraph Path2["2. Modernise the Architecture (Since 2017)"]
+    Norm["Pre-norm, RMSNorm,<br/>RoPE & SwiGLU"] --> GQA["Grouped-Query Attention<br/>(shrinks KV cache)"] --> MoE["Mixture of Experts<br/>(more weights, same compute)"]
+  end
+  Path1 & Path2 --> Goal["Cheaper, faster<br/>and better models"]
+```
+
 ## Why size matters
 
 A model's size decides which hardware can run it and how fast it generates. Both follow from one multiplication.
@@ -83,6 +94,18 @@ The three floating-point formats used in LLMs split their bits differently:
 
 FP16 and BF16 both use 16 bits but make opposite choices. FP16 keeps more fraction bits, so it is more precise, but its 5 exponent bits give a small range. BF16, designed at Google for machine learning, keeps FP32's 8 exponent bits, so it has the same huge range as FP32, but only 7 fraction bits.
 
+!!! note "Quick refresher: How binary floating-point numbers work"
+    In ordinary base-10 scientific notation, a number is written as $\pm \text{digits} \times 10^{\text{exponent}}$. A computer's floating-point format does the same in base 2:
+
+    $$
+    \text{value} = (-1)^{\text{sign}} \times (1.\text{fraction}_2) \times 2^{\text{exponent}}
+    $$
+
+    A field of $b$ bits can hold $2^b$ distinct patterns:
+
+    - **Exponent bits set the range:** FP16 has 5 exponent bits ($2^5 = 32$ patterns), so its highest power of 2 is $2^{15} = 32{,}768$ and its largest representable number is $65{,}504$. FP32 and BF16 both have 8 exponent bits ($2^8 = 256$ patterns), reaching $2^{127} \approx 1.7 \times 10^{38}$ (and $3.4 \times 10^{38}$ with the fraction bits).
+    - **Fraction bits set the precision:** Each extra fraction bit halves the gap between adjacent numbers. With 23 fraction bits ($2^{23} \approx 8.4\text{ million}$ steps between powers of 2), FP32 gives about 7 decimal digits of accuracy; with 7 fraction bits ($2^7 = 128$ steps), BF16 gives about 2 to 3 decimal digits.
+
 ### Worked example: storing the same values in each format
 
 The values below were stored in each format and read back (computed with NumPy):
@@ -108,7 +131,7 @@ Quantized models store weights as **integers** (whole numbers) with very few bit
 | INT8 | 8 | 1 | 256 whole numbers, from −128 to 127 |
 | INT4 | 4 | 0.5 | 16 whole numbers, from −8 to 7 |
 
-An integer format cannot store 0.1234567 at all, only whole numbers such as 12 or −3. To use it for weights, every weight must be mapped onto those few whole numbers, and mapped back when it is needed. That mapping is quantization, explained in the next section.
+Because $b$ bits provide $2^b$ distinct patterns, an 8-bit integer holds $2^8 = 256$ whole numbers and a 4-bit integer holds $2^4 = 16$ whole numbers. An integer format cannot store 0.1234567 at all, only whole numbers such as 12 or −3. To use it for weights, every weight must be mapped onto those few whole numbers, and mapped back when it is needed. That mapping is quantization, explained in the next section.
 
 ### Summary of the formats
 
@@ -135,8 +158,19 @@ $$
 \text{scale} = \frac{\max |w|}{q_{\max}} \qquad q = \text{round}\!\left(\frac{w}{\text{scale}}\right) \qquad \hat{w} = q \times \text{scale}
 $$
 
-- **max |w|** is the largest weight ignoring its sign.
+- **w** is the original floating-point weight.
+- **max |w|** is the largest weight in the group, ignoring its sign.
 - **q\_max** is the largest integer used: 127 for INT8 and 7 for INT4.
+- **round(...)** rounds to the nearest whole number, producing the stored integer **q**.
+- **$\hat{w}$** (read "w-hat") is the approximate floating-point weight reconstructed when multiplying **q** back by **scale**.
+
+```mermaid
+flowchart LR
+  W["Original weight w<br/>(FP16 / BF16)"] --> Q["Quantize (once)<br/>q = round(w ÷ scale)"]
+  Q --> Mem["Stored in GPU memory<br/>Integer q (INT8 or INT4) + scale"]
+  Mem --> DQ["Dequantize (during inference)<br/>ŵ = q × scale"]
+  DQ --> Mul["Matrix multiplication<br/>(in FP16 / BF16)"]
+```
 
 This version is called **symmetric** quantization: 0 stays exactly 0, and positive and negative weights use the same step.
 
@@ -161,15 +195,15 @@ The largest error is 0.0018, below the half-step limit of 0.010236 ÷ 2 = 0.0051
 
 ### The same weights in INT4
 
-INT4 allows only the integers −7 to 7 here, so the steps are much bigger: scale = 1.30 ÷ 7 = 0.1857.
+INT4 allows only the integers −7 to 7 here, so the steps are much bigger: scale = 1.30 ÷ 7 ≈ 0.1857 (the table uses the unrounded value 0.185714 to compute ŵ).
 
-| Weight w | Stored integer q | Dequantized ŵ = q × 0.1857 | Rounding error |
-| --- | --- | --- | --- |
-| 0.42 | 2 | 0.3714 | 0.0486 |
-| −1.30 | −7 | −1.3000 | 0.0000 |
-| 0.053 | 0 | 0.0000 | 0.0530 |
-| 0.871 | 5 | 0.9286 | 0.0576 |
-| −0.317 | −2 | −0.3714 | 0.0544 |
+| Weight w | w ÷ scale | Stored integer q | Dequantized ŵ = q × 0.1857 | Rounding error |
+| --- | --- | --- | --- | --- |
+| 0.42 | 2.26 | 2 | 0.3714 | 0.0486 |
+| −1.30 | −7.00 | −7 | −1.3000 | 0.0000 |
+| 0.053 | 0.29 | 0 | 0.0000 | 0.0530 |
+| 0.871 | 4.69 | 5 | 0.9286 | 0.0576 |
+| −0.317 | −1.71 | −2 | −0.3714 | 0.0544 |
 
 The largest error grows from 0.0018 to 0.0576, about 30 times larger than with INT8, and the small weight 0.053 has become exactly 0. Each weight now takes only half a byte. Whether these errors matter depends on how many weights there are and how cleverly the rounding is done, the subject of the next two sections.
 
@@ -224,6 +258,19 @@ Most quantization in practice is post-training. The smart PTQ methods below impr
 - **Weights and activations.** The **activations** (the vectors flowing between layers while the model runs) are quantized too, so the matrix multiplication itself runs in 8-bit integers (**W8A8**). This also speeds up the arithmetic, which helps prefill, which is compute-bound. It is harder: activations change with every input, and large models have a few activation dimensions with very large values (outliers) that must be handled separately.
 - **KV cache.** The keys and values stored during generation can be quantized as well. With the 7-billion-weight model of [Chapter 3](03-inference.md#how-much-memory-the-cache-needs), INT8 halves the cache from 0.52 MB to 0.26 MB per token, so 32 users with 4,096 tokens each need about 34.4 GB instead of 68.7 GB.
 
+```mermaid
+flowchart LR
+  subgraph W4A16["W4A16: Weights-Only Quantization (speeds up memory-bound decode)"]
+    W4["Weights in memory<br/>(INT4)"] --> DQ16["Dequantize to 16-bit"]
+    Act16["Activations<br/>(FP16 / BF16)"] --> Mat16["16-bit Matrix Multiply"]
+    DQ16 --> Mat16
+  end
+  subgraph W8A8["W8A8: Weight + Activation Quantization (speeds up prefill too)"]
+    W8["Weights in memory<br/>(INT8)"] --> Mat8["8-bit Integer Matrix Multiply"]
+    Act8["Activations quantized<br/>on the fly (INT8)"] --> Mat8
+  end
+```
+
 ### How: three names you will meet
 
 - **GPTQ** (2022) quantizes a layer's weights one column at a time. After rounding each column, it slightly adjusts the weights not yet quantized to compensate for the error just introduced, using calibration data to measure which errors affect the layer's output most. The result is much better than rounding every weight independently, especially at 4 bits.
@@ -245,7 +292,7 @@ Every bit removed saves memory and time, but each step down adds more rounding e
 
 ### The trade-off for a 7-billion-weight model
 
-Sizes include one 16-bit scale per group of 32 weights; speeds are the upper limit on the same illustrative GPU (2,000 GB/s) used earlier. The quality column describes the pattern widely reported for models of this size, not a measurement.
+Sizes include one 16-bit scale per group of 32 weights (computed as 7 billion × bits per weight ÷ 8 bits per byte); speeds are the upper limit on the same illustrative GPU (2,000 GB/s ÷ unrounded size in GB) used earlier. The quality column describes the pattern widely reported for models of this size, not a measurement.
 
 | Format | Bits per weight | Size | Max tokens per second | Typical quality compared with BF16 |
 | --- | --- | --- | --- | --- |
@@ -322,11 +369,35 @@ $$
 \text{post-norm (2017):}\quad x \leftarrow \text{Norm}\big(x + \text{Sublayer}(x)\big) \qquad\qquad \text{pre-norm:}\quad x \leftarrow x + \text{Sublayer}\big(\text{Norm}(x)\big)
 $$
 
+- **x** is the token vector entering the sublayer, and **$\leftarrow$** means "is updated to".
+- **Norm** is the normalisation step (LayerNorm or RMSNorm).
+- **Sublayer** is either the attention block or the feed-forward network.
+
+```mermaid
+flowchart LR
+  subgraph Post["Post-norm (2017): Norm sits on the main path"]
+    x1["x"] --> S1["Sublayer"] --> A1["+"] --> N1["Norm"] --> out1["output"]
+    x1 -- "skip" --> A1
+  end
+  subgraph Pre["Pre-norm (Modern): Clean residual highway"]
+    x2["x"] --> N2["Norm"] --> S2["Sublayer"] --> A2["+"] --> out2["output"]
+    x2 -- "unobstructed skip highway" --> A2
+  end
+```
+
 In pre-norm, the residual path x passes from the first layer to the last with nothing but additions on it. Gradients ([Chapter 2](02-training.md#backpropagation-computing-every-gradient-at-once)) flow back along it easily, so stacks of dozens of layers train stably and depend less on a careful warm-up schedule.
 
 ### RMSNorm
 
-**RMSNorm** (root-mean-square normalisation) keeps layer normalisation's goal, a stable scale for each token's vector, but drops the mean subtraction and the shift β. It divides each number by the vector's **root mean square** (the square root of the average of the squared numbers), then multiplies by the learned γ.
+**RMSNorm** (root-mean-square normalisation) keeps layer normalisation's goal, a stable scale for each token's vector, but drops the mean subtraction and the shift β. It divides each number by the vector's **root mean square** (the square root of the average of the squared numbers), then multiplies by the learned γ:
+
+$$
+\text{RMS}(x) = \sqrt{\frac{1}{d_{model}} \sum_{j=1}^{d_{model}} x_j^2} \qquad y_j = \gamma_j \, \frac{x_j}{\text{RMS}(x)}
+$$
+
+- **$x_j$** is the j-th number of the token vector $x$, and **$d_{model}$** is the vector length.
+- **$\text{RMS}(x)$** is the root mean square of the vector's numbers (with a tiny $\epsilon$ added inside the square root in code to avoid dividing by zero).
+- **$\gamma_j$** is the learned scale for dimension j, and **$y_j$** is the normalised output.
 
 **Worked example** with the same vector as Chapter 1, x = \[2, 4, 6, 8\]:
 
@@ -342,7 +413,16 @@ Both results have a controlled size, which is what matters for stable training. 
 
 The 2017 model adds a position vector to each token's embedding once, at the bottom of the stack. **RoPE** instead encodes position inside every attention layer, by **rotating** the query and key vectors. Each pair of numbers in q and k is treated as a point in a plane and rotated by an angle equal to the token's position times a fixed speed, with a different speed for each pair (as the sinusoidal encoding uses a different frequency for each dimension).
 
-The useful property is that the attention score between two tokens then depends only on **how far apart** they are, not on where they sit in the text.
+The useful property is that the attention score between two tokens then depends on what they contain and on **how far apart** they are, not on where they sit in the text.
+
+!!! note "Quick refresher: Why rotating two vectors makes their dot product depend only on the angle between them"
+    In a 2D plane, the dot product of two vectors of length 1 pointing at angles $\theta_1$ and $\theta_2$ is simply the cosine of the angle between them:
+
+    $$
+    q \cdot k = \cos(\theta_2 - \theta_1)
+    $$
+
+    If token $q$ sits at position $m$ (rotated by angle $m\theta$) and token $k$ sits at position $n$ (rotated by angle $n\theta$), the angle between them is $(n - m)\theta$. Shifting both words 10 positions further down the sentence adds $10\theta$ to both angles, which cancels out in the subtraction $(n + 10) - (m + 10) = n - m$. So, for vectors like these, the score depends only on the relative distance $n - m$; for real vectors it also depends on their content, but never on the absolute positions.
 
 **Worked example** with one pair of numbers, q = k = (1, 0), and a speed of 0.1 radian per position (made-up values):
 
@@ -358,6 +438,23 @@ Both pairs are 3 positions apart, so they get the same score, wherever they are 
 ### Grouped-query attention (GQA)
 
 In the original multi-head attention, each of the 8 heads has its own W\_Q, W\_K and W\_V, so every head stores its own keys and values in the KV cache. **Grouped-query attention** keeps a separate query for each head but lets a **group** of query heads share one key head and one value head. (The extreme case, all query heads sharing a single key/value head, is called multi-query attention.)
+
+```mermaid
+flowchart TD
+  subgraph MHA["Multi-Head Attention (MHA): 1 KV per Q"]
+    Q1["Q1"] --- KV1["K1, V1"]
+    Q2["Q2"] --- KV2["K2, V2"]
+    Q3["Q3"] --- KV3["K3, V3"]
+    Q4["Q4"] --- KV4["K4, V4"]
+  end
+  subgraph GQA["Grouped-Query Attention (GQA): Shared KV per group"]
+    GQ1["Q1"] & GQ2["Q2"] --- GKV1["K1, V1"]
+    GQ3["Q3"] & GQ4["Q4"] --- GKV2["K2, V2"]
+  end
+  subgraph MQA["Multi-Query Attention (MQA): 1 KV for all Q"]
+    MQ1["Q1"] & MQ2["Q2"] & MQ3["Q3"] & MQ4["Q4"] --- MKV1["K1, V1"]
+  end
+```
 
 **Worked example: the KV cache of Llama 3 8B** (32 layers, head size 128, 16-bit numbers), using the formula from [Chapter 3](03-inference.md#how-much-memory-the-cache-needs) with the key/value heads counted explicitly:
 
@@ -408,6 +505,16 @@ $$
 - **x** is the token's vector, and **E\_i(x)** the output of expert i.
 - **s\_i** is the router's score for expert i.
 - **g\_i** is the weight given to expert i: a softmax over the chosen experts' scores only.
+- **y** is the combined output vector for the token, formed by adding the weighted outputs of the top-k chosen experts.
+
+```mermaid
+flowchart LR
+  x["Token vector x"] --> R["Router<br/>(scores 8 experts)"]
+  R -- "top-2 selected (g₃ = 0.599)" --> E3["Expert 3 (active)"]
+  R -- "top-2 selected (g₆ = 0.401)" --> E6["Expert 6 (active)"]
+  R -. "not run (0 FLOPs)" .-> Idle["Experts 1, 2, 4, 5, 7, 8"]
+  E3 & E6 --> Sum["Weighted sum<br/>y = g₃ E₃(x) + g₆ E₆(x)"]
+```
 
 ### Worked example: routing one token
 
@@ -458,9 +565,11 @@ $$
 L_{\text{balance}} = \alpha \cdot N \cdot \sum_{i=1}^{N} f_i \, P_i
 $$
 
+- **α** (alpha) is a small scaling constant (such as 0.01) that controls how strongly the balancing penalty is weighted relative to the main next-token loss.
 - **N** is the number of experts.
 - **f\_i** is the fraction of the batch's tokens actually sent to expert i.
 - **P\_i** is the router's average probability for expert i over the batch.
+- **$\sum_{i=1}^{N}$** adds the product $f_i P_i$ across all N experts.
 
 **Worked example** with N = 4 experts, ignoring α:
 
@@ -469,7 +578,7 @@ $$
 | Balanced | 0.25, 0.25, 0.25, 0.25 | 0.25, 0.25, 0.25, 0.25 | 4 × (4 × 0.0625) = **1.0** |
 | Collapsed | 1, 0, 0, 0 | 0.90, 0.05, 0.03, 0.02 | 4 × (1 × 0.90) = **3.6** |
 
-The collapsed router is penalised 3.6 times more than the balanced one, which pushes it to spread tokens across all experts.
+In the balanced row, each expert has $f_i P_i = 0.25 \times 0.25 = 0.0625$, and the four terms sum to $0.25$; multiplying by $N = 4$ gives **1.0**. In the collapsed row, expert 1 gets all the tokens ($f_1 = 1$, $f_2 = f_3 = f_4 = 0$), so the sum is $1 \times 0.90 + 0 + 0 + 0 = 0.90$, and multiplying by $N = 4$ gives **3.6**. The collapsed router is penalised 3.6 times more than the balanced one, which pushes it to spread tokens across all experts.
 
 ### Recent refinements
 
