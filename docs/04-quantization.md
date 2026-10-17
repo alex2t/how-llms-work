@@ -118,3 +118,85 @@ An integer format cannot store 0.1234567 at all, only whole numbers such as 12 o
 | FP16 | 2 | Small | Medium | Inference |
 | INT8 | 1 | 256 steps, with a scale | Steps of a fixed size | Quantized weights, KV cache |
 | INT4 | 0.5 | 16 steps, with a scale | Coarse steps | Quantized weights |
+
+## How quantization works
+
+**Quantization** means storing numbers in a format with fewer bits, usually by mapping real-valued weights onto a small set of whole numbers. The mapping uses one extra number, the **scale**, which says how much one integer step is worth. Understanding the scale explains both why quantization works so well and where its errors come from.
+
+### Definitions
+
+- **Quantize:** turn a real number into a small integer, q = round(w ÷ scale).
+- **Dequantize:** turn the integer back into an approximate real number, ŵ = q × scale. This happens just before the weight is used in a calculation.
+- **Scale:** the size of one integer step, chosen so the largest weight lands on the largest allowed integer.
+- **Rounding error:** the difference between the original weight w and the dequantized ŵ. It can never be larger than half a step (scale ÷ 2).
+
+$$
+\text{scale} = \frac{\max |w|}{q_{\max}} \qquad q = \text{round}\!\left(\frac{w}{\text{scale}}\right) \qquad \hat{w} = q \times \text{scale}
+$$
+
+- **max |w|** is the largest weight ignoring its sign.
+- **q\_max** is the largest integer used: 127 for INT8 and 7 for INT4.
+
+This version is called **symmetric** quantization: 0 stays exactly 0, and positive and negative weights use the same step.
+
+### Worked example: five weights to INT8
+
+Take five weights (made-up values): 0.42, −1.30, 0.053, 0.871, −0.317.
+
+1. **Find the scale.** The largest weight ignoring sign is 1.30, so scale = 1.30 ÷ 127 = 0.010236.
+2. **Quantize.** Divide each weight by the scale and round to the nearest whole number.
+3. **Store** the five integers (1 byte each) and the one scale.
+4. **Dequantize** when needed: multiply each integer by the scale.
+
+| Weight w | w ÷ scale | Stored integer q | Dequantized ŵ = q × 0.010236 | Rounding error |
+| --- | --- | --- | --- | --- |
+| 0.42 | 41.03 | 41 | 0.4197 | 0.0003 |
+| −1.30 | −127.00 | −127 | −1.3000 | 0.0000 |
+| 0.053 | 5.18 | 5 | 0.0512 | 0.0018 |
+| 0.871 | 85.09 | 85 | 0.8701 | 0.0009 |
+| −0.317 | −30.97 | −31 | −0.3173 | 0.0003 |
+
+The largest error is 0.0018, below the half-step limit of 0.010236 ÷ 2 = 0.0051. Each weight is now stored in 1 byte instead of 4, and its value is still correct to about 2 decimal places.
+
+### The same weights in INT4
+
+INT4 allows only the integers −7 to 7 here, so the steps are much bigger: scale = 1.30 ÷ 7 = 0.1857.
+
+| Weight w | Stored integer q | Dequantized ŵ = q × 0.1857 | Rounding error |
+| --- | --- | --- | --- |
+| 0.42 | 2 | 0.3714 | 0.0486 |
+| −1.30 | −7 | −1.3000 | 0.0000 |
+| 0.053 | 0 | 0.0000 | 0.0530 |
+| 0.871 | 5 | 0.9286 | 0.0576 |
+| −0.317 | −2 | −0.3714 | 0.0544 |
+
+The largest error grows from 0.0018 to 0.0576, about 30 times larger than with INT8, and the small weight 0.053 has become exactly 0. Each weight now takes only half a byte. Whether these errors matter depends on how many weights there are and how cleverly the rounding is done, the subject of the next two sections.
+
+### Zero-point (asymmetric) quantization
+
+The weights above range from −1.30 to 0.871, but symmetric INT8 reserves integers up to +127 for positive values that never appear: the largest positive weight only reaches 85. **Asymmetric** quantization fixes this by mapping the actual range, minimum to maximum, onto all 256 values of an unsigned 8-bit integer (0 to 255). It needs a second stored number, the **zero point**: the integer that represents the real value 0.
+
+- scale = (0.871 − (−1.30)) ÷ 255 = 0.008514
+- zero point = round(1.30 ÷ 0.008514) = 153
+- q = round(w ÷ scale) + zero point, so −1.30 → 0, 0 → 153, and 0.871 → 255.
+
+The step is now 0.0085 instead of 0.0102, because no integer values are wasted. Asymmetric quantization is most useful for activations, which are often all positive (for example after ReLU), so half of a symmetric range would be wasted.
+
+### The outlier problem and group-wise scales
+
+One scale for many weights works well only if the weights have similar sizes. Add a single large weight, 10.0, to the five above and quantize all six to INT4 with one scale:
+
+- scale = 10.0 ÷ 7 = 1.43
+- 0.42, 0.053 and −0.317 all round to 0, and −1.30 becomes −1.43.
+
+Three of the five ordinary weights are wiped out by one **outlier** (a value much larger than the rest). Real models do have such outliers, so quantizing a whole matrix with one scale gives poor results.
+
+The standard fix is **group-wise quantization**: split each row of weights into small groups, typically 32, 64 or 128 weights, and give each group its own scale. An outlier then only spoils the scale of its own group. The cost is the extra scales. With one 16-bit scale per group:
+
+| Group size | Bits per weight for INT4 | Bits per weight for INT8 |
+| --- | --- | --- |
+| 32 | 4 + 16 ÷ 32 = 4.5 | 8.5 |
+| 64 | 4.25 | 8.25 |
+| 128 | 4.125 | 8.125 |
+
+So a "4-bit" 7-billion-weight model with groups of 32 really uses 4.5 bits per weight: 7,000,000,000 × 4.5 ÷ 8 ≈ 3.9 GB, not 3.5 GB.
