@@ -134,8 +134,8 @@ Compare the book with each lecture of Stanford's CME295 (summaries in `sources/`
   - [ ] L2-6: Chapter 4 → RoPE: paragraph on context extension.
   - [ ] L2-7: Chapter 3 → tokens-to-words-to-pages table.
 - [x] Lecture 3 — Pre-training data, SFT, LoRA, RLHF vs DPO, GRPO, distillation. Gap analysis in `fix.md`; L3-1 to L3-9 approved.
-  - [ ] L3-1: Chapter 2 → section "Where pre-training data comes from" (pipeline diagram, filtering example).
-  - [ ] L3-2: Chapter 2 → model collapse, inside L3-1's section.
+  - [x] L3-1: Chapter 2 → section "Where pre-training data comes from" (pipeline diagram, filtering example).
+  - [x] L3-2: Chapter 2 → model collapse, inside L3-1's section.
   - [ ] L3-3: Chapter 5 → bits per byte after the two-tokenizer example.
   - [ ] L3-4: Chapter 2 → "Packing: the alternative to padding".
   - [ ] L3-5: Chapter 2 → subsection "Cheap fine-tuning: LoRA"; "instruction tuning" in Stage 2.

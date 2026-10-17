@@ -152,21 +152,21 @@ Reviewed 2026-10-17. Normalisation (RMSNorm, pre-norm), RoPE, attention's quadra
 
 Reviewed 2026-10-17. The next-token objective, teacher forcing, and supervised fine-tuning with the loss on answer tokens only are already covered (Chapter 2). RLHF, DPO and LoRA are each covered by one short paragraph; the lecture goes much deeper. Most gaps belong in Chapter 2; reasoning models belong in the new Chapter 6.
 
-#### L3-1. Where pre-training data comes from `[ ]`
+#### L3-1. Where pre-training data comes from `[x]`
 
 - **Missing:** Chapter 2 says only that the model learns from "books, web pages, code". Missing: how a pre-training corpus is built (web crawls such as Common Crawl, code repositories, text extracted from PDFs), how it is cleaned (rule-based filters, **deduplication**, language identification, quality classifiers), training in **stages** (broad data first, then more code and reasoning data), and how the **data mixture** (the share of each source) is chosen by training small proxy models on different mixtures.
 - **Recommendation:** existing chapter. **Chapter 2 → "Training data and batches"**: expand "Training data" into a section "**Where pre-training data comes from**", with a pipeline diagram (Mermaid) and a worked example of how deduplication and filtering shrink a corpus (made-up numbers). Real corpus sizes to be checked against the papers.
 - **Priority:** Medium.
 
-**Decision:** Approved (user, 2026-10-17). Not written yet.
+**Decision:** Approved (user, 2026-10-17). Written 2026-10-17.
 
-#### L3-2. Model collapse: training on AI-generated text `[ ]`
+#### L3-2. Model collapse: training on AI-generated text `[x]`
 
 - **Missing:** more and more web text is written by LLMs. Models trained on it can lose the rare cases (the "tails" of the distribution) and become less varied from one generation of models to the next.
 - **Recommendation:** existing chapter. **Chapter 2 → "Where pre-training data comes from"** (L3-1): a short subsection with a small illustration of how rare tokens disappear when a model's own samples become the next training set.
 - **Priority:** Low.
 
-**Decision:** Approved (user, 2026-10-17). Not written yet.
+**Decision:** Approved (user, 2026-10-17). Written 2026-10-17.
 
 #### L3-3. Bits per byte: a loss that does not depend on the tokenizer `[ ]`
 

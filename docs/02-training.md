@@ -55,6 +55,56 @@ The model does not learn from one sentence at a time; it learns from groups of s
 
 The **training data (corpus)** is the collection of text the model learns from: books, web pages, code, or, for a translation model, pairs of sentences in two languages. The original paper used about 4.5 million English–German sentence pairs. Before training, all of it is converted to token IDs with the frozen tokenizer.
 
+### Where pre-training data comes from
+
+A modern model's pre-training data is not a tidy library: it is assembled from raw sources and then aggressively cleaned, because the model learns whatever patterns the data contains, including spam, duplicates and errors. Llama 3, for example, was pre-trained on more than 15 trillion tokens.
+
+```mermaid
+flowchart LR
+  A["Raw sources: web crawls, code, books, PDFs"] --> B[Extract plain text] --> C[Keep wanted languages] --> D[Remove duplicates] --> E[Quality filter] --> F[Tokenize and mix]
+```
+
+1. **Collect.** Most text comes from **web crawls**. Common Crawl, a non-profit, publishes snapshots of billions of web pages; the FineWeb dataset was built from 96 of them. Code comes from public repositories; academic text is extracted from PDFs.
+2. **Extract.** Strip the HTML, menus and adverts, keeping the main text of each page.
+3. **Identify the language.** A small classifier labels each document's language, and only the wanted languages are kept.
+4. **Deduplicate.** The web repeats itself: copied articles, boilerplate, mirrored sites. **Deduplication** removes exact copies and near-copies, so the model does not over-learn repeated text or memorise it word for word.
+5. **Filter for quality.** Simple rules (too short, too many symbols, mostly lists of links) remove obvious junk. Many pipelines then use a **quality classifier**, a small model trained to score how useful a page is, for example how educational it reads, and keep only the best-scoring pages.
+6. **Tokenize and mix** the sources into the final training set, as described next.
+
+**Worked example** with made-up but typical proportions:
+
+| Stage | Pages left | Share of the crawl |
+| --- | --- | --- |
+| Crawled pages | 1,000,000 | 100% |
+| After text extraction and language identification (45% kept) | 450,000 | 45.0% |
+| After removing exact duplicates (30% removed) | 315,000 | 31.5% |
+| After removing near-duplicates (10% removed) | 283,500 | 28.4% |
+| After the quality filter (40% kept) | 113,400 | 11.3% |
+
+Only about one page in nine survives. This is normal: careful filtering of web data gives better models than using everything, even though the training set becomes much smaller.
+
+### Choosing the data mixture
+
+The final training set mixes several **sources** (also called domains): web pages, code, books, scientific papers, maths. The **data mixture** is the share of training tokens taken from each, and it strongly affects what the model is good at: more code improves coding, more maths improves maths, and every extra share for one source is taken from the others.
+
+Testing mixtures on the full model would cost a full training run each time. Instead, teams train many **small proxy models**, each on a different mixture, measure their loss on the kinds of text they care about, and fit a simple model that predicts the loss for any mixture. The predicted best mixture is then used for the large model (methods such as DoReMi and RegMix work this way).
+
+Training also often happens in **stages**: most of the tokens come from the broad mixture, and a final stage uses a smaller set of the highest-quality data, with more code, maths and reasoning text, to sharpen those skills.
+
+### Model collapse: training on AI-written text
+
+More and more web text is written by LLMs. If a model is trained on text produced by earlier models, which were themselves trained on model-written text, quality can decline from one generation to the next. This is called **model collapse**.
+
+The main cause is that **rare things get lost**. A model only reproduces what appears often enough in its training data, and a finite sample of a model's output under-represents rare words, facts and styles.
+
+**Worked example.** Suppose a rare word has probability 0.001 in a model's output, and the next model is trained on 1,000 tokens sampled from it (tiny numbers, for illustration):
+
+- The chance that the word never appears in the 1,000 samples is 0.999¹⁰⁰⁰ ≈ 0.368.
+- So in about 37% of cases, the next model never sees the word at all, and gives it no probability. Once lost, it cannot come back in later generations.
+- A common word with probability 0.01 is almost never lost: 0.99¹⁰⁰⁰ ≈ 0.00004.
+
+Repeated over generations, the rare cases (the "tails" of the distribution) disappear first, and the text becomes more uniform and less varied. This is one more reason why data pipelines filter carefully and value original, human-written text.
+
 ### What a batch is
 
 A **batch** is a small group of training examples that go through the model together in one training step. The model computes the loss for every example in the batch, averages the results, and makes one weight update from that average.
@@ -571,3 +621,8 @@ After the last stage, all weights are frozen again and the model is ready for in
 - [Direct Preference Optimization (Rafailov et al., 2023)](https://arxiv.org/abs/2305.18290)
 - [Constitutional AI: Harmlessness from AI Feedback (Bai et al., 2022)](https://arxiv.org/abs/2212.08073)
 - [LoRA: Low-Rank Adaptation of Large Language Models (Hu et al., 2021)](https://arxiv.org/abs/2106.09685)
+- [The FineWeb Datasets: Decanting the Web for the Finest Text Data at Scale (Penedo et al., 2024)](https://arxiv.org/abs/2406.17557): building a pre-training corpus from Common Crawl
+- [The Llama 3 Herd of Models (Llama Team, Meta, 2024)](https://arxiv.org/abs/2407.21783): 15 trillion pre-training tokens, final high-quality training stage
+- [DoReMi: Optimizing Data Mixtures Speeds Up Language Model Pretraining (Xie et al., 2023)](https://arxiv.org/abs/2305.10429) and [RegMix: Data Mixture as Regression for Language Model Pre-training (Liu et al., 2024)](https://arxiv.org/abs/2407.01492): choosing the data mixture with small proxy models
+- [The Curse of Recursion: Training on Generated Data Makes Models Forget (Shumailov et al., 2023)](https://arxiv.org/abs/2305.17493): model collapse
+- [CME295: Transformers & Large Language Models, Lecture 3 (Stanford University, Afshine and Shervine Amidi)](https://cme295.stanford.edu/syllabus/): pre-training data, fine-tuning and preference training topics
