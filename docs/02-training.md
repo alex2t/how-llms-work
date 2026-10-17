@@ -222,6 +222,33 @@ The loss (explained later in this chapter) is computed per position and then ave
 | Why | Stop the model from seeing the answer | Stop filler from changing the results |
 | Needed at inference? | Yes, in every decoder layer | Only when several prompts are batched together |
 
+### Packing: the alternative to padding
+
+Padding wastes work: every `<pad>` position goes through the whole model and is then thrown away. In the batch above, 2 of the 12 positions (17%) are padding. With real data the waste can be much larger. If training examples average 1,000 tokens and every sequence is padded to 4,096, about (4,096 − 1,000) ÷ 4,096 ≈ 76% of all positions are padding.
+
+**Packing** avoids this. Instead of giving each example its own padded row, several examples are joined end to end into one sequence of the fixed length, separated by an end token, and that long sequence is cut into rows. Almost every position then holds a real token.
+
+**Worked example** with sentences A and B from above:
+
+| | Rows | Positions | Real tokens | Wasted |
+| --- | --- | --- | --- | --- |
+| Padded | A (6) and B (4 + 2 `<pad>`) | 2 × 6 = 12 | 10 | 2 `<pad>` |
+| Packed | A, `<EOS>`, B in one row | 11 | 10 | 0 (1 separator) |
+
+With 1,000-token examples and a fixed length of 4,096, about four examples fit in each packed row instead of one.
+
+**Keeping packed examples apart.** In a packed row, the first token of B should not attend to the tokens of A: they come from unrelated texts. Many pipelines therefore combine the causal mask with a **document mask** that blocks attention across the separator. For a tiny packed row `X Y <EOS> P Q` (two examples, X Y and P Q):
+
+| looks at → | X | Y | `<EOS>` | P | Q |
+| --- | --- | --- | --- | --- | --- |
+| **X** | ✓ | 0 | 0 | 0 | 0 |
+| **Y** | ✓ | ✓ | 0 | 0 | 0 |
+| **`<EOS>`** | ✓ | ✓ | ✓ | 0 | 0 |
+| **P** | 0 | 0 | 0 | ✓ | 0 |
+| **Q** | 0 | 0 | 0 | ✓ | ✓ |
+
+The result is one causal triangle per example: P and Q see only each other, exactly as if they had their own row. Some pre-training pipelines skip the document mask and let the end token alone mark the boundary; fine-tuning on separate conversations usually keeps it.
+
 ## The decoder input "shifted right": `<SOS>` and `<EOS>`
 
 To train a decoder, each position needs an input to read and a correct token to predict. The trick is to feed the decoder the target sentence moved one place to the right, so that at every position the correct answer is simply the next word. Two special tokens make this work.

@@ -77,6 +77,7 @@ One line per implemented section, newest at the bottom.
 - 2026-10-17 — CME295 review — Lecture 2: 7 missing topics proposed in fix.md, including Mixture of Experts and a new prompting and reasoning chapter.
 - 2026-10-17 — CME295 review — Lecture 3: 9 missing topics proposed in fix.md, mostly for Chapter 2, plus reasoning models for Chapter 6.
 - 2026-10-17 — Chapter 2 — Where pre-training data comes from, data mixtures and model collapse (CME295 L3-1, L3-2).
+- 2026-10-17 — Chapter 2 — Packing: the alternative to padding, with the document mask (CME295 L3-4).
 
 ## Credits
 

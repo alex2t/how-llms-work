@@ -176,13 +176,13 @@ Reviewed 2026-10-17. The next-token objective, teacher forcing, and supervised f
 
 **Decision:** Approved (user, 2026-10-17). Not written yet.
 
-#### L3-4. Packing sequences instead of padding them `[ ]`
+#### L3-4. Packing sequences instead of padding them `[x]`
 
 - **Missing:** Chapter 2 explains padding, which wastes compute on `<pad>` tokens. Training pipelines usually **pack** several short examples into one fixed-length sequence, separated by end and start tokens, so almost no positions are wasted.
 - **Recommendation:** existing chapter. **Chapter 2 → "Padding and the padding mask"**: a final subsection "**Packing: the alternative to padding**", reusing sentences A (6 tokens) and B (4 tokens): padded, the batch wastes 2 of 12 positions; packed into one sequence, it wastes none. Mention that attention must still be kept from crossing between packed examples.
 - **Priority:** Low.
 
-**Decision:** Approved (user, 2026-10-17). Not written yet.
+**Decision:** Approved (user, 2026-10-17). Written 2026-10-17.
 
 #### L3-5. LoRA in depth, and the term "instruction tuning" `[ ]`
 
