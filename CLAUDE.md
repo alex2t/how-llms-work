@@ -13,7 +13,7 @@ A plain-English book that explains how large language models work, written as fi
 | 1 | How Transformers Work: BPE, Attention and Q/K/V | `docs/01-transformers.md` | Written, imported and live |
 | 2 | Training: how the model learns | `docs/02-training.md` | Written (draft); fixes listed in `fix.md` |
 | 3 | Inference and decoding | `docs/03-inference.md` | Written (draft) |
-| 4 | Quantization, efficiency and the modern Transformer | `docs/04-quantization.md` | In progress |
+| 4 | Quantization, efficiency and the modern Transformer | `docs/04-quantization.md` | Written (draft) |
 | 5 | Evaluation: how we measure a model | `docs/05-evaluation.md` | Placeholder |
 
 `plan.md` is the single source of truth for what is done and what is left.
@@ -119,3 +119,4 @@ Add one line per implemented section, newest at the bottom: `YYYY-MM-DD — Chap
 - 2026-10-17 — Chapter 4 — Kinds of quantization — PTQ vs QAT table; weights-only (W4A16), weights + activations (W8A8), KV cache (68.7 → 34.4 GB); GPTQ, AWQ, GGUF (Q8_0 = 8.5 bits, Q4_0 = 4.5 bits).
 - 2026-10-17 — Chapter 4 — Quality vs speed — 7B trade-off table (16 to 2.5 bits; 14.0 to 2.2 GB; 143 to 914 tokens/s); when quality drops; larger model at 4 bits vs smaller at 16; how to check a quantized model.
 - 2026-10-17 — Chapter 4 — What changed since 2017 — overview table linking each change to its Chapter 1 section; 2017 base model vs Llama 3 8B; pre-norm, RMSNorm ([2,4,6,8] example), RoPE (distance-only score), GQA (KV cache 0.52 → 0.13 MB/token), SwiGLU, context and vocabulary.
+- 2026-10-17 — Chapter 4 — Cheat sheet + Sources — 22-row cheat sheet and 13 sources; chapter complete (draft).

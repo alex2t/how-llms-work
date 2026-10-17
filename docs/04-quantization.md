@@ -383,3 +383,46 @@ Because of the third matrix, models usually choose a smaller expansion to keep t
 
 - **Context.** The 2017 model translated single sentences. Modern models are trained on long documents, with context windows of 8,192 tokens (Llama 3 8B) and, in later models, 128,000 tokens or more. Long contexts are what make the KV cache so large ([Chapter 3](03-inference.md#the-context-window-a-hard-limit)), which is why GQA and KV-cache quantization matter.
 - **Vocabulary.** A larger vocabulary means common words and code fragments become single tokens, so the same text needs fewer tokens and generates faster. The cost is a larger embedding matrix E: Llama 3 8B's has 128,256 × 4,096 = 525,336,576 weights, about 6.5% of the whole model, compared with about 37,000 × 512 ≈ 19 million in the 2017 model.
+
+## Cheat sheet
+
+| Concept | One-line meaning |
+| --- | --- |
+| Weight memory | Number of weights × bytes per weight; 7B model: 28 GB (FP32), 14 GB (16-bit), 7 GB (INT8), 3.5 GB (INT4) |
+| Decode speed limit | Memory speed ÷ model size: fewer bytes per weight, faster generation |
+| Floating-point number | Sign + exponent (range) + fraction (precision) |
+| FP32 / FP16 / BF16 | 4 bytes, precise / 2 bytes, small range / 2 bytes, FP32's range with low precision |
+| INT8 / INT4 | 256 / 16 whole-number levels, used with a scale |
+| Quantize / dequantize | q = round(w ÷ scale); ŵ = q × scale |
+| Scale | Size of one integer step: max \|w\| ÷ q\_max |
+| Rounding error | w − ŵ; at most half a step |
+| Zero point | Extra number that lets an unsigned range cover min to max (asymmetric quantization) |
+| Outlier | One large value that ruins the scale for all the others |
+| Group-wise quantization | One scale per 32 to 128 weights; INT4 with groups of 32 = 4.5 bits per weight |
+| PTQ / QAT | Quantize after training / train with simulated rounding |
+| W4A16 / W8A8 | 4-bit weights with 16-bit activations / 8-bit weights and activations |
+| GPTQ | Rounds column by column, adjusting the rest to compensate |
+| AWQ | Protects the ~1% of weights that meet large activations |
+| GGUF | File format of llama.cpp with block-quantized types such as Q8\_0 and Q4\_K\_M |
+| Quality rule of thumb | 8 bits ≈ no loss; 4 bits small loss; below 4 bits falls quickly |
+| Pre-norm | x + Sublayer(Norm(x)): stable training of deep stacks |
+| RMSNorm | Divide by the root mean square; no mean subtraction, no β |
+| RoPE | Rotate q and k by position: scores depend only on distance |
+| GQA | Query heads share key/value heads: smaller KV cache |
+| SwiGLU | Gated feed-forward network with three matrices and the Swish activation |
+
+## Sources
+
+- [A Study of BFLOAT16 for Deep Learning Training (Kalamkar et al., 2019)](https://arxiv.org/abs/1905.12322): the BF16 format
+- [Quantization and Training of Neural Networks for Efficient Integer-Arithmetic-Only Inference (Jacob et al., 2017)](https://arxiv.org/abs/1712.05877): scale and zero-point quantization, quantization-aware training
+- [LLM.int8(): 8-bit Matrix Multiplication for Transformers at Scale (Dettmers et al., 2022)](https://arxiv.org/abs/2208.07339): activation outliers in large models
+- [GPTQ: Accurate Post-Training Quantization for Generative Pre-trained Transformers (Frantar et al., 2022)](https://arxiv.org/abs/2210.17323)
+- [AWQ: Activation-aware Weight Quantization for LLM Compression and Acceleration (Lin et al., 2023)](https://arxiv.org/abs/2306.00978)
+- [GGUF file format, ggml documentation](https://github.com/ggml-org/ggml/blob/master/docs/gguf.md)
+- [On Layer Normalization in the Transformer Architecture (Xiong et al., 2020)](https://arxiv.org/abs/2002.04745): pre-norm vs post-norm
+- [Root Mean Square Layer Normalization (Zhang and Sennrich, 2019)](https://arxiv.org/abs/1910.07467)
+- [RoFormer: Enhanced Transformer with Rotary Position Embedding (Su et al., 2021)](https://arxiv.org/abs/2104.09864)
+- [GQA: Training Generalized Multi-Query Transformer Models from Multi-Head Checkpoints (Ainslie et al., 2023)](https://arxiv.org/abs/2305.13245)
+- [GLU Variants Improve Transformer (Shazeer, 2020)](https://arxiv.org/abs/2002.05202): SwiGLU
+- [The Llama 3 Herd of Models (Llama Team, Meta, 2024)](https://arxiv.org/abs/2407.21783): settings of the modern model in the comparison table
+- [Attention Is All You Need (Vaswani et al., 2017)](https://arxiv.org/abs/1706.03762): the original settings, including the 37,000-token vocabulary

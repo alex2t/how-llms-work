@@ -12,7 +12,7 @@ A plain-English book on how large language models work, with worked numeric exam
 | 1 | How Transformers Work: BPE, Attention and Q/K/V | Written |
 | 2 | Training: how the model learns | Written (draft) |
 | 3 | Inference and decoding | Written (draft) |
-| 4 | Quantization, efficiency and the modern Transformer | In progress |
+| 4 | Quantization, efficiency and the modern Transformer | Written (draft) |
 | 5 | Evaluation: how we measure a model | Planned |
 
 The detailed task list is in [`plan.md`](plan.md).
@@ -55,6 +55,7 @@ One line per implemented section, newest at the bottom.
 - 2026-10-17 — Chapter 4 — Kinds of quantization: when, what and how, including GPTQ, AWQ and GGUF.
 - 2026-10-17 — Chapter 4 — Quality vs speed: the trade-off by bit count and how to check a quantized model.
 - 2026-10-17 — Chapter 4 — What changed since 2017: the modern Transformer compared with the original, with a worked example for each change.
+- 2026-10-17 — Chapter 4 — Cheat sheet and sources: chapter complete.
 
 ## Credits
 

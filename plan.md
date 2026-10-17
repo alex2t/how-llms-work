@@ -83,7 +83,7 @@ Goal: give the reader the background needed before Chapter 1, and the story of w
   - [x] grouped-query attention (GQA) to shrink the KV cache
   - [x] SwiGLU instead of ReLU in the feed-forward network
   - [x] larger context windows and vocabularies
-- [ ] Cheat sheet + Sources.
+- [x] Cheat sheet + Sources.
 
 ## Phase 5 — Chapter 5: Evaluation (`docs/05-evaluation.md`)
 
