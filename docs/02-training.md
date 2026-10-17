@@ -840,6 +840,17 @@ On-policy distillation addresses the weakness of teacher forcing described in [T
 | Pre-training | Next-token prediction on huge raw text: gives the base model |
 | Supervised fine-tuning | Train on prompt + good answer; loss on answer tokens only |
 | Preference training (RLHF, DPO) | Make preferred answers more likely than rejected ones |
+| Pre-training data pipeline | Collect, extract text, keep wanted languages, deduplicate, filter for quality |
+| Data mixture | Share of tokens from each source; chosen with small proxy models |
+| Model collapse | Training on model-written text loses rare cases, generation after generation |
+| Packing | Join several examples into one fixed-length row instead of padding each |
+| Masked language modelling | Hide 15% of tokens and predict them from both sides (BERT) |
+| Instruction tuning | Supervised fine-tuning on instructions paired with good responses |
+| Reward model | Scores answers; trained so the preferred answer scores higher: −ln σ(r\_w − r\_l) |
+| KL penalty | Keeps the trained model close to its reference, preventing reward hacking |
+| DPO loss | −ln σ(β × difference of log-probability ratios); no reward model needed |
+| LoRA / QLoRA | Train small matrices B·A added to frozen weights / the same on a 4-bit base |
+| Distillation | A small student learns to match a large teacher's probabilities |
 
 ## Sources
 
