@@ -13,7 +13,7 @@ A plain-English book that explains how large language models work, written as fi
 | 1 | How Transformers Work: BPE, Attention and Q/K/V | `docs/01-transformers.md` | Written, imported and live |
 | 2 | Training: how the model learns | `docs/02-training.md` | Written (draft); fixes listed in `fix.md` |
 | 3 | Inference and decoding | `docs/03-inference.md` | Written (draft) |
-| 4 | Quantization, efficiency and the modern Transformer | `docs/04-quantization.md` | Placeholder |
+| 4 | Quantization, efficiency and the modern Transformer | `docs/04-quantization.md` | In progress |
 | 5 | Evaluation: how we measure a model | `docs/05-evaluation.md` | Placeholder |
 
 `plan.md` is the single source of truth for what is done and what is left.
@@ -113,3 +113,4 @@ Add one line per implemented section, newest at the bottom: `YYYY-MM-DD — Chap
 - 2026-10-17 — Chapter 3 — Stopping — end token, max tokens and stop sequences with examples; stop_reason; context window (8,192 − 7,000 = 1,192); decoding IDs back to text and streaming.
 - 2026-10-17 — Chapter 3 — Cheat sheet + Sources — 19-row cheat sheet and 8 sources; chapter complete (draft).
 - 2026-10-17 — Chapter 1 — Training and generation (F1) — two 4-step lists replaced by a summary that links to Chapters 2 and 3.
+- 2026-10-17 — Chapter 4 — Big picture + Why size matters — memory = weights × bytes; 7B model at 28 / 14 / 7 / 3.5 GB; decode speed limit 71 / 143 / 286 / 571 tokens/s.
