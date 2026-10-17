@@ -72,7 +72,7 @@ Goal: give the reader the background needed before Chapter 1, and the story of w
 ## Phase 4 — Chapter 4: Quantization, efficiency and the modern Transformer (`docs/04-quantization.md`)
 
 - [x] Why size matters: parameters × bytes per parameter = memory; worked example for a 7B model.
-- [ ] Number formats: FP32, FP16, BF16, INT8, INT4 — size and precision table.
+- [x] Number formats: FP32, FP16, BF16, INT8, INT4 — size and precision table.
 - [ ] How quantization works: scale and zero-point; worked example rounding a few weights to INT8 and back; the rounding error.
 - [ ] Kinds of quantization: post-training vs quantization-aware; weights-only vs weights + activations; KV-cache quantization; GPTQ, AWQ, GGUF at a high level.
 - [ ] Quality vs speed trade-offs; when quality drops noticeably.

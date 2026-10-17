@@ -114,3 +114,4 @@ Add one line per implemented section, newest at the bottom: `YYYY-MM-DD — Chap
 - 2026-10-17 — Chapter 3 — Cheat sheet + Sources — 19-row cheat sheet and 8 sources; chapter complete (draft).
 - 2026-10-17 — Chapter 1 — Training and generation (F1) — two 4-step lists replaced by a summary that links to Chapters 2 and 3.
 - 2026-10-17 — Chapter 4 — Big picture + Why size matters — memory = weights × bytes; 7B model at 28 / 14 / 7 / 3.5 GB; decode speed limit 71 / 143 / 286 / 571 tokens/s.
+- 2026-10-17 — Chapter 4 — Number formats — sign/exponent/fraction; FP32, FP16, BF16 bit layouts; stored-value table computed with NumPy (FP16 overflow at 70,000, underflow at 1e-8); INT8/INT4 ranges.

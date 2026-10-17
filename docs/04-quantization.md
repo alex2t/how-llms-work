@@ -59,3 +59,62 @@ The same arithmetic decides which large models are practical. A 70-billion-weigh
 | INT4 | 3.5 GB | 571 |
 
 Halving the bytes per weight roughly doubles the decode speed limit. In practice the gain is a little smaller, because the small integers must be converted back to ordinary numbers before the arithmetic, but the direction is the same. This is the main reason quantization is used almost everywhere models are served.
+
+## Number formats
+
+Every number in a model, whether a weight, an activation or a value in the KV cache, is stored in a **number format**: a fixed rule for turning a pattern of bits into a value. The format decides how much memory each number uses, how large or small a value it can hold, and how precisely it holds it.
+
+### Floating-point numbers: range and precision
+
+Most model numbers are **floating-point** numbers. A floating-point number works like scientific notation, 1.2345 × 10³, stored in binary. Its bits are split into three parts:
+
+- **Sign (1 bit):** positive or negative.
+- **Exponent:** the power of 2 that sets the size of the number. More exponent bits give a wider **range**, from very small to very large values.
+- **Fraction (also called mantissa):** the significant digits. More fraction bits give more **precision**, that is, more correct digits.
+
+The three floating-point formats used in LLMs split their bits differently:
+
+| Format | Total bits | Sign | Exponent | Fraction | Largest value | Correct decimal digits (about) |
+| --- | --- | --- | --- | --- | --- | --- |
+| FP32 (single precision) | 32 | 1 | 8 | 23 | 3.4 × 10³⁸ | 7 |
+| FP16 (half precision) | 16 | 1 | 5 | 10 | 65,504 | 3 to 4 |
+| BF16 (brain float 16) | 16 | 1 | 8 | 7 | 3.4 × 10³⁸ | 2 to 3 |
+
+FP16 and BF16 both use 16 bits but make opposite choices. FP16 keeps more fraction bits, so it is more precise, but its 5 exponent bits give a small range. BF16, designed at Google for machine learning, keeps FP32's 8 exponent bits, so it has the same huge range as FP32, but only 7 fraction bits.
+
+### Worked example: storing the same values in each format
+
+The values below were stored in each format and read back (computed with NumPy):
+
+| Value to store | FP32 stores | FP16 stores | BF16 stores |
+| --- | --- | --- | --- |
+| 0.1234567 (a typical weight) | 0.1234567 | 0.12347 | 0.12354 |
+| 70,000 (a large activation) | 70,000 | **infinity** (too large) | 70,144 |
+| 0.00000001 (a tiny gradient) | 0.00000001 | **0** (too small) | 0.0000000100 |
+
+- **A typical weight:** all three formats keep the value close. FP16's error is 0.000017 and BF16's is 0.000078, both small compared with the weight itself.
+- **A large value:** FP16 cannot store anything above 65,504, so 70,000 becomes infinity and the calculation breaks. BF16 stores it with a small error.
+- **A tiny value:** FP16 rounds 0.00000001 to 0, so the information is lost. BF16 keeps it.
+
+This is why **BF16 is the usual format for training** today: running out of range breaks training, while BF16's lower precision is usually harmless. For inference, both FP16 and BF16 are common.
+
+### Integer formats
+
+Quantized models store weights as **integers** (whole numbers) with very few bits:
+
+| Format | Bits | Bytes | Values it can hold |
+| --- | --- | --- | --- |
+| INT8 | 8 | 1 | 256 whole numbers, from −128 to 127 |
+| INT4 | 4 | 0.5 | 16 whole numbers, from −8 to 7 |
+
+An integer format cannot store 0.1234567 at all, only whole numbers such as 12 or −3. To use it for weights, every weight must be mapped onto those few whole numbers, and mapped back when it is needed. That mapping is quantization, explained in the next section.
+
+### Summary of the formats
+
+| Format | Bytes per number | Range | Precision | Typical use |
+| --- | --- | --- | --- | --- |
+| FP32 | 4 | Huge | High | Optimiser state, master copy of weights during training |
+| BF16 | 2 | Huge | Low | Training and inference |
+| FP16 | 2 | Small | Medium | Inference |
+| INT8 | 1 | 256 steps, with a scale | Steps of a fixed size | Quantized weights, KV cache |
+| INT4 | 0.5 | 16 steps, with a scale | Coarse steps | Quantized weights |
