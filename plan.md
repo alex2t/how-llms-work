@@ -133,7 +133,7 @@ Compare the book with each lecture of Stanford's CME295 (summaries in `sources/`
   - [ ] L2-5: Chapter 3 → long-context advice; Chapter 5 → needle-in-a-haystack benchmark.
   - [ ] L2-6: Chapter 4 → RoPE: paragraph on context extension.
   - [ ] L2-7: Chapter 3 → tokens-to-words-to-pages table.
-- [ ] Lecture 3 — Pre-training data, SFT, LoRA, RLHF vs DPO, GRPO, distillation.
+- [x] Lecture 3 — Pre-training data, SFT, LoRA, RLHF vs DPO, GRPO, distillation. Gap analysis in `fix.md` (L3-1 to L3-9); waiting for decisions.
 - [ ] Lecture 4 (when published).
 - [ ] Lecture 5 (when published).
 - [ ] Lecture 6 (when published).

@@ -148,6 +148,90 @@ Reviewed 2026-10-17. Normalisation (RMSNorm, pre-norm), RoPE, attention's quadra
 
 **Decision:** Approved (user, 2026-10-17). Not written yet.
 
+### Lecture 3 — Pre-training data, SFT, LoRA, RLHF vs DPO, GRPO, distillation
+
+Reviewed 2026-10-17. The next-token objective, teacher forcing, and supervised fine-tuning with the loss on answer tokens only are already covered (Chapter 2). RLHF, DPO and LoRA are each covered by one short paragraph; the lecture goes much deeper. Most gaps belong in Chapter 2; reasoning models belong in the new Chapter 6.
+
+#### L3-1. Where pre-training data comes from `[ ]`
+
+- **Missing:** Chapter 2 says only that the model learns from "books, web pages, code". Missing: how a pre-training corpus is built (web crawls such as Common Crawl, code repositories, text extracted from PDFs), how it is cleaned (rule-based filters, **deduplication**, language identification, quality classifiers), training in **stages** (broad data first, then more code and reasoning data), and how the **data mixture** (the share of each source) is chosen by training small proxy models on different mixtures.
+- **Recommendation:** existing chapter. **Chapter 2 → "Training data and batches"**: expand "Training data" into a section "**Where pre-training data comes from**", with a pipeline diagram (Mermaid) and a worked example of how deduplication and filtering shrink a corpus (made-up numbers). Real corpus sizes to be checked against the papers.
+- **Priority:** Medium.
+
+**Decision:**
+
+#### L3-2. Model collapse: training on AI-generated text `[ ]`
+
+- **Missing:** more and more web text is written by LLMs. Models trained on it can lose the rare cases (the "tails" of the distribution) and become less varied from one generation of models to the next.
+- **Recommendation:** existing chapter. **Chapter 2 → "Where pre-training data comes from"** (L3-1): a short subsection with a small illustration of how rare tokens disappear when a model's own samples become the next training set.
+- **Priority:** Low.
+
+**Decision:**
+
+#### L3-3. Bits per byte: a loss that does not depend on the tokenizer `[ ]`
+
+- **Missing:** Chapter 5 shows that perplexity can only be compared between models with the same tokenizer, but gives no fix. **Bits per byte (BPB)** divides the total loss by the number of bytes of text instead of the number of tokens (and converts it to bits), so models with different tokenizers can be compared fairly.
+- **Recommendation:** existing chapter. **Chapter 5 → "Perplexity" → "Only comparable with the same tokenizer"**: add BPB right after the two-tokenizer example. Reusing that example (total loss 3.0 for the same sentence), both models get the same BPB: if the sentence is 30 bytes long, 3.0 ÷ ln 2 ÷ 30 ≈ 0.144 bits per byte, which shows exactly the fairness that perplexity lacked.
+- **Priority:** Medium.
+
+**Decision:**
+
+#### L3-4. Packing sequences instead of padding them `[ ]`
+
+- **Missing:** Chapter 2 explains padding, which wastes compute on `<pad>` tokens. Training pipelines usually **pack** several short examples into one fixed-length sequence, separated by end and start tokens, so almost no positions are wasted.
+- **Recommendation:** existing chapter. **Chapter 2 → "Padding and the padding mask"**: a final subsection "**Packing: the alternative to padding**", reusing sentences A (6 tokens) and B (4 tokens): padded, the batch wastes 2 of 12 positions; packed into one sequence, it wastes none. Mention that attention must still be kept from crossing between packed examples.
+- **Priority:** Low.
+
+**Decision:**
+
+#### L3-5. LoRA in depth, and the term "instruction tuning" `[ ]`
+
+- **Missing:** Chapter 2 gives LoRA one paragraph (frozen weights, a 512 × 8 and an 8 × 512 matrix). Missing: the formula W = W₀ + B·A with every letter explained; **where** adapters are placed (the original paper: W\_Q and W\_V only; common practice today: all linear layers); **swapping adapters** so one base model serves many tasks; **QLoRA** (LoRA on a 4-bit quantized base model, linking to Chapter 4); and a one-line mention of other parameter-efficient methods (adapters, prefix tuning). Also, Stage 2 never uses the common name **instruction tuning** for supervised fine-tuning on instruction-following examples.
+- **Recommendation:** existing chapter. **Chapter 2 → "Stages of an LLM's life"**: turn the LoRA paragraph into a subsection "**Cheap fine-tuning: LoRA**" with a worked example (a 2 × 2 weight matrix plus B·A with rank 1). Add "instruction tuning" to the Stage 2 text.
+- **Priority:** Medium.
+
+**Decision:**
+
+#### L3-6. Preference training in detail: reward model, KL penalty, DPO `[ ]`
+
+- **Missing:** Stage 3 in Chapter 2 describes RLHF and DPO in words only. Missing:
+    - **Reward model training** (the Bradley–Terry loss): the loss is small when the preferred answer gets the higher score. Example: scores 2.0 (preferred) and 0.5 (rejected) give σ(1.5) = 0.818 and a loss of −ln 0.818 = 0.201.
+    - **The KL penalty** in RLHF: a term that keeps the trained model close to its starting point, to prevent **reward hacking** (the model exploiting flaws in the reward model).
+    - **The DPO loss** in plain words: raise the probability of the preferred answer, relative to the starting model, more than that of the rejected one.
+    - **Cost comparison:** RLHF with PPO keeps 4 models in memory (the model being trained, its frozen reference copy, the reward model, a value model); DPO needs 2.
+- **Recommendation:** existing chapter. **Chapter 2 → "Stage 3: preference training"**: expand with the worked reward-model example, the KL idea, the DPO loss with every letter explained, and a 4-models-vs-2 table.
+- **Priority:** Medium.
+
+**Decision:**
+
+#### L3-7. Reasoning models and how they are trained (test-time compute, GRPO) `[ ]`
+
+- **Missing:** none of this is in the book:
+    - **Reasoning models** write a hidden chain of thought between `<think>` and `</think>` before the final answer. Spending more output tokens at answer time to get better answers is called **test-time compute**.
+    - **Reinforcement learning with verifiable rewards (RLVR):** for maths and code, an answer can be checked automatically (is the number right, do the tests pass?), so no human labels or reward model are needed.
+    - **GRPO** (group relative policy optimisation, used for DeepSeek-R1): for each question the model writes a group of answers; each answer's **advantage** is its reward minus the group's average, divided by the group's spread. Example: rewards 1, 0, 1, 1 give a mean of 0.75, a spread of 0.433, and advantages of +0.577 for the right answers and −1.732 for the wrong one. No value model is needed, unlike PPO.
+    - **What emerges:** longer answers, self-checking and corrections appear during training without being taught directly.
+- **Recommendation:** **new Chapter 6** (approved in L2-2), section "**Reasoning models: thinking before answering**", after chain-of-thought and self-consistency. Link from Chapter 2's Stage 3 and from Chapter 3 (thinking tokens make answers longer, so they cost decode time and KV-cache memory).
+- **Priority:** High.
+
+**Decision:**
+
+#### L3-8. Distillation: a small model learns from a large one `[ ]`
+
+- **Missing:** **knowledge distillation**: a small **student** model is trained to match the probabilities of a large **teacher** model, instead of one-hot targets. Variants from the lecture: distilling a teacher's chains of thought into a smaller model, and **on-policy distillation** (the teacher scores answers that the student itself wrote).
+- **Recommendation:** existing chapter. **Chapter 2**, a new section "**Distillation**" after "Stages of an LLM's life". Worked example reusing Chapter 1's probabilities as the teacher's soft target (CAT 0.772, DOG 0.211, IS 0.013, LOVELY 0.004) and comparing the student's loss with the one-hot loss, which connects to label smoothing. Link from **Chapter 4** as another way to get a smaller, cheaper model.
+- **Priority:** Medium.
+
+**Decision:**
+
+#### L3-9. Benchmarks for maths, code and preferences; Elo and pass@k `[ ]`
+
+- **Missing:** Chapter 5 names MMLU, HumanEval and Chatbot Arena only. Missing: **GSM8K**, **MATH** and **AIME** (maths), **SWE-bench** (fixing real software issues); how Chatbot Arena turns votes into an **Elo rating** (a 100-point gap means the stronger model is expected to win about 64% of comparisons: 1 ÷ (1 + 10^(−100/400)) = 0.640); and **pass@k** (the chance that at least one of k attempts is correct), the usual score for code. Pass@k was noted under L1-6.
+- **Recommendation:** existing chapter. **Chapter 5 → "Evaluating generative LLMs" → "Benchmarks"**: a table of benchmark families (what each measures, how it is scored) and two short worked examples (Elo, pass@k). Benchmark sizes to be checked against their papers.
+- **Priority:** Medium.
+
+**Decision:**
+
 ---
 
 ## Done
