@@ -14,7 +14,7 @@ A plain-English book on how large language models work, with worked numeric exam
 | 3 | Inference and decoding | Written (draft) |
 | 4 | Quantization, efficiency and the modern Transformer | Written (draft) |
 | 5 | Evaluation: how we measure a model | Written (draft) |
-| 6 | Prompting, reasoning and agents | Planned |
+| 6 | Prompting, reasoning and agents | In progress |
 
 The detailed task list is in [`plan.md`](plan.md). Proposed changes to written chapters, including topics found missing when comparing the book with Stanford's CME295 course (one lecture at a time), are in [`fix.md`](fix.md).
 
@@ -94,6 +94,7 @@ One line per implemented section, newest at the bottom.
 - 2026-10-17 — Chapter 1 — Special tokens in one table, linked to where each is explained (CME295 L1-3).
 - 2026-10-17 — Introduction — How Word2Vec is trained: its network and negative sampling (CME295 L1-5).
 - 2026-10-17 — Introduction — The context bottleneck: why RNN translation needed attention (CME295 L1-1).
+- 2026-10-17 — Chapter 6 — New chapter started: in-context learning with zero-shot and few-shot fraud prompts (CME295 L2-2).
 
 ## Credits
 

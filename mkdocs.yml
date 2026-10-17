@@ -43,6 +43,7 @@ nav:
   - "3 · Inference": 03-inference.md
   - "4 · Quantization": 04-quantization.md
   - "5 · Evaluation": 05-evaluation.md
+  - "6 · Prompting": 06-prompting.md
 
 markdown_extensions:
   - toc:

@@ -18,6 +18,7 @@ Read the chapters in order the first time; each one builds on the last. Use the 
 | [3 · Inference](03-inference.md) | How the model generates text: the KV cache, greedy and beam search, temperature, top-k and top-p |
 | [4 · Quantization](04-quantization.md) | Memory, number formats, quantization, and what changed in Transformers since 2017 |
 | [5 · Evaluation](05-evaluation.md) | Perplexity, MSE, accuracy, precision, recall, F1, AUC-ROC, and business outcome metrics |
+| [6 · Prompting](06-prompting.md) | In-context learning, chain-of-thought, self-consistency, and how reasoning models are trained |
 
 ## Running examples
 

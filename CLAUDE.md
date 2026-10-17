@@ -15,7 +15,7 @@ A plain-English book that explains how large language models work, written as fi
 | 3 | Inference and decoding | `docs/03-inference.md` | Written (draft) |
 | 4 | Quantization, efficiency and the modern Transformer | `docs/04-quantization.md` | Written (draft) |
 | 5 | Evaluation: how we measure a model | `docs/05-evaluation.md` | Written (draft) |
-| 6 | Prompting, reasoning and agents | `docs/06-prompting.md` | Planned (approved in `fix.md`, L2-2) |
+| 6 | Prompting, reasoning and agents | `docs/06-prompting.md` | In progress |
 
 `plan.md` is the single source of truth for what is done and what is left.
 
@@ -173,3 +173,4 @@ Add one line per implemented section, newest at the bottom: `YYYY-MM-DD — Chap
 - 2026-10-17 — Chapter 1 — Special tokens (L1-3, Chapter 1 part) — table of 7 token kinds with other names, purpose and links to Chapters 2 and 3; 4 cheat-sheet rows; CME295 Lecture 1 credited.
 - 2026-10-17 — Introduction — How Word2Vec is trained (L1-5) — one-hidden-layer network, first layer = embedding table; negative sampling example (losses 0.127 + 0.313 + 0.974 = 1.414; 3 dot products instead of 50,000).
 - 2026-10-17 — Introduction — Context bottleneck (L1-1) — fourth RNN problem with the "I love you very much" example; 2014 attention as the fix; bridge-table row added before "Sequential processing"; "all three" → "all four"; cheat-sheet row and 2 sources.
+- 2026-10-17 — Chapter 6 — Page created + Big picture + In-context learning (L2-2 part) — added to nav and home page; zero-shot and few-shot fraud prompts; why it works; cost table (180 extra tokens per request, 18 million a month); tips.
