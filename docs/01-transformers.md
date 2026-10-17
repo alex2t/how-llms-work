@@ -1,7 +1,5 @@
 # How Transformers Work: BPE, Attention and Q/K/V
 
-Oct 13, 2026 · @Alex
-
 ## The big picture
 
 A language model turns text into numbers, mixes those numbers with attention, and predicts the next token. Every step is ordinary arithmetic on vectors; nothing is hand-coded about grammar or meaning.
@@ -135,9 +133,9 @@ Follow the words `YOUR CAT IS` through the table:
 - **Where the numbers come from:** E starts filled with random numbers and is learned during training, like every other weight. After training it is frozen.
 - **Why it works:** tokens used in similar contexts get pushed toward similar vectors. In the table, `cat` and `dog` have close vectors even though their IDs mean nothing; that closeness is the learned meaning.
 
-```latex
+$$
 \text{token} \xrightarrow{\text{tokenizer}} \text{token ID } k \xrightarrow{\text{row } k \text{ of } E} \text{embedding } \in \mathbb{R}^{d_{model}}
-```
+$$
 
 ### Positional encoding
 
@@ -172,9 +170,9 @@ PE(1) is the same vector in every sentence: position 1 in "YOUR CAT IS…" and p
 
 Each dimension of the position vector is a sine or cosine wave. Even dimensions use sine, odd dimensions use cosine, and each pair of dimensions uses a different wavelength:
 
-```latex
+$$
 PE_{(pos,\,2i)} = \sin\!\left(\frac{pos}{10000^{2i/d_{model}}}\right) \qquad PE_{(pos,\,2i+1)} = \cos\!\left(\frac{pos}{10000^{2i/d_{model}}}\right)
-```
+$$
 
 - **pos** is the token's position (0, 1, 2, …).
 - **i** indexes dimension pairs: 2i is an even dimension, 2i + 1 the odd one after it, up to dimension 511.
@@ -200,9 +198,9 @@ Dimensions 0–1 change a lot from one word to the next; dimensions 2–3 barely
 
 ### The encoder input
 
-```latex
+$$
 X = \text{Embedding}(\text{token IDs}) \cdot \sqrt{d_{model}} + PE \qquad X \in \mathbb{R}^{n \times d_{model}}
-```
+$$
 
 n is the number of tokens; the √d\_model scaling of the embeddings is a detail from the paper. Many modern models replace the sine and cosine table with learned position vectors (GPT-2, BERT) or RoPE (rotary position embedding), which rotates Q and K by an angle that depends on position.
 
@@ -231,9 +229,9 @@ The job of the Transformer block is to fix that: let every word look at the othe
 
 Q, K and V are not extra inputs. They are the same token vectors X multiplied by three different learned weight matrices:
 
-```latex
+$$
 Q = X W_Q \qquad K = X W_K \qquad V = X W_V
-```
+$$
 
 - **X** is the current representation of every token: the embeddings in the first layer, and the previous layer's output in every later layer.
 - **W\_Q, W\_K, W\_V** are ordinary trainable weights of shape d\_model × d\_k (512 × 64 per head in the paper). They start as random numbers and are learned by backpropagation, exactly like every other weight in the network. Nobody designs them by hand.
@@ -245,9 +243,9 @@ Q = X W_Q \qquad K = X W_K \qquad V = X W_V
 
 **The model is a stack of layers.** A Transformer is the same block repeated N times: 6 in the original paper, around 100 in today's large models. Each layer has **its own** W\_Q, W\_K and W\_V. A layer takes an X in and hands a new X of exactly the same shape (6 × 512) to the next layer. So "X" means a different thing depending on which layer you are in:
 
-```latex
+$$
 X^{(1)} = \text{Embedding} + PE \qquad Q^{(\ell)} = X^{(\ell)} W_Q^{(\ell)},\; K^{(\ell)} = X^{(\ell)} W_K^{(\ell)},\; V^{(\ell)} = X^{(\ell)} W_V^{(\ell)} \qquad X^{(\ell+1)} = \text{Layer}_{\ell}\big(X^{(\ell)}\big)
-```
+$$
 
 **Example** with the 6-layer model and the sentence `YOUR CAT IS A LOVELY CAT`, following the row for `LOVELY`:
 
@@ -284,9 +282,9 @@ The same token plays different roles. What `it` is looking for (a referent) is d
 
 Three tokens, d\_model = 4, d\_k = 2. Token vectors: `the` = \[1, 0, 1, 0\], `cat` = \[0, 2, 0, 2\], `sat` = \[1, 1, 1, 1\]. Suppose training produced these weights:
 
-```latex
+$$
 W_Q = \begin{bmatrix} 1 & 0 \\ 0 & 1 \\ 1 & 0 \\ 0 & 1 \end{bmatrix} \quad W_K = \begin{bmatrix} 0 & 1 \\ 1 & 0 \\ 0 & 1 \\ 1 & 0 \end{bmatrix} \quad W_V = \begin{bmatrix} 1 & 0 \\ 0 & 1 \\ 0 & 0 \\ 0 & 0 \end{bmatrix}
-```
+$$
 
 Multiplying each token vector by each matrix gives:
 
@@ -302,9 +300,9 @@ One input vector, three different vectors out. The next section uses these numbe
 
 Attention turns each token's vector into a weighted average of all value vectors, with weights set by how well its query matches each key. The whole operation is one formula:
 
-```latex
+$$
 \text{Attention}(Q, K, V) = \text{softmax}\!\left(\frac{Q K^{T}}{\sqrt{d_k}}\right) V
-```
+$$
 
 1. **Score.** Compute Q·Kᵀ, an n × n table. Cell (i, j) is the dot product of token i's query with token j's key: large when they point in the same direction.
 2. **Scale.** Divide by √d\_k. Dot products grow with vector length; without scaling, softmax becomes nearly one-hot and gradients vanish, so training stalls.
@@ -360,9 +358,9 @@ Every token is scored against every other token, so the work grows with n². Dou
 
 Instead of one attention operation, the model runs h smaller ones in parallel, each with its own W\_Q, W\_K and W\_V. In the paper h = 8 heads, each with d\_k = d\_model / h = 64.
 
-```latex
+$$
 \text{head}_i = \text{Attention}(X W_Q^{(i)},\; X W_K^{(i)},\; X W_V^{(i)}) \qquad \text{MultiHead}(X) = \text{Concat}(\text{head}_1, \dots, \text{head}_8)\, W_O
-```
+$$
 
 - The 8 outputs (64 numbers each) are concatenated back to 512 numbers, then mixed by one more learned matrix W\_O (512 × 512).
 - **Why bother:** one softmax can only express one way of distributing attention. Eight heads can each specialise: one may track the previous word, another subject–verb links, another which noun a pronoun refers to.
@@ -372,7 +370,17 @@ Instead of one attention operation, the model runs h smaller ones in parallel, e
 
 A Transformer layer is attention followed by a small feed-forward network, each wrapped in a residual connection and layer normalisation. Stack that layer N times (N = 6 in the paper) and you have the model.
 
-&#91;embedded content: original Transformer · encoder and decoder stacks\]
+```mermaid
+flowchart LR
+  subgraph Encoder["Encoder (x6)"]
+    S[Source tokens] --> SA[Self-attention] --> FF1[Feed-forward]
+  end
+  subgraph Decoder["Decoder (x6)"]
+    O[Output so far] --> MSA[Masked self-attention] --> CA[Cross-attention] --> FF2[Feed-forward]
+  end
+  FF1 -- "K, V" --> CA
+  FF2 --> L[Linear + softmax] --> P[Next-token probabilities]
+```
 
 The encoder reads the whole source sentence at once; the decoder generates the output one token at a time and looks up the encoder through cross-attention.
 
@@ -383,9 +391,9 @@ The encoder reads the whole source sentence at once; the decoder generates the o
 - **Residual connection:** each sublayer's output is *added* to its input, x + Sublayer(x). The signal and gradients can flow straight through, which makes deep stacks trainable.
 - **Layer normalisation:** rescales each token vector to a stable range. The paper applies it after the addition; most modern models apply it before each sublayer ("pre-norm"), which trains more stably.
 
-```latex
+$$
 \text{FFN}(x) = \max(0,\; x W_1 + b_1)\, W_2 + b_2 \qquad \text{output} = \text{LayerNorm}(x + \text{Sublayer}(x))
-```
+$$
 
 ### Layer normalisation in detail
 
@@ -398,9 +406,9 @@ For one token vector x with d\_model numbers:
 3. **Normalise:** subtract the mean and divide by the spread. ε is a tiny number (e.g. 0.00001) that avoids dividing by zero.
 4. **Rescale and shift:** multiply by **γ (gamma)** and add **β (beta)**. Both are learned, one value per dimension.
 
-```latex
+$$
 \hat{x}_j = \frac{x_j - \mu}{\sqrt{\sigma^2 + \epsilon}} \qquad y_j = \gamma_j \, \hat{x}_j + \beta_j
-```
+$$
 
 **Worked example** with a 4-number vector x = \[2, 4, 6, 8\]:
 
@@ -449,9 +457,9 @@ Say the model has read `YOUR CAT IS A LOVELY` and must predict the next word.
 3. **Softmax → probabilities.** Softmax exponentiates every logit and divides by the total, so all 50,000 values become positive and add up to 1.
 4. **Pick a token.** The simplest rule takes the highest probability. The chosen token ID is turned back into text by the tokenizer.
 
-```latex
+$$
 \text{logits} = x_{\text{last}} \, W_{out} \in \mathbb{R}^{|V|} \qquad P(\text{token } k) = \frac{e^{\text{logit}_k}}{\sum_{j} e^{\text{logit}_j}}
-```
+$$
 
 **Worked example.** Pretend, for readability, that the vocabulary had only four tokens (the logits are illustrative):
 
