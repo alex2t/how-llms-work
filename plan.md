@@ -140,7 +140,7 @@ Compare the book with each lecture of Stanford's CME295 (summaries in `sources/`
   - [x] L3-4: Chapter 2 → "Packing: the alternative to padding".
   - [x] L3-5: Chapter 2 → subsection "Cheap fine-tuning: LoRA"; "instruction tuning" in Stage 2.
   - [x] L3-6: Chapter 2 → Stage 3 expanded: reward model, KL penalty, DPO loss, 4 vs 2 models.
-  - [ ] L3-7: Chapter 6 → section "Reasoning models: thinking before answering" (test-time compute, RLVR, GRPO).
+  - [x] L3-7: Chapter 6 → section "Reasoning models: thinking before answering" (test-time compute, RLVR, GRPO).
   - [x] L3-8: Chapter 2 → section "Distillation"; link from Chapter 4.
   - [x] L3-9: Chapter 5 → benchmark families, Elo and pass@k.
   - [ ] Follow-up: link "as Chapter 6 explains" in Chapter 5 (Benchmark families) to the reasoning-models section once Chapter 6 exists.

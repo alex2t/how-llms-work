@@ -128,3 +128,88 @@ Suppose each chain is right with probability 0.6, independently of the others. T
 (These are lower bounds: when the wrong answers all differ, a smaller group of matching right answers can still win the vote.)
 
 The cost grows with every chain: 5 chains cost about 5 times the decode time and tokens of one. Self-consistency therefore suits questions with a short, checkable final answer, such as a number or a label, where the extra accuracy is worth the price. It does not help with open-ended writing, where no two answers are identical and there is nothing to vote on.
+
+## Reasoning models: thinking before answering
+
+Chain-of-thought and self-consistency are tricks applied from outside, through the prompt. **Reasoning models** are trained to reason on their own: before every answer they write a long, often hidden, chain of thought, and they have learned through reinforcement learning which kinds of reasoning lead to correct answers. They are much stronger at maths, coding and planning, and they show a new way to buy accuracy: spending more computation at answer time.
+
+### Thinking tokens and test-time compute
+
+A reasoning model's output has two parts. DeepSeek-R1, for example, writes:
+
+```text
+<think>
+Total of the three purchases: 45 + 120 + 80 = 245. Usual daily spend: 50.
+245 ÷ 50 = 4.9. Check: 4.9 × 50 = 245. Correct.
+</think>
+The purchases total 4.9 times the customer's usual daily spend.
+```
+
+- **Thinking tokens** (between `<think>` and `</think>`): the model's working, including checks and corrections. Many applications hide this part and show only the answer.
+- **The answer:** written after the thinking ends.
+
+Spending more tokens at answer time to get better answers is called **test-time compute**. Pre-training improves a model by spending more computation **before** it is used; reasoning models add a second dial: more thinking per question, usually with better results on hard problems.
+
+The cost is real, and Chapter 3's arithmetic applies to every thinking token. For 2,000 thinking tokens on the 7-billion-weight model of [Chapter 3](03-inference.md#worked-example-a-7-billion-weight-model):
+
+| Cost | Calculation | Result |
+| --- | --- | --- |
+| Extra decode time | 2,000 × 7 ms | 14 seconds |
+| Extra KV cache, multi-head attention ([Chapter 3](03-inference.md#how-much-memory-the-cache-needs)) | 2,000 × 0.52 MB | ≈ 1,049 MB |
+| Extra KV cache with GQA, as in Llama 3 8B ([Chapter 4](04-quantization.md#grouped-query-attention-gqa)) | 2,000 × 0.13 MB | ≈ 262 MB |
+
+This is why reasoning models are slower and more expensive per question, and why many let the user choose how much to think.
+
+### Training with verifiable rewards
+
+How does a model learn to reason well? Writing thousands of good reasoning examples by hand is impractical. Instead, reasoning models are trained with **reinforcement learning** on problems whose answers can be **checked automatically**:
+
+- **Maths:** compare the final number with the known answer.
+- **Code:** run the program against tests.
+
+The reward is simply 1 for a correct final answer and 0 otherwise. This is called **reinforcement learning with verifiable rewards (RLVR)**. It needs no human labels and no reward model ([Chapter 2](02-training.md#inside-rlhf-training-the-reward-model)), so there is no learned reward model to exploit: a wrong answer cannot be made to look right. The model is free to discover whatever reasoning works; only the result is graded.
+
+### GRPO: learning from a group of answers
+
+**GRPO** (group relative policy optimisation), introduced with DeepSeekMath and used to train DeepSeek-R1, is the reinforcement-learning method most associated with reasoning models. For each question:
+
+1. The model writes a **group** of G answers (for example 4 to 16), with sampling switched on.
+2. Each answer gets its reward r\_i from the checker.
+3. Each answer's **advantage**, how much better it did than its group, is computed:
+
+$$
+A_i = \frac{r_i - \text{mean}(r)}{\text{std}(r)}
+$$
+
+- **mean(r)** is the average reward of the group, and **std(r)** its standard deviation (spread).
+- A positive advantage means better than the group average; negative means worse.
+
+4. Training raises the probability of every token in answers with a positive advantage and lowers it in answers with a negative advantage, with a KL penalty keeping the model close to its reference, as in RLHF ([Chapter 2](02-training.md#inside-rlhf-the-kl-penalty-and-reward-hacking)).
+
+**Worked example:** a group of 4 answers to one question (rewards made up; standard deviation computed over the group):
+
+| Group's rewards | Mean | Std | Advantages | What training does |
+| --- | --- | --- | --- | --- |
+| 1, 0, 1, 1 | 0.75 | 0.433 | +0.577, −1.732, +0.577, +0.577 | A strong push away from the one wrong answer, a mild push toward the three right ones |
+| 0, 0, 0, 1 | 0.25 | 0.433 | −0.577, −0.577, −0.577, +1.732 | A strong push toward the single right answer |
+| 1, 1, 1, 1 | 1.00 | 0 | none | Nothing: every answer equals the average, so there is nothing to learn |
+
+The last row shows a practical point: questions that are always solved, or never solved, teach the model nothing. Training sets for reasoning models are therefore chosen to be hard but not impossible for the current model.
+
+The group average replaces the **value model** that PPO uses to judge answers ([Chapter 2](02-training.md#rlhf-vs-dpo-what-each-costs)). With verifiable rewards there is no reward model either, so training needs only the model being trained and its frozen reference, plus a checking program.
+
+### What emerges
+
+The DeepSeek-R1 paper reports that when its earlier version, R1-Zero, was trained this way directly from the pre-trained model, without any supervised examples of reasoning, its answers grew steadily longer during training, and behaviours such as checking its own work and going back to reconsider a step appeared without being taught. Because R1-Zero's reasoning was hard to read (for example, mixing languages), the final R1 model first received a small amount of supervised fine-tuning on readable reasoning examples, then the same reinforcement learning.
+
+Reasoning ability can also be passed to smaller models: R1's reasoning answers were used to fine-tune much smaller models ([Chapter 2](02-training.md#distillation-a-small-model-learns-from-a-large-one)).
+
+### Prompted reasoning vs reasoning models
+
+| | Chain-of-thought prompting | Reasoning model |
+| --- | --- | --- |
+| Where the reasoning comes from | An instruction or examples in the prompt | Learned in training, written for every question |
+| Training needed | None | Reinforcement learning with verifiable rewards (for example GRPO) |
+| Reasoning length | Short, a few steps | Often thousands of tokens, with checks and corrections |
+| Cost per question | A little more than a direct answer | Much more: decode time and KV cache grow with the thinking |
+| Best for | Moderately multi-step tasks | Hard maths, code, planning |

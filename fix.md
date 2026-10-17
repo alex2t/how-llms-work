@@ -204,7 +204,7 @@ Reviewed 2026-10-17. The next-token objective, teacher forcing, and supervised f
 
 **Decision:** Approved (user, 2026-10-17). Written 2026-10-17.
 
-#### L3-7. Reasoning models and how they are trained (test-time compute, GRPO) `[ ]`
+#### L3-7. Reasoning models and how they are trained (test-time compute, GRPO) `[x]`
 
 - **Missing:** none of this is in the book:
     - **Reasoning models** write a hidden chain of thought between `<think>` and `</think>` before the final answer. Spending more output tokens at answer time to get better answers is called **test-time compute**.
@@ -214,7 +214,7 @@ Reviewed 2026-10-17. The next-token objective, teacher forcing, and supervised f
 - **Recommendation:** **new Chapter 6** (approved in L2-2), section "**Reasoning models: thinking before answering**", after chain-of-thought and self-consistency. Link from Chapter 2's Stage 3 and from Chapter 3 (thinking tokens make answers longer, so they cost decode time and KV-cache memory).
 - **Priority:** High.
 
-**Decision:** Approved (user, 2026-10-17). Not written yet.
+**Decision:** Approved (user, 2026-10-17). Written 2026-10-17.
 
 #### L3-8. Distillation: a small model learns from a large one `[x]`
 

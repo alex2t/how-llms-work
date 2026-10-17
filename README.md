@@ -97,6 +97,7 @@ One line per implemented section, newest at the bottom.
 - 2026-10-17 — Chapter 6 — New chapter started: in-context learning with zero-shot and few-shot fraud prompts (CME295 L2-2).
 - 2026-10-17 — Chapter 6 — Chain-of-thought: asking for the steps before the answer (CME295 L2-2).
 - 2026-10-17 — Chapter 6 — Self-consistency: sampling several chains and taking the majority answer (CME295 L2-2).
+- 2026-10-17 — Chapter 6 — Reasoning models: thinking tokens, test-time compute, verifiable rewards and GRPO (CME295 L3-7).
 
 ## Credits
 
