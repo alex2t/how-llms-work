@@ -29,6 +29,7 @@ A plain-English book that explains how large language models work, written as fi
 ├── mkdocs.yml                 # site config, theme and navigation bar
 ├── requirements.txt           # Python packages for the build
 ├── .github/workflows/deploy.yml   # builds and publishes to GitHub Pages
+├── sources/                   # CME295 lecture summaries (Gemini notebook); git-ignored, never commit
 └── docs/
     ├── index.md               # Home page
     ├── 00-introduction.md     # Foundations and history
@@ -46,6 +47,19 @@ mkdocs build --strict             # must pass with no warnings before every comm
 ```
 
 Publishing is automatic: push to `main` and the workflow deploys to GitHub Pages. One-time setup: in the GitHub repo, Settings → Pages → Source = **GitHub Actions**.
+
+**Environment notes (this machine).** Norton Antivirus intercepts HTTPS, so tools that use their own certificate list fail with "unable to get local issuer certificate". Git is fixed for this repository only (`git config --local http.sslBackend schannel`); for `uv` downloads add `--system-certs`.
+
+## CME295 lecture review
+
+The book is being checked against Stanford's [CME295: Transformers & Large Language Models](https://cme295.stanford.edu/syllabus/) (Afshine and Shervine Amidi). The course has 9 lectures; slides appear one a week. Summaries made with a Gemini notebook are in `sources/` (one file per lecture).
+
+- **One lecture at a time.** For each lecture, compare every topic with the book and write the result into `fix.md`, section "CME295 gap analysis": what is missing, whether it needs a new chapter or belongs in an existing one (give the chapter and section), and a priority. The user decides each item before anything is written.
+- **Summaries are pointers, not facts.** Verify every claim and number against the original paper or official documentation before it goes into the book.
+- **Paraphrase and credit.** Do not copy slide text or images; credit CME295 in the chapter's Sources when its lecture shaped a section.
+- **`sources/` is git-ignored** and must never be committed or published.
+- **The glossary (Phase 6) waits until Lecture 9 has been reviewed.**
+- **After the review,** the user reads each chapter and flags unclear parts; rewrite those with a definition plus a concrete example (see Writing style).
 
 ## Working rules (follow every time)
 
@@ -71,7 +85,7 @@ Publishing is automatic: push to `main` and the workflow deploys to GitHub Pages
   - Base model: d_model = 512, 8 heads, d_k = 64, 6 layers, d_ff = 2,048.
   - Translation: "I love you very much" → "Ti amo molto" (with `<SOS>`, `<EOS>`).
   - Logits: CAT 6.2, DOG 4.9, IS 2.1, LOVELY 1.0 → probabilities 0.772, 0.211, 0.013, 0.004.
-  - Fraud example (Chapter 5): an LLM labelling 100 transactions as fraud / not fraud.
+  - Fraud example (Chapter 5): an LLM labelling transactions as fraud / not fraud. Evaluation sample of 100 transactions with 10 fraud (TP 8, FN 2, FP 6, TN 84 at threshold 0.5); real traffic 100,000 a month, 2% fraud.
 - Tables for step-by-step calculations and comparisons; numbered lists for procedures; bullet lists for properties.
 - When the user comments that a part "is not clear": rewrite it with a definition plus a concrete example. Do not just shorten it.
 - End each chapter with a **Cheat sheet** table and a **Sources** list.

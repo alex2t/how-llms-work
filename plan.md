@@ -110,6 +110,22 @@ Goal: give the reader the background needed before Chapter 1, and the story of w
 
 ## Phase 6 — Polish
 
-- [ ] Glossary page (`docs/glossary.md`) collecting every defined term with a link to where it is explained; add to the nav.
+- [ ] Glossary page (`docs/glossary.md`) collecting every defined term with a link to where it is explained; add to the nav. **Wait until CME295 Lecture 9 has been reviewed (Phase 7).**
 - [ ] Cross-link check: every "see Chapter N" is a working link.
 - [ ] Read-through for consistency of running examples and notation across all chapters.
+
+## Phase 7 — CME295 lecture review
+
+Compare the book with each lecture of Stanford's CME295 (summaries in `sources/`, git-ignored). For each lecture, write the missing topics into `fix.md` ("CME295 gap analysis") with a recommendation: new chapter, or which existing chapter and section. The user decides; approved items become tasks here. Slides appear one a week.
+
+- [x] Set-up: `sources/` git-ignored; credits in `README.md`; workflow in `CLAUDE.md`.
+- [ ] Lecture 1 — Transformer foundations, tokenization, embeddings, attention.
+- [ ] Lecture 2 — Model families, Mixture of Experts, normalisation, context, decoding, prompting.
+- [ ] Lecture 3 — Pre-training data, SFT, LoRA, RLHF vs DPO, GRPO, distillation.
+- [ ] Lecture 4 (when published).
+- [ ] Lecture 5 (when published).
+- [ ] Lecture 6 (when published).
+- [ ] Lecture 7 (when published).
+- [ ] Lecture 8 (when published).
+- [ ] Lecture 9 (when published), then the glossary (Phase 6).
+- [ ] User read-through of every chapter; rewrite the parts flagged as unclear.

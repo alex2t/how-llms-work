@@ -15,7 +15,7 @@ A plain-English book on how large language models work, with worked numeric exam
 | 4 | Quantization, efficiency and the modern Transformer | Written (draft) |
 | 5 | Evaluation: how we measure a model | Written (draft) |
 
-The detailed task list is in [`plan.md`](plan.md).
+The detailed task list is in [`plan.md`](plan.md). Proposed changes to written chapters, including topics found missing when comparing the book with Stanford's CME295 course (one lecture at a time), are in [`fix.md`](fix.md).
 
 ## Build locally
 
@@ -77,3 +77,5 @@ One line per implemented section, newest at the bottom.
 
 - Vaswani et al., [Attention Is All You Need](https://arxiv.org/abs/1706.03762) (2017).
 - Umar Jamil, [Transformer from scratch](https://github.com/hkproj/transformer-from-scratch-notes) slides (CC BY-NC 4.0), used as a reference for explanations.
+- Stanford University, [CME295: Transformers & Large Language Models](https://cme295.stanford.edu/syllabus/), by Afshine Amidi and Shervine Amidi (lectures on YouTube, slides on the course site). Used to check which topics the book should cover; explanations are paraphrased, and no slide content is copied.
+- Google Gemini notebook summaries of the CME295 lectures, used as a topic checklist for that review. They are kept locally and not published.
