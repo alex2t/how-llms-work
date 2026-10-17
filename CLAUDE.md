@@ -8,14 +8,14 @@ A plain-English book that explains how large language models work, written as fi
 
 | # | Chapter | File | Status |
 | --- | --- | --- | --- |
-| — | Home page (about the book, how to read it) | `docs/index.md` | Written (draft) |
-| 0 | Introduction: foundations and history | `docs/00-introduction.md` | Written (draft) |
-| 1 | How Transformers Work: BPE, Attention and Q/K/V | `docs/01-transformers.md` | Written, imported and live |
-| 2 | Training: how the model learns | `docs/02-training.md` | Written (draft); fixes listed in `fix.md` |
-| 3 | Inference and decoding | `docs/03-inference.md` | Written (draft) |
-| 4 | Quantization, efficiency and the modern Transformer | `docs/04-quantization.md` | Written (draft) |
-| 5 | Evaluation: how we measure a model | `docs/05-evaluation.md` | Written (draft) |
-| 6 | Prompting, reasoning and agents | `docs/06-prompting.md` | Written (draft); agents to come with later lectures |
+| — | Home page (about the book, how to read it) | `docs/index.md` | Written |
+| 0 | Introduction: foundations and history | `docs/00-introduction.md` | Written |
+| 1 | How Transformers Work: BPE, Attention and Q/K/V | `docs/01-transformers.md` | Written |
+| 2 | Training: how the model learns | `docs/02-training.md` | Written |
+| 3 | Inference and decoding | `docs/03-inference.md` | Written |
+| 4 | Quantization, efficiency and the modern Transformer | `docs/04-quantization.md` | Written |
+| 5 | Evaluation: how we measure a model | `docs/05-evaluation.md` | Written |
+| 6 | Prompting, reasoning and agents | `docs/06-prompting.md` | Written; agents to come with later lectures |
 
 `plan.md` is the single source of truth for what is done and what is left.
 
@@ -23,7 +23,7 @@ A plain-English book that explains how large language models work, written as fi
 
 ```
 .
-├── CLAUDE.md                  # this file: rules for Claude Code + progress log
+├── CLAUDE.md                  # this file: rules for Claude Code
 ├── plan.md                    # task list: what is done, what is left
 ├── fix.md                     # proposed changes to existing content, waiting for approval
 ├── AGENTS.md                  # instructions for Antigravity (Gemini), written by Antigravity; committed
@@ -68,16 +68,16 @@ The book is being checked against Stanford's [CME295: Transformers & Large Langu
 
 1. **Propose before changing existing content.** Before editing or reorganising any section that is already written, show the user what you plan to change (a short before/after or a bullet list) and wait for approval. New sections can be written directly.
 2. **Never delete without asking.** If a change would remove a paragraph, table, example or section, say exactly what would be removed and why, and wait for an explicit yes. Moving text is also a change that needs approval.
-3. **One section at a time.** Write a section, run `mkdocs build --strict`, then update the logs (rule 4), then move to the next section.
-4. **After each section is implemented, update two files:**
+3. **One section at a time.** Write a section, run `mkdocs build --strict`, then update `plan.md` and the status table (rule 4), then move to the next section.
+4. **After each section is implemented, update:**
    - `plan.md`: tick the task `[x]` and add any follow-up task you discovered.
-   - `CLAUDE.md`: add one line to the "Progress log" below and update the chapter status table above.
+   - `CLAUDE.md`: the chapter status table above, if a chapter's status changed.
 
    `README.md` has no progress log. Update it only when a chapter is added or its scope changes (see "README" below).
 5. **Check every number.** Any worked example must be computed, not guessed. Use a quick Python snippet to verify arithmetic (softmax, log, means, memory sizes) before writing it.
 6. **Keep the navigation in sync.** Every new page must be added to `nav:` in `mkdocs.yml`; never leave a page out of the navigation bar.
 7. **Commit messages:** `chN: <section> — <what changed>`, e.g. `ch2: padding mask — add 2-sentence batch example`.
-8. **Chapter review by the user.** The user reads one chapter at a time and asks for clarifications. Apply each requested clarification **directly, without proposing it first** (this overrides rule 1 during a review; rule 2 still applies: ask before removing a whole paragraph, table, example or section). Run `mkdocs build --strict` after each change. The user's questions only show where the text is unclear: never copy a question into the book; instead rewrite the passage so that no reader would need to ask it, and answer the question in the chat. **Do not record review changes** in `fix.md`, `plan.md`, `README.md`, the progress log or anywhere else (this overrides rule 4 during a review), and **do not commit during the review**. Commit, push and deploy once, at the end of that chapter's review. Open decisions stay at the top of `fix.md`, under "Waiting for approval".
+8. **Chapter review by the user.** The user reads one chapter at a time and asks for clarifications. Apply each requested clarification **directly, without proposing it first** (this overrides rule 1 during a review; rule 2 still applies: ask before removing a whole paragraph, table, example or section). Run `mkdocs build --strict` after each change. The user's questions only show where the text is unclear: never copy a question into the book; instead rewrite the passage so that no reader would need to ask it, and answer the question in the chat. **Do not record review changes** in `fix.md`, `plan.md`, `README.md` or anywhere else (this overrides rule 4 during a review), and **do not commit during the review**. Commit, push and deploy once, at the end of that chapter's review. Open decisions stay at the top of `fix.md`, under "Waiting for approval".
 
 ## Writing style (match Chapter 1)
 
@@ -150,76 +150,3 @@ Do not change anything in `docs/` while reviewing. The user then decides: replac
 7. **Build locally.**
 
 No progress log, no status columns, no internal task lists and no one-time setup steps.
-
-## Progress log
-
-Add one line per implemented section, newest at the bottom: `YYYY-MM-DD — Chapter N — Section — one-sentence summary`.
-
-- 2026-10-17 — Setup — Repository scaffold — MkDocs Material site, navigation tabs, GitHub Pages workflow, home page and placeholders for the Introduction and Chapters 1–5 created.
-- 2026-10-17 — Setup — GitHub Pages — site published at https://alex2t.github.io/how-llms-work/; workflow actions updated to Node 24 versions.
-- 2026-10-17 — Chapter 1 — Import cleanup — 11 latex blocks converted to math, date line removed, encoder–decoder Mermaid diagram added.
-- 2026-10-17 — Chapter 2 — Formulas — 8 latex blocks converted to math blocks.
-- 2026-10-17 — Chapter 2 — Status and number check — chapter recorded as written; worked numbers checked (33 of 36 correct); proposed fixes listed in fix.md.
-- 2026-10-17 — Chapter 2 — Fixes F2–F7 — three number corrections, perplexity link to Chapter 5, 23 chapter links, two running examples added to the home page.
-- 2026-10-17 — Chapter 3 — Big picture + Inference vs training — the generation loop; what is switched off at inference; memory example (260 MB vs 1,040 MB); why the forward pass is deterministic.
-- 2026-10-17 — Chapter 3 — Generation step by step — Ti amo molto generated in 4 decoder passes with the encoder run once; decoder-only version with a prompt; comparison table.
-- 2026-10-17 — Chapter 3 — Prefill vs decode — prefill is compute-bound, decode memory-bound; base-model FLOPs-per-byte table; 7B example (28 ms first token, 7 ms per token, 143 tokens/s).
-- 2026-10-17 — Chapter 3 — The KV cache — why earlier K and V never change; cache growth table (4 vs 10 positions); memory formula; base model 24.6 KB/token, 7B model 0.52 MB/token and 68.7 GB for 32 users.
-- 2026-10-17 — Chapter 3 — Choosing the next token: greedy and beam search — shared CAT/DOG table; beam of 2 finds DOG <EOS> (0.200) where greedy ends at 0.154; log scores and length penalty.
-- 2026-10-17 — Chapter 3 — Sampling and temperature — sampling defined; T = 2 worked step by step; table at T = 0.5, 1, 2; order never changes; T = 0 means greedy.
-- 2026-10-17 — Chapter 3 — Top-k sampling — k = 2 worked (0.785 / 0.215); table for k = 1, 2, 3; why a fixed k fails on confident vs unsure prompts.
-- 2026-10-17 — Chapter 3 — Top-p (nucleus) sampling — p = 0.9 worked with running totals; table for p = 0.7, 0.9, 0.99; nucleus of 1 vs 6 tokens on the confident vs unsure prompts.
-- 2026-10-17 — Chapter 3 — How the rules combine + typical settings — pipeline diagram; T = 2, k = 3, p = 0.9 worked (CAT 0.657, DOG 0.343) vs T = 1 (0.785 / 0.215); settings table by task.
-- 2026-10-17 — Chapter 3 — Stopping — end token, max tokens and stop sequences with examples; stop_reason; context window (8,192 − 7,000 = 1,192); decoding IDs back to text and streaming.
-- 2026-10-17 — Chapter 3 — Cheat sheet + Sources — 19-row cheat sheet and 8 sources; chapter complete (draft).
-- 2026-10-17 — Chapter 1 — Training and generation (F1) — two 4-step lists replaced by a summary that links to Chapters 2 and 3.
-- 2026-10-17 — Chapter 4 — Big picture + Why size matters — memory = weights × bytes; 7B model at 28 / 14 / 7 / 3.5 GB; decode speed limit 71 / 143 / 286 / 571 tokens/s.
-- 2026-10-17 — Chapter 4 — Number formats — sign/exponent/fraction; FP32, FP16, BF16 bit layouts; stored-value table computed with NumPy (FP16 overflow at 70,000, underflow at 1e-8); INT8/INT4 ranges.
-- 2026-10-17 — Chapter 4 — How quantization works — scale formula; five weights to INT8 (max error 0.0018) and INT4 (0.0576); zero point; outlier problem; group-wise scales (4.5 bits per weight, 3.9 GB for 7B).
-- 2026-10-17 — Chapter 4 — Kinds of quantization — PTQ vs QAT table; weights-only (W4A16), weights + activations (W8A8), KV cache (68.7 → 34.4 GB); GPTQ, AWQ, GGUF (Q8_0 = 8.5 bits, Q4_0 = 4.5 bits).
-- 2026-10-17 — Chapter 4 — Quality vs speed — 7B trade-off table (16 to 2.5 bits; 14.0 to 2.2 GB; 143 to 914 tokens/s); when quality drops; larger model at 4 bits vs smaller at 16; how to check a quantized model.
-- 2026-10-17 — Chapter 4 — What changed since 2017 — overview table linking each change to its Chapter 1 section; 2017 base model vs Llama 3 8B; pre-norm, RMSNorm ([2,4,6,8] example), RoPE (distance-only score), GQA (KV cache 0.52 → 0.13 MB/token), SwiGLU, context and vocabulary.
-- 2026-10-17 — Chapter 4 — Cheat sheet + Sources — 22-row cheat sheet and 13 sources; chapter complete (draft).
-- 2026-10-17 — Chapter 3 — Links to Chapter 4 (F8) — four page links pointed to exact sections; grouped-query attention linked.
-- 2026-10-17 — Chapter 5 — Big picture + Three levels of evaluation — fraud example defined (100-transaction sample with 10 fraud; real traffic 100,000/month at 2%); loss → model metrics → business outcomes table.
-- 2026-10-17 — Chapter 5 — Loss vs metric — four fraud cases: loss sees every probability change, accuracy only right/wrong; side-by-side table.
-- 2026-10-17 — Chapter 5 — Perplexity — formula; CAT 1.30, translation 1.47, uniform-4 = 4.00, perfect = 1; same-tokenizer caveat (6 vs 10 tokens: 1.65 vs 1.35); limits.
-- 2026-10-17 — Chapter 5 — MSE — amount-at-risk example (MSE 1,031.25, RMSE 32.11, MAE 23.75); why token IDs have no distance; cross-entropy vs MSE table.
-- 2026-10-17 — Chapter 5 — Classification metrics — confusion matrix (TP 8, FN 2, FP 6, TN 84); accuracy trap ("always OK" = 98% on real traffic); precision 0.571, recall 0.80, F1 0.667; ROC threshold table and AUC ≈ 0.94.
-- 2026-10-17 — Chapter 5 — Evaluating generative LLMs — benchmarks (MMLU, HumanEval) and contamination; human evaluation; LLM-as-judge checked against an analyst (88% agreement); judge biases table; method comparison.
-- 2026-10-17 — Chapter 5 — Business outcomes — KPI chain table; precision falls from 0.571 (sample) to 0.197 (real traffic); rules engine vs LLM (€370,000 vs €200,867 a month, 311 hours saved, ROI ≈ 5.8, payback 1.8 months); CSAT/NPS/complaints; baselines and A/B tests; threshold trade-off table (0.5 meets all KPI targets).
-- 2026-10-17 — Chapter 5 — Choosing metrics for a project — 8-step checklist (objective to drift monitoring) filled in for the fraud example; data vs concept drift; re-evaluate after quantization or decoding changes.
-- 2026-10-17 — Chapter 5 — Cheat sheet + Sources — 22-row cheat sheet and 9 sources; chapter complete (draft).
-- 2026-10-17 — Chapters 2–4 — Links to Chapter 5 (F9) — three page links pointed to exact sections.
-- 2026-10-17 — Introduction — Big picture + What you need to know first — vectors, dot product (CAT·DOG 0.888, CAT·A −0.506), shapes, 2×3 times 3×2 by hand, transpose; neuron with ReLU; loss, training, embeddings.
-- 2026-10-17 — Introduction — Historical evolution of text modelling — timeline 1997–2026; task-specific RNN era; 2017 turning point; scaling table (65M → 1.5B → 175B, about 2,700×); agents.
-- 2026-10-17 — Introduction — Vector embeddings — one-hot on a 5-word vocabulary (all dot products 0, all distances 1.414); Word2Vec CBOW and skip-gram; Paris − France + Germany = (4, 3), nearest Berlin (0.14); polysemy and word-order limits.
-- 2026-10-17 — Introduction — RNNs and LSTMs — RNN formula and diagram; 3-step worked example (h = 0.462, 0.551, 0.189); LSTM gates; vanishing/exploding table (0.8ⁿ vs 1.2ⁿ); long-range and sequential limits; bridge table to Chapter 1.
-- 2026-10-17 — Introduction — Cheat sheet + Sources — 19-row cheat sheet and 13 sources; chapter complete (draft).
-- 2026-10-17 — CME295 review — Lecture 1 — compared with the Introduction and Chapter 1; no new chapter needed; 5 gaps proposed in fix.md (context bottleneck, tokenizer granularity, special tokens, WordPiece/Unigram, Word2Vec training) plus 2 notes.
-- 2026-10-17 — CME295 review — Lecture 2 — 7 gaps proposed in fix.md: Mixture of Experts (Ch 4), prompting and reasoning (new Chapter 6 recommended), constrained decoding (Ch 3), masked language modelling (Ch 2), long-context quality (Ch 3, 5), RoPE context extension (Ch 4), tokens-to-pages table (Ch 3).
-- 2026-10-17 — CME295 review — Lecture 3 — 9 gaps proposed in fix.md: pre-training data, model collapse, packing, LoRA in depth, preference-training maths, distillation (Ch 2); bits per byte, maths/code benchmarks with Elo and pass@k (Ch 5); reasoning models and GRPO (new Ch 6).
-- 2026-10-17 — Chapter 2 — Pre-training data + model collapse (L3-1, L3-2) — pipeline diagram; filtering example (1,000,000 pages → 113,400, 11.3%); data mixtures and proxy models; training stages; collapse example (0.999¹⁰⁰⁰ ≈ 0.368).
-- 2026-10-17 — Chapter 2 — Packing (L3-4) — padding waste (2 of 12; 76% at 1,000 of 4,096); packed row with zero padding; document mask table.
-- 2026-10-17 — Chapter 2 — Masked language modelling (L2-4) — BERT 15% / 80-10-10 rule; worked YOUR CAT IS A [MASK] CAT (loss 0.511); next sentence prediction, [CLS], [SEP]; comparison table; link added in Chapter 1.
-- 2026-10-17 — Chapter 2 — Preference training in detail (L3-6) — Bradley–Terry reward model (σ(1.5) = 0.818, loss 0.201 vs 1.701); KL penalty and reward hacking (KL 0.002 vs 0.125); DPO loss (0.693 → 0.474); RLHF vs DPO table (56 GB vs 28 GB).
-- 2026-10-17 — Chapter 2 — LoRA in depth + instruction tuning (L3-5) — LoRA paragraph kept and expanded into a subsection: W = W₀ + B·A, 2×2 rank-1 example, 0.4% at 4,096², about 20 million adapters for a 7B model, full vs LoRA vs QLoRA memory, adapter swapping, PEFT family; "instruction tuning" named in Stage 2.
-- 2026-10-17 — Chapter 2 — Distillation (L3-8) — soft-target loss; students A and B (one-hot 0.357 vs 0.051, soft 0.628 vs 0.855; minimum 0.607); three distillation methods incl. on-policy; link from Chapter 4.
-- 2026-10-17 — Chapter 2 — Cheat sheet — 11 rows added for the CME295 topics (data pipeline to distillation).
-- 2026-10-17 — Chapter 4 — RoPE context extension (L2-6) — position interpolation with the 0.1-radian example (speed 0.05: position 30 → 1.5; cos 0.989 vs 0.955); YaRN.
-- 2026-10-17 — Chapter 4 — Mixture of Experts (L2-1) — router and top-2 example (weights 0.599 / 0.401, output [1.802, −0.997]); total vs active (Mixtral 46.7B / 12.9B, DeepSeek-V3 671B / 37B); cost table; load-balancing loss (1.0 vs 3.6); fine-grained and shared experts; overview row, opening list and cheat sheet updated.
-- 2026-10-17 — Chapter 3 — Chat template example (L1-3, Chapter 3 part) — Llama 3 template (verified in Meta's tokenizer code) for the translation request; end-of-turn token; system message; learned in SFT.
-- 2026-10-17 — Chapter 3 — Constrained decoding (L2-3) — FRAUD / OK masking (0.55 / 0.30 → 0.647 / 0.353); logits to −∞; grammars for JSON; cautions; link from Chapter 5 fraud box.
-- 2026-10-17 — Chapter 3 — Context window size and long-context limits (L2-7, L2-5 Chapter 3 part) — tokens → words → pages table (8,192 → 12 pages, 128,000 → 192); needle in a haystack; lost in the middle; prompt advice; 3 cheat-sheet rows and 5 sources.
-- 2026-10-17 — Chapter 5 — Bits per byte (L3-3) — formula; two-tokenizer example gives 0.144 for both models (perplexity 1.65 vs 1.35).
-- 2026-10-17 — Chapter 5 — Benchmarks, pass@k and Elo (L3-9, L2-5 Chapter 5 part) — benchmark families table (knowledge, maths, code, software, long context, preference); pass@k (n = 10, c = 3: 0.300 and 0.917); Elo (1,300 vs 1,200: 64%; upset → 1,279.5 / 1,220.5); 4 cheat-sheet rows and 6 sources.
-- 2026-10-17 — Chapter 1 — Word, character, subword or byte? (L1-2) — existing paragraph kept under a new subsection; OOV and [UNK]; 4-way comparison table on `unbelievable`; UTF-8 bytes (café = 5 bytes, 😀 = 4); byte-level BPE.
-- 2026-10-17 — Chapter 1 — Other subword algorithms (L1-4) — WordPiece score on the chapter corpus (first merge i + d at 0.333 vs BPE e + s); Unigram; algorithm table; SentencePiece.
-- 2026-10-17 — Chapter 1 — Special tokens (L1-3, Chapter 1 part) — table of 7 token kinds with other names, purpose and links to Chapters 2 and 3; 4 cheat-sheet rows; CME295 Lecture 1 credited.
-- 2026-10-17 — Introduction — How Word2Vec is trained (L1-5) — one-hidden-layer network, first layer = embedding table; negative sampling example (losses 0.127 + 0.313 + 0.974 = 1.414; 3 dot products instead of 50,000).
-- 2026-10-17 — Introduction — Context bottleneck (L1-1) — fourth RNN problem with the "I love you very much" example; 2014 attention as the fix; bridge-table row added before "Sequential processing"; "all three" → "all four"; cheat-sheet row and 2 sources.
-- 2026-10-17 — Chapter 6 — Page created + Big picture + In-context learning (L2-2 part) — added to nav and home page; zero-shot and few-shot fraud prompts; why it works; cost table (180 extra tokens per request, 18 million a month); tips.
-- 2026-10-17 — Chapter 6 — Chain-of-thought (L2-2 part) — why writing steps helps (more passes, scratch paper); €45 + €120 + €80 = 245, ÷ 50 = 4.9 example; few-shot and zero-shot CoT; limits (200 tokens = 1.4 s).
-- 2026-10-17 — Chapter 6 — Self-consistency (L2-2 part) — 5 sampled chains, majority 4.9 (3 of 5); voting table at p = 0.6 (0.600 / 0.683 / 0.753); cost and when to use it.
-- 2026-10-17 — Chapter 6 — Reasoning models (L3-7) — <think> example; test-time compute; cost table (2,000 tokens = 14 s, 1,049 MB or 262 MB with GQA); RLVR; GRPO formula and 3 groups (1,0,1,1 → +0.577 / −1.732; all-correct → no signal); no value model; R1-Zero emergent behaviour; CoT vs reasoning model table.
-- 2026-10-17 — Chapter 6 — Cheat sheet + Sources + links — 11-row cheat sheet and 8 sources; links to Chapter 6 from Chapters 1, 2, 3 (new bullet on thinking-token cost) and 5; chapter written (draft); agents pending later lectures.
