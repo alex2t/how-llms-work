@@ -96,7 +96,7 @@ Reviewed 2026-10-17. Normalisation (RMSNorm, pre-norm), RoPE, attention's quadra
 
 **Decision:** Approved (user, 2026-10-17). Written 2026-10-17.
 
-#### L2-2. Prompting and reasoning: in-context learning, chain-of-thought, self-consistency `[ ]`
+#### L2-2. Prompting and reasoning: in-context learning, chain-of-thought, self-consistency `[x]`
 
 - **Missing:** the Introduction mentions in one line that GPT-3 learned "from a few examples in the prompt"; nothing else in the book covers how prompts steer a model. Missing topics:
     - **In-context learning:** zero-shot (instructions only) and few-shot (a few solved examples in the prompt); the weights do not change.
@@ -106,7 +106,7 @@ Reviewed 2026-10-17. Normalisation (RMSNorm, pre-norm), RoPE, attention's quadra
 - **Alternative:** a section in Chapter 3 now, moved to its own chapter later. Not recommended, since moving text needs approval again.
 - **Priority:** High.
 
-**Decision:** Approved: new Chapter 6 after Chapter 5 (user, 2026-10-17). Not written yet.
+**Decision:** Approved: new Chapter 6 after Chapter 5 (user, 2026-10-17). Written 2026-10-17.
 
 #### L2-3. Constrained (guided) decoding `[x]`
 

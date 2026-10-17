@@ -175,3 +175,4 @@ Add one line per implemented section, newest at the bottom: `YYYY-MM-DD — Chap
 - 2026-10-17 — Introduction — Context bottleneck (L1-1) — fourth RNN problem with the "I love you very much" example; 2014 attention as the fix; bridge-table row added before "Sequential processing"; "all three" → "all four"; cheat-sheet row and 2 sources.
 - 2026-10-17 — Chapter 6 — Page created + Big picture + In-context learning (L2-2 part) — added to nav and home page; zero-shot and few-shot fraud prompts; why it works; cost table (180 extra tokens per request, 18 million a month); tips.
 - 2026-10-17 — Chapter 6 — Chain-of-thought (L2-2 part) — why writing steps helps (more passes, scratch paper); €45 + €120 + €80 = 245, ÷ 50 = 4.9 example; few-shot and zero-shot CoT; limits (200 tokens = 1.4 s).
+- 2026-10-17 — Chapter 6 — Self-consistency (L2-2 part) — 5 sampled chains, majority 4.9 (3 of 5); voting table at p = 0.6 (0.600 / 0.683 / 0.753); cost and when to use it.

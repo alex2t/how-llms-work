@@ -92,3 +92,39 @@ Two ways to get a chain of thought:
 - **Longer answers cost more.** Every reasoning token is a decode step: 200 extra tokens at 7 ms each add 1.4 seconds ([Chapter 3](03-inference.md#worked-example-a-7-billion-weight-model)).
 - **Little gain on simple tasks.** Looking up a fact or labelling an obvious case needs no steps.
 - **The written steps are not guaranteed to be the real reason.** A model can write plausible steps and still reach a wrong answer, or a right answer for the wrong reason, so the steps are useful but must not be trusted blindly.
+
+## Self-consistency
+
+A single chain of thought can take a wrong turn. **Self-consistency** asks the same question several times, with sampling switched on so the chains differ, and returns the answer that comes up most often. It trades extra computation for accuracy, and it needs no change to the model or the prompt.
+
+### How it works
+
+1. Sample several chains of thought for the same question, with a temperature above 0 (for example 0.7) so that they differ ([Chapter 3](03-inference.md#sampling-and-temperature)).
+2. Extract the final answer from each chain.
+3. Return the **majority answer**: the one that appears most often.
+
+**Worked example:** the purchase question from the previous section, asked 5 times (made-up outputs):
+
+| Chain | Reasoning (shortened) | Final answer |
+| --- | --- | --- |
+| 1 | 45 + 120 + 80 = 245; 245 ÷ 50 | 4.9 |
+| 2 | Total 245; ratio 4.9 | 4.9 |
+| 3 | 45 + 120 + 95 = 260; 260 ÷ 50 (copied a number wrongly) | 5.2 |
+| 4 | 245 ÷ 50 | 4.9 |
+| 5 | 245 ÷ 100 (used the wrong daily spend) | 2.45 |
+
+4.9 appears 3 times out of 5, so self-consistency answers 4.9. Correct chains tend to agree with each other, while mistakes scatter in different directions.
+
+### Why voting helps, in numbers
+
+Suppose each chain is right with probability 0.6, independently of the others. The vote is certainly right when more than half of the chains are right:
+
+| Chains sampled | Right chains needed for a majority | Probability the vote is right |
+| --- | --- | --- |
+| 1 | 1 | 0.600 |
+| 5 | 3 | 0.683 |
+| 11 | 6 | 0.753 |
+
+(These are lower bounds: when the wrong answers all differ, a smaller group of matching right answers can still win the vote.)
+
+The cost grows with every chain: 5 chains cost about 5 times the decode time and tokens of one. Self-consistency therefore suits questions with a short, checkable final answer, such as a number or a label, where the extra accuracy is worth the price. It does not help with open-ended writing, where no two answers are identical and there is nothing to vote on.
