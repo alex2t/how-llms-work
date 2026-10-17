@@ -156,3 +156,4 @@ Add one line per implemented section, newest at the bottom: `YYYY-MM-DD — Chap
 - 2026-10-17 — CME295 review — Lecture 3 — 9 gaps proposed in fix.md: pre-training data, model collapse, packing, LoRA in depth, preference-training maths, distillation (Ch 2); bits per byte, maths/code benchmarks with Elo and pass@k (Ch 5); reasoning models and GRPO (new Ch 6).
 - 2026-10-17 — Chapter 2 — Pre-training data + model collapse (L3-1, L3-2) — pipeline diagram; filtering example (1,000,000 pages → 113,400, 11.3%); data mixtures and proxy models; training stages; collapse example (0.999¹⁰⁰⁰ ≈ 0.368).
 - 2026-10-17 — Chapter 2 — Packing (L3-4) — padding waste (2 of 12; 76% at 1,000 of 4,096); packed row with zero padding; document mask table.
+- 2026-10-17 — Chapter 2 — Masked language modelling (L2-4) — BERT 15% / 80-10-10 rule; worked YOUR CAT IS A [MASK] CAT (loss 0.511); next sentence prediction, [CLS], [SEP]; comparison table; link added in Chapter 1.

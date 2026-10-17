@@ -446,6 +446,8 @@ After attention has gathered information from the other tokens, the feed-forward
 
 Modern chat models are decoder-only: they drop the encoder and cross-attention, and every token attends only to the tokens before it.
 
+Encoder-only models such as BERT are trained differently, by filling in hidden words from both sides: see [Chapter 2](02-training.md#another-training-objective-masked-language-modelling).
+
 ## From the last vector back to a word
 
 After the final layer, each token is still a vector of 512 numbers. To produce text, the model turns the vector at the last position into a score for **every token in the vocabulary**, converts the scores into probabilities, and picks a token.

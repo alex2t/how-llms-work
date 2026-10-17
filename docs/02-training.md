@@ -562,6 +562,50 @@ Here \[k = correct\] is 1 for the correct token and 0 otherwise, and |V| is the 
 
 The smoothed loss is higher (0.526 instead of 0.259) because tokens with very small probabilities now also cost something. The model can no longer win by pushing the wrong tokens to almost 0, so it stays less overconfident. The paper reports that label smoothing made perplexity slightly worse but improved accuracy and the BLEU translation score.
 
+## Another training objective: masked language modelling
+
+Everything so far trains a model to predict the **next** token, which is what decoder models such as GPT and Claude do. Encoder-only models such as BERT ([Chapter 1](01-transformers.md#three-ways-the-block-is-used-today)) are trained with a different game: fill in hidden words using the text on **both** sides. They cannot generate text well, but they produce very good representations of a whole text, which is why they are still widely used for classification and search.
+
+### Masked language modelling (MLM)
+
+In **masked language modelling**, some tokens of the input are hidden and the model must predict them. BERT picks 15% of the tokens at random. Of the picked tokens:
+
+- 80% are replaced by a special `[MASK]` token,
+- 10% are replaced by a random token,
+- 10% are left unchanged.
+
+The mix stops the model from relying on seeing `[MASK]`, which never appears in real use. In a 1,000-token text, 150 tokens are picked: about 120 become `[MASK]`, 15 become random tokens, and 15 stay the same. The loss is the usual cross-entropy, computed **only at the 150 picked positions**.
+
+**Worked example.** Take `YOUR CAT IS A LOVELY CAT` and hide position 4:
+
+| Position | 0 | 1 | 2 | 3 | 4 | 5 |
+| --- | --- | --- | --- | --- | --- | --- |
+| Input | YOUR | CAT | IS | A | `[MASK]` | CAT |
+| Target | — | — | — | — | LOVELY | — |
+
+The encoder has no causal mask, so position 4 sees `YOUR CAT IS A` on its left **and** `CAT` on its right. Suppose it gives `LOVELY` a probability of 0.60 (made-up number). The loss at that position is −ln 0.60 = 0.511, and the other five positions add nothing to the loss.
+
+A decoder trained on the same sentence would predict `LOVELY` from the left side only (`YOUR CAT IS A`). Seeing both sides makes the masked task easier and gives every token a representation informed by its whole context, which is what encoder models are for.
+
+### Next sentence prediction and the tokens `[CLS]` and `[SEP]`
+
+BERT was also trained on a second task, **next sentence prediction**: given two segments of text, decide whether the second really followed the first in the original document (half the examples) or was taken at random from elsewhere (the other half). Two special tokens frame the input:
+
+- **`[CLS]`** (classification) is placed at the very start. Its output vector is used as a summary of the whole input; a small classifier on top of it gives the yes/no answer.
+- **`[SEP]`** (separator) marks the end of each segment.
+
+For example: `[CLS] YOUR CAT IS LOVELY [SEP] IT SLEEPS ALL DAY [SEP]` should be labelled "really follows". Later work (RoBERTa) found that next sentence prediction adds little and trained with masked language modelling alone, but the `[CLS]` vector idea remained.
+
+### Next-token prediction vs masked language modelling
+
+| | Next-token prediction | Masked language modelling |
+| --- | --- | --- |
+| Models | Decoder-only (GPT, Claude, Llama) | Encoder-only (BERT and its successors) |
+| Each position sees | Only the tokens before it (causal mask) | All tokens, both sides |
+| Positions that give a loss | All of them | Only the masked 15% |
+| Good at | Generating text | Understanding and representing text: classification, search |
+| Typical use after training | Chat, writing, code | Fine-tuned with a small classifier on `[CLS]`, or used to turn texts into vectors for search |
+
 ## Stages of an LLM's life: pre-training, fine-tuning and preference training
 
 A chat model like Claude is not trained once but in several stages, each with different data and a different goal. The architecture and the tokenizer stay the same through all of them; only the weights keep changing, as Chapter 1's note "[Fine-tuning is just more training](01-transformers.md#what-is-learned-and-what-changes-after-training)" said.
@@ -653,3 +697,5 @@ After the last stage, all weights are frozen again and the model is ready for in
 - [DoReMi: Optimizing Data Mixtures Speeds Up Language Model Pretraining (Xie et al., 2023)](https://arxiv.org/abs/2305.10429) and [RegMix: Data Mixture as Regression for Language Model Pre-training (Liu et al., 2024)](https://arxiv.org/abs/2407.01492): choosing the data mixture with small proxy models
 - [The Curse of Recursion: Training on Generated Data Makes Models Forget (Shumailov et al., 2023)](https://arxiv.org/abs/2305.17493): model collapse
 - [CME295: Transformers & Large Language Models, Lecture 3 (Stanford University, Afshine and Shervine Amidi)](https://cme295.stanford.edu/syllabus/): pre-training data, fine-tuning and preference training topics
+- [BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding (Devlin et al., 2018)](https://arxiv.org/abs/1810.04805): masked language modelling, next sentence prediction, `[CLS]` and `[SEP]`
+- [RoBERTa: A Robustly Optimized BERT Pretraining Approach (Liu et al., 2019)](https://arxiv.org/abs/1907.11692): training without next sentence prediction

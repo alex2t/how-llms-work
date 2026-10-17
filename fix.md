@@ -116,13 +116,13 @@ Reviewed 2026-10-17. Normalisation (RMSNorm, pre-norm), RoPE, attention's quadra
 
 **Decision:** Approved (user, 2026-10-17). Not written yet.
 
-#### L2-4. Encoder-only models and masked language modelling (BERT) `[ ]`
+#### L2-4. Encoder-only models and masked language modelling (BERT) `[x]`
 
 - **Missing:** Chapter 1's table lists encoder-only models (BERT) but never says how they are trained. Missing: **masked language modelling** (hide about 15% of the tokens and predict them from both sides), **next sentence prediction**, and the special tokens `[CLS]` (one vector for the whole text) and `[SEP]` (boundary between segments). Encoder-only models remain common for classification and for the text embeddings used in search and retrieval, which later lectures are likely to build on.
 - **Recommendation:** existing chapters. **Chapter 2**, a new section "**Another training objective: masked language modelling**" before "Stages of an LLM's life", with a worked example that masks one token of `YOUR CAT IS A LOVELY CAT`. Link to it from **Chapter 1 → "Three ways the block is used today"**.
 - **Priority:** Medium.
 
-**Decision:** Approved (user, 2026-10-17). Not written yet.
+**Decision:** Approved (user, 2026-10-17). Written 2026-10-17.
 
 #### L2-5. Long context: a bigger window is not a perfect memory `[ ]`
 
