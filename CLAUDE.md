@@ -122,3 +122,4 @@ Add one line per implemented section, newest at the bottom: `YYYY-MM-DD — Chap
 - 2026-10-17 — Chapter 4 — Cheat sheet + Sources — 22-row cheat sheet and 13 sources; chapter complete (draft).
 - 2026-10-17 — Chapter 3 — Links to Chapter 4 (F8) — four page links pointed to exact sections; grouped-query attention linked.
 - 2026-10-17 — Chapter 5 — Big picture + Three levels of evaluation — fraud example defined (100-transaction sample with 10 fraud; real traffic 100,000/month at 2%); loss → model metrics → business outcomes table.
+- 2026-10-17 — Chapter 5 — Loss vs metric — four fraud cases: loss sees every probability change, accuracy only right/wrong; side-by-side table.

@@ -31,3 +31,38 @@ The levels are connected but not interchangeable:
 - **Each level needs the one below it.** Business results cannot be estimated without model metrics, and model metrics depend on a model that has learned.
 
 The rest of the chapter climbs the three levels in order: loss and perplexity, then model metrics for classification and for generated text, then business outcomes, and finally a checklist for choosing metrics for a project.
+
+## Loss vs metric
+
+Training optimises a **loss**, but people judge a model by a **metric**. The two are often confused because both are "a number that says how good the model is". Knowing why they differ explains why training never optimises accuracy directly, and why a good loss alone does not prove a model is useful.
+
+### Definitions
+
+- **Loss:** a number the training process makes smaller. It must change smoothly when the weights change slightly, so that a gradient can be computed ([Chapter 2](02-training.md#the-gradient-which-way-to-move-each-weight)). For LLMs it is the [cross-entropy](02-training.md#the-loss-cross-entropy): −ln of the probability given to the correct token.
+- **Metric:** a number that measures what people actually care about, such as the share of correct answers. It does not need to change smoothly, because no gradient is ever computed from it.
+
+### Worked example: four fraud cases
+
+Four transactions in the sample are fraud. The model answers `FRAUD` when its fraud score is at least 0.5:
+
+| Transaction | Fraud score (probability of `FRAUD`) | Loss = −ln(score) | Model's answer | Correct? |
+| --- | --- | --- | --- | --- |
+| 1 | 0.95 | 0.051 | FRAUD | Yes |
+| 2 | 0.60 | 0.511 | FRAUD | Yes |
+| 3 | 0.55 | 0.598 | FRAUD | Yes |
+| 4 | 0.45 | 0.799 | OK | No |
+
+- **The loss sees every difference.** Transaction 1 (0.95) and transaction 2 (0.60) are both correct, but the loss is ten times lower for the confident one. Raising transaction 4 from 0.45 to 0.46 lowers its loss a little, so training gets a useful signal.
+- **The accuracy metric sees only right or wrong.** Transactions 1 to 3 count the same. Moving transaction 4 from 0.45 to 0.46 changes nothing; moving it from 0.49 to 0.51 suddenly flips it to correct. Such a jumpy number has no useful gradient, so it cannot be trained on directly.
+
+### Loss and metric side by side
+
+| | Loss | Metric |
+| --- | --- | --- |
+| Purpose | Guide training | Judge the result |
+| Computed on | Every token, during training | Final answers, on test data |
+| Must change smoothly? | Yes, to compute gradients | No |
+| Example | Cross-entropy 0.383 per token | 92% of transactions labelled correctly |
+| Read by | The optimiser | People |
+
+The practical rule: watch the loss to check that training works, but decide whether a model is good with metrics measured on data the model never saw during training. The next section turns the loss into a friendlier number, perplexity; the sections after it cover the metrics.

@@ -58,6 +58,7 @@ One line per implemented section, newest at the bottom.
 - 2026-10-17 — Chapter 4 — Cheat sheet and sources: chapter complete.
 - 2026-10-17 — Chapter 3 — Links to Chapter 4 now open the exact section.
 - 2026-10-17 — Chapter 5 — Three levels of evaluation: training loss, model metrics and business outcomes, on the fraud example.
+- 2026-10-17 — Chapter 5 — Loss vs metric: why training uses cross-entropy but people judge with metrics.
 
 ## Credits
 
