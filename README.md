@@ -79,6 +79,7 @@ One line per implemented section, newest at the bottom.
 - 2026-10-17 — Chapter 2 — Where pre-training data comes from, data mixtures and model collapse (CME295 L3-1, L3-2).
 - 2026-10-17 — Chapter 2 — Packing: the alternative to padding, with the document mask (CME295 L3-4).
 - 2026-10-17 — Chapter 2 — Masked language modelling: how encoder-only models such as BERT are trained (CME295 L2-4).
+- 2026-10-17 — Chapter 2 — Preference training in detail: reward model, KL penalty, DPO loss and their costs (CME295 L3-6).
 
 ## Credits
 

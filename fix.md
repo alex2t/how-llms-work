@@ -192,7 +192,7 @@ Reviewed 2026-10-17. The next-token objective, teacher forcing, and supervised f
 
 **Decision:** Approved (user, 2026-10-17). Not written yet.
 
-#### L3-6. Preference training in detail: reward model, KL penalty, DPO `[ ]`
+#### L3-6. Preference training in detail: reward model, KL penalty, DPO `[x]`
 
 - **Missing:** Stage 3 in Chapter 2 describes RLHF and DPO in words only. Missing:
     - **Reward model training** (the Bradley–Terry loss): the loss is small when the preferred answer gets the higher score. Example: scores 2.0 (preferred) and 0.5 (rejected) give σ(1.5) = 0.818 and a loss of −ln 0.818 = 0.201.
@@ -202,7 +202,7 @@ Reviewed 2026-10-17. The next-token objective, teacher forcing, and supervised f
 - **Recommendation:** existing chapter. **Chapter 2 → "Stage 3: preference training"**: expand with the worked reward-model example, the KL idea, the DPO loss with every letter explained, and a 4-models-vs-2 table.
 - **Priority:** Medium.
 
-**Decision:** Approved (user, 2026-10-17). Not written yet.
+**Decision:** Approved (user, 2026-10-17). Written 2026-10-17.
 
 #### L3-7. Reasoning models and how they are trained (test-time compute, GRPO) `[ ]`
 

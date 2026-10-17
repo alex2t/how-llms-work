@@ -635,6 +635,86 @@ Some qualities are easier to judge than to write down: which of two answers is c
 
 In all of these, the loss is no longer "predict the text in the data" but "make preferred answers more likely than rejected ones". The weights change; nothing else does.
 
+### Inside RLHF: training the reward model
+
+The reward model is usually a copy of the language model with its last layer replaced by a single output: one number, the **reward**, that scores an answer to a prompt. It is trained on pairs: for a prompt x, a preferred answer y\_w (w for "winner") and a rejected answer y\_l (l for "loser"). The training rule, called the **Bradley–Terry** loss, wants the preferred answer to get the higher score:
+
+$$
+L = -\ln \sigma\big(r(x, y_w) - r(x, y_l)\big) \qquad \sigma(a) = \frac{1}{1 + e^{-a}}
+$$
+
+- **r(x, y)** is the reward the model gives to answer y for prompt x.
+- **σ (sigmoid)** turns any number into a probability between 0 and 1. Here σ(r\_w − r\_l) is the model's probability that the preferred answer is the better one.
+- The loss is −ln of that probability, exactly like cross-entropy.
+
+**Worked example** (made-up scores):
+
+| Scores: preferred, rejected | Difference | σ(difference) | Loss | Reading |
+| --- | --- | --- | --- | --- |
+| 2.0, 0.5 | +1.5 | 0.818 | −ln 0.818 = 0.201 | Correct order: small loss |
+| 0.5, 2.0 | −1.5 | 0.182 | −ln 0.182 = 1.701 | Wrong order: large loss |
+
+Only the **difference** between the two scores matters, so the reward model learns to rank answers, not to give them absolute marks.
+
+### Inside RLHF: the KL penalty and reward hacking
+
+The language model is then trained to produce answers that the reward model scores highly. Left alone, it finds the reward model's weaknesses. If the reward model slightly prefers longer answers, the language model learns to write ever longer answers, whether or not they are better. Getting a high reward without being better is called **reward hacking**.
+
+The fix is a penalty for drifting too far from the starting model (the SFT model, kept frozen as a **reference**). The distance between the two models' probabilities is measured with the **KL divergence** (Kullback–Leibler divergence):
+
+$$
+\text{KL}(\pi \,\|\, \pi_{\text{ref}}) = \sum_k \pi_k \ln \frac{\pi_k}{\pi_{\text{ref},k}}
+$$
+
+- **π\_k** is the probability the model being trained gives to token k; **π\_ref,k** is the reference model's probability.
+- KL is 0 when the two lists are identical and grows as they move apart.
+
+The training goal becomes **reward − λ × KL**, where λ (lambda) sets how strongly drifting is penalised.
+
+**Worked example** with Chapter 1's probabilities as the reference (CAT 0.772, DOG 0.211, IS 0.013, LOVELY 0.004), against two possible trained models (made-up numbers):
+
+| Trained model's probabilities (CAT, DOG, IS, LOVELY) | KL from the reference |
+| --- | --- |
+| 0.800, 0.185, 0.011, 0.004 (a small change) | 0.002 |
+| 0.950, 0.040, 0.007, 0.003 (a large change) | 0.197 − 0.067 − 0.004 − 0.001 ≈ 0.125 |
+
+The large change is penalised far more heavily: 0.125 against 0.002. The model may still move far from the reference, but only where the reward gain is worth it.
+
+### Inside DPO: preferences without a reward model
+
+DPO reaches the same goal in one supervised step. It never trains a reward model; it works directly with the probabilities that the model being trained and the frozen reference give to the preferred and rejected answers:
+
+$$
+L_{\text{DPO}} = -\ln \sigma\!\left(\beta \left[\ln \frac{\pi(y_w \mid x)}{\pi_{\text{ref}}(y_w \mid x)} - \ln \frac{\pi(y_l \mid x)}{\pi_{\text{ref}}(y_l \mid x)}\right]\right)
+$$
+
+- **π(y | x)** is the probability the model being trained gives to the whole answer y for prompt x; **π\_ref** is the reference's probability.
+- **ln(π ÷ π\_ref)** says how much more (positive) or less (negative) likely the trained model makes an answer than the reference did.
+- **β** (beta, often 0.1) plays the role of the KL penalty: it controls how far the model may move from the reference.
+
+The loss is small when the preferred answer has gained probability relative to the reference **more** than the rejected one has.
+
+**Worked example** with β = 0.1:
+
+| Moment | ln ratio, preferred | ln ratio, rejected | β × difference | σ | Loss |
+| --- | --- | --- | --- | --- | --- |
+| Start: trained model = reference | 0 | 0 | 0 | 0.500 | 0.693 |
+| After some training | +2.0 | −3.0 | 0.1 × 5.0 = 0.5 | 0.622 | 0.474 |
+
+The structure is the same as the reward model's loss: −ln σ of a difference. DPO's insight is that the model's own probability ratios can play the role of the reward.
+
+### RLHF vs DPO: what each costs
+
+| | RLHF with PPO | DPO |
+| --- | --- | --- |
+| Training steps | Train a reward model, then reinforcement learning | One supervised training run |
+| Models in memory | 4: the model being trained, the frozen reference, the reward model, and a **value model** that PPO uses to estimate how good a partial answer is | 2: the model being trained and the frozen reference |
+| Weights alone, if each model has 7 billion weights in 16-bit format ([Chapter 4](04-quantization.md#worked-example-a-7-billion-weight-model)) | 4 × 14 GB = 56 GB | 2 × 14 GB = 28 GB |
+| New answers generated during training? | Yes, the model writes answers that are then scored | No, it learns from a fixed set of pairs |
+| Strength | Can keep improving on fresh answers of its own | Simpler, cheaper and more stable |
+
+Reasoning models use another reinforcement-learning method, GRPO, which drops the value model; it is covered with reasoning models in Chapter 6.
+
 ### What changes in each stage
 
 |  | Pre-training | Supervised fine-tuning | Preference training |
@@ -699,3 +779,5 @@ After the last stage, all weights are frozen again and the model is ready for in
 - [CME295: Transformers & Large Language Models, Lecture 3 (Stanford University, Afshine and Shervine Amidi)](https://cme295.stanford.edu/syllabus/): pre-training data, fine-tuning and preference training topics
 - [BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding (Devlin et al., 2018)](https://arxiv.org/abs/1810.04805): masked language modelling, next sentence prediction, `[CLS]` and `[SEP]`
 - [RoBERTa: A Robustly Optimized BERT Pretraining Approach (Liu et al., 2019)](https://arxiv.org/abs/1907.11692): training without next sentence prediction
+- [Training language models to follow instructions with human feedback (Ouyang et al., 2022)](https://arxiv.org/abs/2203.02155): reward model loss, KL penalty and PPO in RLHF
+- [Proximal Policy Optimization Algorithms (Schulman et al., 2017)](https://arxiv.org/abs/1707.06347): PPO
