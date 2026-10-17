@@ -1,14 +1,14 @@
 # How LLMs Work
 
-A plain-English book on how large language models work, from the first token to the business case. Every idea comes with a small worked example you can check by hand.
+Plain-English notes on how large language models work, from the first token to the business case. Every idea comes with a small worked example you can check by hand.
 
-## Who this book is for
+## Who these notes are for
 
 Readers with a technical background (for example a computing degree or a career in enterprise software) who are not machine-learning specialists. No prior knowledge of neural networks is assumed: the Introduction covers the foundations you need.
 
 ## How to read it
 
-Read the chapters in order the first time; each one builds on the last. Use the navigation bar at the top to jump between chapters, and the **Previous / Next** buttons at the bottom of each page to move through the book.
+Read the chapters in order the first time; each one builds on the last. Use the navigation bar at the top to jump between chapters, and the **Previous / Next** buttons at the bottom of each page to move through the notes.
 
 | Chapter | What you will learn |
 | --- | --- |
@@ -22,7 +22,7 @@ Read the chapters in order the first time; each one builds on the last. Use the 
 
 ## Running examples
 
-The same examples appear throughout the book so you never meet unexplained numbers:
+The same examples appear throughout the notes so you never meet unexplained numbers:
 
 - The sentence **`YOUR CAT IS A LOVELY CAT`**, with token IDs YOUR = 105, CAT = 6587, IS = 5475, A = 3578, LOVELY = 65.
 - The original Transformer's settings: 512 numbers per token, 8 attention heads, 6 layers.

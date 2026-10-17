@@ -102,7 +102,7 @@ Result: 2 tokens, `low` and `est</w>`. With illustrative IDs, that becomes \[103
 
 Besides the pieces of ordinary text, every vocabulary contains a few **special tokens**: entries added on purpose to mark structure, such as where a sentence starts or who is speaking. Each has its own ID and its own row in the embedding table, like any other token, but it is never produced by splitting ordinary text; it is inserted by the software that prepares the input. Different models write the same idea with different names, so the table lists the common ones.
 
-| Token in this book | Other common names | Purpose | Explained in |
+| Token in these notes | Other common names | Purpose | Explained in |
 | --- | --- | --- | --- |
 | `<SOS>` (start of sequence) | `[BOS]`, `<s>`, <code>&lt;&#124;begin_of_text&#124;&gt;</code> | Marks the start; gives the first position something to read | [Chapter 2: The special tokens](02-training.md#the-special-tokens) |
 | `<EOS>` (end of sequence) | `[EOS]`, `</s>`, <code>&lt;&#124;eot_id&#124;&gt;</code> (end of turn) | Marks the end; generating it stops the answer | [Chapter 2: The special tokens](02-training.md#the-special-tokens), [Chapter 3: Stopping](03-inference.md#stopping) |

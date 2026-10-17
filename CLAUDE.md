@@ -26,7 +26,7 @@ A plain-English book that explains how large language models work, written as fi
 ├── CLAUDE.md                  # this file: rules for Claude Code + progress log
 ├── plan.md                    # task list: what is done, what is left
 ├── fix.md                     # proposed changes to existing content, waiting for approval
-├── README.md                  # public project page + progress summary
+├── README.md                  # public project page, written like a book's back cover
 ├── mkdocs.yml                 # site config, theme and navigation bar
 ├── requirements.txt           # Python packages for the build
 ├── .github/workflows/deploy.yml   # builds and publishes to GitHub Pages
@@ -67,17 +67,19 @@ The book is being checked against Stanford's [CME295: Transformers & Large Langu
 1. **Propose before changing existing content.** Before editing or reorganising any section that is already written, show the user what you plan to change (a short before/after or a bullet list) and wait for approval. New sections can be written directly.
 2. **Never delete without asking.** If a change would remove a paragraph, table, example or section, say exactly what would be removed and why, and wait for an explicit yes. Moving text is also a change that needs approval.
 3. **One section at a time.** Write a section, run `mkdocs build --strict`, then update the logs (rule 4), then move to the next section.
-4. **After each section is implemented, update three files:**
+4. **After each section is implemented, update two files:**
    - `plan.md`: tick the task `[x]` and add any follow-up task you discovered.
-   - `README.md`: add one line to "Progress" (date, chapter, section, one-sentence summary) and update the chapter status table.
    - `CLAUDE.md`: add one line to the "Progress log" below and update the chapter status table above.
+
+   `README.md` has no progress log. Update it only when a chapter is added or its scope changes (see "README" below).
 5. **Check every number.** Any worked example must be computed, not guessed. Use a quick Python snippet to verify arithmetic (softmax, log, means, memory sizes) before writing it.
 6. **Keep the navigation in sync.** Every new page must be added to `nav:` in `mkdocs.yml`; never leave a page out of the navigation bar.
 7. **Commit messages:** `chN: <section> — <what changed>`, e.g. `ch2: padding mask — add 2-sentence batch example`.
-8. **Chapter review by the user.** The user reads one chapter at a time and asks for clarifications. Make each requested change (propose first if it changes or removes existing text, per rules 1 and 2), run `mkdocs build --strict`, and update the logs, but **do not commit during the review**. Commit, push and deploy once, at the end of that chapter's review. Open decisions stay at the top of `fix.md`, under "Waiting for approval".
+8. **Chapter review by the user.** The user reads one chapter at a time and asks for clarifications. Apply each requested clarification **directly, without proposing it first** (this overrides rule 1 during a review; rule 2 still applies: ask before removing a whole paragraph, table, example or section). Run `mkdocs build --strict` after each change. The user's questions only show where the text is unclear: never copy a question into the book; instead rewrite the passage so that no reader would need to ask it, and answer the question in the chat. **Do not record review changes** in `fix.md`, `plan.md`, `README.md`, the progress log or anywhere else (this overrides rule 4 during a review), and **do not commit during the review**. Commit, push and deploy once, at the end of that chapter's review. Open decisions stay at the top of `fix.md`, under "Waiting for approval".
 
 ## Writing style (match Chapter 1)
 
+- **Call it "notes", never "book"** (in the site and the README): "book" sounds presumptuous.
 - **Audience:** a technical reader (computing degree, enterprise software background) who is not an ML specialist. English may not be the reader's first language: short, direct sentences; no unfinished sentences.
 - Open every section with one or two sentences saying what it explains and why it matters.
 - Define every term in plain words the first time it appears (e.g. "logit", "batch", "gradient", "vocabulary", "d_model"). Explain every letter in a formula.
@@ -106,6 +108,20 @@ The book is being checked against Stanford's [CME295: Transformers & Large Langu
 - Callouts with Material admonitions: `!!! note`, `!!! tip "Key idea"`, `!!! warning`.
 - Diagrams: prefer Mermaid (```` ```mermaid ````) for flows; otherwise put an SVG in `docs/images/` and reference it with a relative path.
 - Sources from the attached slides by Umar Jamil are CC BY-NC 4.0: paraphrase and credit them; do not copy slide images.
+
+## README
+
+`README.md` is the public face of the repository. Write it like the back cover of a book, in a professional tone (not a social-media post), and keep it concise. Sections, in this order:
+
+1. Title, a short description and the link to the live site.
+2. **What the book covers.**
+3. **Who it is for.**
+4. **Chapters** (number, title, what you will learn).
+5. **How it was made** (course notes, Claude, NotebookLM, Claude Code).
+6. **Credits.**
+7. **Build locally.**
+
+No progress log, no status columns, no internal task lists and no one-time setup steps.
 
 ## Progress log
 

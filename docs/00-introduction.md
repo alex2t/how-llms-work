@@ -2,16 +2,16 @@
 
 ## The big picture
 
-This book explains how large language models work, with real arithmetic at every step. Before [Chapter 1](01-transformers.md) opens up the Transformer, this introduction does two things:
+These notes explain how large language models work, with real arithmetic at every step. Before [Chapter 1](01-transformers.md) opens up the Transformer, this introduction does two things:
 
-1. **Foundations.** It explains the small amount of maths and machine learning the rest of the book relies on: vectors, matrices, the dot product, and what a neural network, a loss and an embedding are.
+1. **Foundations.** It explains the small amount of maths and machine learning the rest of the notes rely on: vectors, matrices, the dot product, and what a neural network, a loss and an embedding are.
 2. **History.** It tells the story of how computers learned to model text, from one-hot vectors to Word2Vec to recurrent networks, and why each approach hit a wall that the Transformer removed.
 
 Readers who already know linear algebra and basic machine learning can skip to the history sections, or go straight to [Chapter 1](01-transformers.md).
 
 ## What you need to know first
 
-Everything a language model does is arithmetic on lists and tables of numbers. This section explains those lists and tables, and the few operations the book uses on them, each with a tiny example you can check by hand.
+Everything a language model does is arithmetic on lists and tables of numbers. This section explains those lists and tables, and the few operations the notes use on them, each with a tiny example you can check by hand.
 
 ### Vectors
 
@@ -27,6 +27,28 @@ The **dot product** of two vectors of the same length multiplies them number by 
 | --- | --- | --- |
 | CAT \[0.81, 0.10, −0.52\] · DOG \[0.77, 0.15, −0.48\] | 0.6237 + 0.0150 + 0.2496 | **0.888** |
 | CAT \[0.81, 0.10, −0.52\] · A \[−0.05, 0.08, 0.91\] | −0.0405 + 0.0080 − 0.4732 | **−0.506** |
+
+**How each result is computed.** Pair the numbers by position (1st with 1st, 2nd with 2nd, 3rd with 3rd), multiply each pair, then add the three products.
+
+CAT · DOG:
+
+| Position | CAT | DOG | Multiply | Product |
+| --- | --- | --- | --- | --- |
+| 1st | 0.81 | 0.77 | 0.81 × 0.77 | 0.6237 |
+| 2nd | 0.10 | 0.15 | 0.10 × 0.15 | 0.0150 |
+| 3rd | −0.52 | −0.48 | −0.52 × −0.48 | +0.2496 |
+| **Sum** | | | 0.6237 + 0.0150 + 0.2496 | **0.8883 ≈ 0.888** |
+
+CAT · A:
+
+| Position | CAT | A | Multiply | Product |
+| --- | --- | --- | --- | --- |
+| 1st | 0.81 | −0.05 | 0.81 × −0.05 | −0.0405 |
+| 2nd | 0.10 | 0.08 | 0.10 × 0.08 | +0.0080 |
+| 3rd | −0.52 | 0.91 | −0.52 × 0.91 | −0.4732 |
+| **Sum** | | | −0.0405 + 0.0080 − 0.4732 | **−0.5057 ≈ −0.506** |
+
+**The sign rule decides the result.** Two numbers with the same sign multiply to a positive product; numbers with opposite signs give a negative one. In CAT · DOG, all three positions have matching signs (+ with +, + with +, − with −), so every product is positive and they add up to a large total. In CAT · A, the first and third positions have opposite signs, so two of the products are negative. The third one (−0.4732) is the largest, so the total ends up negative. Positions where both numbers are large count the most; that is why the 1st position dominates CAT · DOG and the 3rd dominates CAT · A.
 
 CAT and DOG, words used in similar ways, have a large positive dot product; CAT and the article A have a negative one. Attention in Chapter 1 is built on exactly this operation: it uses dot products to decide how much each token should look at each other token.
 
@@ -65,11 +87,18 @@ In Chapter 1 the same rule turns a sentence's 6 × 512 matrix into its queries: 
 
 ### The transpose
 
-The **transpose** of a matrix, written with a superscript T, swaps its rows and columns: row 1 becomes column 1, and so on. A 2 × 3 matrix becomes 3 × 2:
+The **transpose** of a matrix, written with a superscript T, swaps its rows and columns: row 1 becomes column 1, and so on. The 2 × 3 matrix A from the example above becomes 3 × 2:
 
 $$
-A^T = \begin{bmatrix} 1 & 4 \\ 2 & 5 \\ 3 & 6 \end{bmatrix}
+A = \begin{bmatrix} 1 & 2 & 3 \\ 4 & 5 & 6 \end{bmatrix} \quad \longrightarrow \quad A^T = \begin{bmatrix} 1 & 4 \\ 2 & 5 \\ 3 & 6 \end{bmatrix}
 $$
+
+| In A | In Aᵀ |
+| --- | --- |
+| Row 1: 1, 2, 3 | Column 1: 1, 2, 3 |
+| Row 2: 4, 5, 6 | Column 2: 4, 5, 6 |
+
+Each number moves from row r, column c to row c, column r. For example, the 6 sits in row 2, column 3 of A, and in row 3, column 2 of Aᵀ.
 
 The attention formula in Chapter 1 uses QKᵀ: transposing K turns its rows (one per token) into columns, so that multiplying Q by Kᵀ computes the dot product of every query with every key in one matrix multiplication.
 
@@ -86,7 +115,63 @@ A **neural network** is a function built from many simple steps, each with adjus
 - Weighted sum: 2 × 0.5 + 3 × (−1) = 1 − 3 = −2. Add the bias: −2 + 1 = −1.
 - ReLU(−1) = 0. The neuron outputs 0.
 
+The same neuron as a picture. The neuron has two inputs, so it has two weights, one per input: the first input (2) goes with the first weight (0.5), the second input (3) with the second weight (−1).
+
+```mermaid
+flowchart LR
+  x1["input 2"] --> m1["2 × 0.5 = 1<br/>(input × its weight 0.5)"]
+  x2["input 3"] --> m2["3 × (−1) = −3<br/>(input × its weight −1)"]
+  b["bias 1<br/>(not multiplied)"] --> S
+  m1 --> S["add everything<br/>1 + (−3) + 1 = −1"]
+  m2 --> S
+  S --> R["ReLU(−1) = 0<br/>(negative, so 0)"] --> O["output 0"]
+```
+
+Reading the picture from left to right:
+
+| Step | What happens | Calculation | Result |
+| --- | --- | --- | --- |
+| 1 | First input times the first weight | 2 × 0.5 | 1 |
+| 2 | Second input times the second weight | 3 × (−1) | −3 |
+| 3 | Add the two products and the bias. The bias is not multiplied by any input: it is a fixed extra number added to the sum | 1 + (−3) + 1 | −1 |
+| 4 | Apply ReLU: a negative value becomes 0 | ReLU(−1) | 0 |
+
 With weights \[0.5, 1\] instead, the sum is 1 + 3 + 1 = 5 and the output is 5. Changing the weights changes what the neuron computes; that is all "learning" will mean.
+
+### Where the weights and the bias come from
+
+Nobody chooses the weights or the bias by hand. The 0.5, −1 and 1 above are made up for the example; in a real network, no person decides whether a weight should be 0.5 or 0.8. Every value is found automatically by **training**, in two phases.
+
+**1. Start with random values.** Before training, every weight is set to a small random number, for example drawn between about −0.1 and 0.1. Biases usually start at 0. The values must be random rather than all equal: if every neuron in a layer started with the same weights, they would all compute the same thing, receive the same corrections, and stay identical forever.
+
+**2. Correct them a little, many times.** Training shows the network an example whose correct answer is known, measures how wrong the output is (the **loss**), and moves every weight and the bias a small step in the direction that reduces that error. The size of each move depends on how much that weight contributed to the error.
+
+**Worked example: one training step.** Take the neuron with weights \[0.5, 1\] and bias 1 (output 5), and suppose the correct answer for inputs \[2, 3\] is **3**. Measure the error as (output − target)², so the loss is (5 − 3)² = 4.
+
+The output is 2 too high. Each value is moved in proportion to how strongly it pushed the output up:
+
+| Value | Multiplied by input | Correction (error signal × input × step size) | New value |
+| --- | --- | --- | --- |
+| Weight 1 | 2 | 4 × 2 × 0.01 = 0.08 | 0.5 − 0.08 = **0.42** |
+| Weight 2 | 3 | 4 × 3 × 0.01 = 0.12 | 1 − 0.12 = **0.88** |
+| Bias | (always 1) | 4 × 1 × 0.01 = 0.04 | 1 − 0.04 = **0.96** |
+
+- The **error signal** 4 is 2 × (5 − 3): it grows with the size of the error, and its sign says "the output is too high, so go down".
+- Weight 2 moves the most because it multiplied the larger input (3): it was most responsible for the output being too high.
+- The bias is treated like a weight whose input is always 1, so it is corrected in exactly the same way.
+- The **step size** 0.01, called the **learning rate**, keeps each change small so training does not overshoot.
+
+New output: 2 × 0.42 + 3 × 0.88 + 0.96 = 0.84 + 2.64 + 0.96 = 4.44. The loss falls from 4 to (4.44 − 3)² = 2.07. Repeating the same step:
+
+| Step | Weights | Bias | Output | Loss |
+| --- | --- | --- | --- | --- |
+| 0 | 0.5, 1 | 1 | 5.00 | 4.00 |
+| 1 | 0.42, 0.88 | 0.96 | 4.44 | 2.07 |
+| 2 | 0.362, 0.794 | 0.931 | 4.04 | 1.08 |
+| 3 | 0.321, 0.731 | 0.911 | 3.75 | 0.56 |
+| 5 | 0.270, 0.654 | 0.885 | 3.39 | 0.15 |
+
+After five steps the output is close to 3, with weights of about 0.27 and 0.65. Those final values were not chosen by anyone: they are simply where the corrections stopped. A real model does exactly this, but for millions or billions of weights at once and over billions of examples; a 7-billion-weight model has 7 billion numbers set this way. [Chapter 2](02-training.md#backpropagation-gradient-descent-and-the-optimiser) explains how the corrections are computed for every weight in a deep network (gradients and backpropagation).
 
 A **layer** is many neurons working side by side on the same inputs, which is a matrix multiplication followed by the activation. A network stacks layers, each feeding the next. The Transformer's feed-forward network ([Chapter 1](01-transformers.md#the-feed-forward-network-in-detail)) is exactly two such layers.
 
@@ -160,7 +245,7 @@ A model can only compute with numbers, so every word must first become a vector.
 
 ### One-hot encoding
 
-**One-hot encoding** gives each word in the vocabulary its own position. A word's vector has a 1 at its position and 0 everywhere else, so the vector is as long as the vocabulary.
+**One-hot encoding** gives each word in the vocabulary its own position. The **vocabulary** is the fixed list of words the model knows, decided before training. Every word's vector has one slot per word in that list, with a 1 in the word's own slot and 0 in all the others. So every vector has exactly as many numbers as there are words in the vocabulary, and all words have vectors of the same length: with a 5-word vocabulary each vector has 5 numbers; with a 50,000-word vocabulary each vector has 50,000 numbers, one 1 and 49,999 zeros.
 
 **Worked example** with a 5-word vocabulary: cat, dog, bank, river, money.
 
@@ -172,19 +257,33 @@ A model can only compute with numbers, so every word must first become a vector.
 | river | \[0, 0, 0, 1, 0\] |
 | money | \[0, 0, 0, 0, 1\] |
 
-Now measure similarity with the dot product from the foundations section:
+**Do these vectors know that cat and dog are similar?** A useful word vector should place words with related meanings close together: cat should be closer to dog (both animals) than to bank. The [dot product](#the-dot-product-a-measure-of-similarity) tests this: a large result means similar, 0 means unrelated. Compute it for cat and dog by lining the two vectors up slot by slot, multiplying each pair and adding:
 
-- cat · dog = 1×0 + 0×1 + 0×0 + 0×0 + 0×0 = **0**
-- cat · bank = **0**
-- The same holds for every pair of different words: the dot product is always 0, and the distance between any two words is always √2 ≈ 1.414.
+| Slot | 1 (cat) | 2 (dog) | 3 (bank) | 4 (river) | 5 (money) | Sum |
+| --- | --- | --- | --- | --- | --- | --- |
+| cat | 1 | 0 | 0 | 0 | 0 | |
+| dog | 0 | 1 | 0 | 0 | 0 | |
+| cat × dog | 1 × 0 = 0 | 0 × 1 = 0 | 0 × 0 = 0 | 0 × 0 = 0 | 0 × 0 = 0 | **0** |
 
-The vectors are **orthogonal** (at right angles to each other): "cat" is exactly as far from "dog" as from "bank". One-hot vectors identify words but say nothing about their meaning. They are also wasteful: with a 50,000-word vocabulary, every word needs 50,000 numbers, all but one of them 0.
+Every product is 0, because cat's 1 sits in slot 1 and dog's 1 sits in slot 2: wherever one vector has its 1, the other has a 0. The same thing happens for cat and bank, and for **every** pair of different words, since no two words share a slot. Only a word with itself scores 1 (cat · cat = 1 × 1 = 1).
+
+| Pair | Dot product | What it says |
+| --- | --- | --- |
+| cat · cat | 1 | Same word |
+| cat · dog | 0 | Unrelated |
+| cat · bank | 0 | Unrelated, exactly like cat and dog |
+
+The **distance** between two vectors (how far apart they are) tells the same story. It is computed by subtracting the vectors slot by slot, squaring each difference, adding, and taking the square root. For cat and dog: cat − dog = \[1, −1, 0, 0, 0\]; squares 1 + 1 + 0 + 0 + 0 = 2; distance √2 ≈ 1.414. For cat and bank: \[1, 0, −1, 0, 0\], again √2 ≈ 1.414. Every pair of different words is exactly 1.414 apart.
+
+So with one-hot vectors, the model sees cat as no closer to dog than to bank or money. The vectors are **orthogonal** (at right angles to each other): "cat" is exactly as far from "dog" as from "bank". One-hot vectors identify words but say nothing about their meaning. They are also wasteful: with a 50,000-word vocabulary, every word needs 50,000 numbers, all but one of them 0.
 
 ### Word2Vec: learning vectors from context
 
 **Word2Vec** (Mikolov and colleagues at Google, 2013) learns a short, dense vector for every word, typically 300 numbers, with the idea that **a word is known by the company it keeps**: words that appear in similar contexts should get similar vectors.
 
-It learns them with a **proxy task**: a simple prediction task nobody actually needs solved, set up only because solving it forces useful vectors to form. Take the sentence "the cat sat on the mat" and a **context window** of 2 words on each side of the word "sat":
+It learns them with a **proxy task**, also called a practice task. The model is trained to guess missing words from their neighbours. Nobody needs these guesses: they are never used for anything. The task is there for one reason: to get good at it, the model must give similar vectors to words that appear in similar places, and those vectors are what we want. It is like practising scales on a piano: nobody listens to the scales, but they build the skill.
+
+Here is the guessing task on the sentence "the cat sat on the mat". The **context window** is the set of neighbours the model looks at; here it is 2 words on each side of the word "sat". Word2Vec comes in two versions, which guess in opposite directions:
 
 | Proxy task | Input | Prediction target |
 | --- | --- | --- |
@@ -193,7 +292,37 @@ It learns them with a **proxy task**: a simple prediction task nobody actually n
 
 Training slides this window over billions of words of text and adjusts the vectors to make these predictions better, just as training adjusts weights to lower a loss ([Chapter 2](02-training.md#what-training-is)). Because "cat" and "dog" appear among the same neighbours (the, sat, fed, pet), they end up with similar vectors. The prediction task is then thrown away; the vectors are the product.
 
-**The network behind it, and negative sampling.** Word2Vec is a tiny neural network with one hidden layer: the input is a one-hot vector (as long as the vocabulary), the hidden layer has d numbers (for example 300), and the output again has one score per vocabulary word. Multiplying a one-hot vector by the first weight matrix simply picks out one row of it, and **that row is the word's vector**: the first layer is the embedding table. Predicting a word with a softmax over the whole vocabulary would mean computing 50,000 scores for every training example, so Word2Vec uses a shortcut called **negative sampling**: it turns each prediction into a few yes/no questions. "Is *sat* a real neighbour of *cat*?" should be answered yes; for a handful of randomly drawn words ("negatives", typically 2 to 20), the answer should be no. The probability of "yes" is σ(dot product of the two words' vectors), where σ squeezes any number into 0 to 1.
+**The network behind it.** Word2Vec is a very small [neural network](#what-a-neural-network-is) with three parts:
+
+| Part | What it holds | Size (50,000-word vocabulary) |
+| --- | --- | --- |
+| Input | The word as a one-hot vector | 50,000 numbers |
+| Hidden layer | The word's vector | 300 numbers |
+| Output | One score per vocabulary word: how likely each word is to be a neighbour | 50,000 numbers |
+
+The first weight matrix, between the input and the hidden layer, has one row per vocabulary word and 300 columns. Multiplying a one-hot vector by it simply **picks out one row**, because every 0 in the one-hot vector cancels its row and the single 1 keeps its row.
+
+**Example** with the 5-word vocabulary from above and 3 numbers per word instead of 300 (made-up weights). The one-hot vector for *dog* is \[0, 1, 0, 0, 0\]:
+
+| Row of the weight matrix | Weights | Multiplied by dog's one-hot number | Result |
+| --- | --- | --- | --- |
+| 1 (cat) | \[0.2, 0.8, −0.1\] | × 0 | \[0, 0, 0\] |
+| 2 (dog) | \[0.3, 0.7, 0.0\] | × 1 | \[0.3, 0.7, 0.0\] |
+| 3 (bank) | \[−0.6, 0.1, 0.9\] | × 0 | \[0, 0, 0\] |
+| 4 (river) | \[−0.4, 0.2, 0.5\] | × 0 | \[0, 0, 0\] |
+| 5 (money) | \[−0.5, −0.3, 0.8\] | × 0 | \[0, 0, 0\] |
+| **Sum** | | | **\[0.3, 0.7, 0.0\]**, row 2 |
+
+So the hidden layer for *dog* is just row 2. **That row is dog's vector**, and the whole first weight matrix is the table of word vectors (the **embedding table**). When training adjusts these weights, it is adjusting the word vectors.
+
+**Negative sampling: a cheaper way to train.** The output layer is expensive. To check one guess, the network would compute a score for every word in the vocabulary, 50,000 scores, and turn them into probabilities with a softmax. Doing this for billions of training examples is too slow.
+
+**Negative sampling** replaces that one big question ("which of the 50,000 words is the neighbour?") with a few yes/no questions:
+
+1. Take a real pair from the text, for example *cat* and its neighbour *sat*. The correct answer to "Is *sat* a neighbour of *cat*?" is **yes**.
+2. Draw a few random words from the vocabulary, for example *bank* and *river*. These are the **negatives**: random words are almost never real neighbours, so the correct answer for each is **no**. Word2Vec typically uses 2 to 20 negatives.
+3. For each pair, the model's answer is a probability of "yes", computed from the dot product of the two words' vectors and passed through the **sigmoid** function σ(x) = 1 / (1 + e⁻ˣ). The sigmoid turns any number into a value between 0 and 1: a large positive dot product gives a probability close to 1 (yes), a large negative one gives a probability close to 0 (no).
+4. The loss measures how wrong each answer is: −ln(probability) for a "yes" pair, −ln(1 − probability) for a "no" pair. Each term is near 0 when the answer is right and grows when it is wrong.
 
 **Worked example** (made-up dot products), centre word *cat*, one true neighbour and two negatives:
 

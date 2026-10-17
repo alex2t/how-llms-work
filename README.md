@@ -1,22 +1,59 @@
 # How LLMs Work
 
-A plain-English book on how large language models work, with worked numeric examples in every chapter. Built with [MkDocs](https://www.mkdocs.org/) and [Material for MkDocs](https://squidfunk.github.io/mkdocs-material/), published on GitHub Pages:
+Plain-English notes on how large language models work, from the way a model reads text to the way it is evaluated in production. Every idea is explained in plain words and backed by a small worked example with real numbers that you can check by hand.
 
-**📖 Read it: https://alex2t.github.io/how-llms-work/**
+**Read it online: https://alex2t.github.io/how-llms-work/**
+
+## What the notes cover
+
+The notes follow one model's life from start to finish:
+
+- **Foundations:** the vectors, dot products and matrices that everything is built on, and how text modelling evolved from one-hot vectors and recurrent networks to the Transformer.
+- **The Transformer:** tokenization, embeddings, positional encoding, where queries, keys and values come from, and how attention works.
+- **Training:** pre-training data, the loss, backpropagation, fine-tuning, preference training (RLHF and DPO), LoRA and distillation.
+- **Inference:** how text is generated token by token, the KV cache, and the decoding rules (greedy, beam search, temperature, top-k, top-p).
+- **Efficiency:** number formats, quantization, Mixture of Experts, and what has changed in Transformers since 2017.
+- **Evaluation:** perplexity, classification metrics, benchmarks, LLM-as-judge, and how model metrics connect to business outcomes.
+- **Prompting and reasoning:** in-context learning, chain-of-thought, and how reasoning models are trained.
+
+A few running examples, such as the sentence `YOUR CAT IS A LOVELY CAT` and a fraud-detection use case, are reused across chapters, so the reader never meets unexplained numbers. Every worked calculation has been checked with a script.
+
+## Who it is for
+
+Readers with a technical background, for example a computing degree or a career in enterprise software, who want to understand what happens inside ChatGPT, Claude or Gemini. No machine-learning or advanced maths background is needed: the Introduction covers the foundations, and every term is defined the first time it appears.
 
 ## Chapters
 
-| # | Chapter | Status |
+| # | Chapter | What you will learn |
 | --- | --- | --- |
-| 0 | Introduction: foundations and history | Written (draft) |
-| 1 | How Transformers Work: BPE, Attention and Q/K/V | Written |
-| 2 | Training: how the model learns | Written (draft) |
-| 3 | Inference and decoding | Written (draft) |
-| 4 | Quantization, efficiency and the modern Transformer | Written (draft) |
-| 5 | Evaluation: how we measure a model | Written (draft) |
-| 6 | Prompting, reasoning and agents | Written (draft) |
+| 0 | Introduction: foundations and history | The maths you need, and the path from one-hot vectors and RNNs to Transformers |
+| 1 | How Transformers Work | BPE tokenization, embeddings, positional encoding, Q/K/V and attention |
+| 2 | Training: how the model learns | Data, loss, backpropagation, fine-tuning, RLHF, DPO, LoRA and distillation |
+| 3 | Inference and decoding | The generation loop, KV cache, decoding rules and context limits |
+| 4 | Quantization, efficiency and the modern Transformer | Number formats, quantization, Mixture of Experts and post-2017 changes |
+| 5 | Evaluation: how we measure a model | Perplexity, precision, recall, F1, AUC, benchmarks and business metrics |
+| 6 | Prompting, reasoning and agents | In-context learning, chain-of-thought, self-consistency and reasoning models |
 
-The detailed task list is in [`plan.md`](plan.md). Proposed changes to written chapters, including topics found missing when comparing the book with Stanford's CME295 course (one lecture at a time), are in [`fix.md`](fix.md).
+The notes are a work in progress: a section on agents and retrieval will be added to Chapter 6.
+
+## How it was made
+
+The notes grew out of several AI and LLM engineering courses. I took excerpts from the courses and wrote the text with AI assistance, each tool used for a different job:
+
+- **Claude** explained the excerpts I gave it, or went further into a topic when I asked.
+- **NotebookLM (Google Gemini)** summarised lecture videos, used to check which topics were missing.
+- **Claude Code** wrote and edited the pages. I read every chapter and pointed out the passages that were unclear or badly phrased, and Claude Code rewrote them until they were easy to follow. It also checked the arithmetic and built the site.
+
+## Credits
+
+- Stanford University, [CME295: Transformers & Large Language Models](https://cme295.stanford.edu/syllabus/), by Afshine Amidi and Shervine Amidi (lectures on YouTube, slides on the course site). Used to check which topics the notes should cover; explanations are paraphrased, and no slide content is copied.
+- Google NotebookLM (Gemini) summaries of the CME295 lectures, used as a topic checklist. They are kept locally and not published.
+- Vaswani et al., [Attention Is All You Need](https://arxiv.org/abs/1706.03762) (2017).
+- Umar Jamil, [Transformer from scratch](https://github.com/hkproj/transformer-from-scratch-notes) slides (CC BY-NC 4.0), used as a reference for explanations.
+- Written with the help of [Claude](https://claude.ai) and [Claude Code](https://claude.com/claude-code) (Anthropic).
+- Built with [MkDocs](https://www.mkdocs.org/) and [Material for MkDocs](https://squidfunk.github.io/mkdocs-material/).
+
+Each chapter ends with its own list of sources.
 
 ## Build locally
 
@@ -26,83 +63,4 @@ mkdocs serve          # preview at http://127.0.0.1:8000
 mkdocs build --strict # check before committing
 ```
 
-Every push to `main` publishes the site through GitHub Actions (`.github/workflows/deploy.yml`). One-time setup: repository Settings → Pages → Source = **GitHub Actions**.
-
-## Progress
-
-One line per implemented section, newest at the bottom.
-
-- 2026-10-17 — Setup — Repository scaffold: MkDocs Material site with a chapter navigation bar, GitHub Pages workflow, home page and chapter placeholders.
-- 2026-10-17 — Setup — GitHub Pages: site published; workflow actions updated to Node 24 versions.
-- 2026-10-17 — Chapter 1 — Import cleanup: formulas now render as math, date line removed, encoder–decoder diagram added.
-- 2026-10-17 — Chapter 2 — Formulas: 8 formulas now render as math.
-- 2026-10-17 — Chapter 2 — Status and number check: chapter recorded as written, numbers checked, proposed fixes listed in fix.md.
-- 2026-10-17 — Chapter 2 — Fixes: three numbers corrected, chapter references turned into links, home page lists all running examples.
-- 2026-10-17 — Chapter 3 — Inference vs training: what is switched off at inference, with a memory example.
-- 2026-10-17 — Chapter 3 — Generation step by step: the translation generated one token per pass, for encoder–decoder and chat models.
-- 2026-10-17 — Chapter 3 — Prefill vs decode: why the first token is slower, with a 7B-model timing example.
-- 2026-10-17 — Chapter 3 — The KV cache: what it stores, why it is safe, and how much memory it needs.
-- 2026-10-17 — Chapter 3 — Greedy decoding and beam search: a beam of 2 worked through on the CAT/DOG example.
-- 2026-10-17 — Chapter 3 — Sampling and temperature: the CAT/DOG logits at T = 0.5, 1 and 2.
-- 2026-10-17 — Chapter 3 — Top-k sampling: keep the k most likely tokens and renormalise, with its main weakness.
-- 2026-10-17 — Chapter 3 — Top-p sampling: the nucleus grows and shrinks with the model's confidence.
-- 2026-10-17 — Chapter 3 — How the rules combine: temperature, top-k and top-p applied in sequence, plus typical settings.
-- 2026-10-17 — Chapter 3 — Stopping: end token, max tokens, stop sequences and the context window.
-- 2026-10-17 — Chapter 3 — Cheat sheet and sources: chapter complete.
-- 2026-10-17 — Chapter 1 — Training and generation: shortened to a summary linking to Chapters 2 and 3.
-- 2026-10-17 — Chapter 4 — Why size matters: memory and decode speed of a 7B model in each number format.
-- 2026-10-17 — Chapter 4 — Number formats: range and precision of FP32, FP16, BF16, INT8 and INT4.
-- 2026-10-17 — Chapter 4 — How quantization works: scale, zero point, rounding error, outliers and group-wise scales.
-- 2026-10-17 — Chapter 4 — Kinds of quantization: when, what and how, including GPTQ, AWQ and GGUF.
-- 2026-10-17 — Chapter 4 — Quality vs speed: the trade-off by bit count and how to check a quantized model.
-- 2026-10-17 — Chapter 4 — What changed since 2017: the modern Transformer compared with the original, with a worked example for each change.
-- 2026-10-17 — Chapter 4 — Cheat sheet and sources: chapter complete.
-- 2026-10-17 — Chapter 3 — Links to Chapter 4 now open the exact section.
-- 2026-10-17 — Chapter 5 — Three levels of evaluation: training loss, model metrics and business outcomes, on the fraud example.
-- 2026-10-17 — Chapter 5 — Loss vs metric: why training uses cross-entropy but people judge with metrics.
-- 2026-10-17 — Chapter 5 — Perplexity: what it means and why it needs the same tokenizer.
-- 2026-10-17 — Chapter 5 — MSE: a regression loss, and why it does not fit next-token prediction.
-- 2026-10-17 — Chapter 5 — Classification metrics: confusion matrix, accuracy, precision, recall, F1, ROC and AUC on the fraud sample.
-- 2026-10-17 — Chapter 5 — Evaluating generative LLMs: benchmarks, human evaluation and LLM-as-judge.
-- 2026-10-17 — Chapter 5 — Business outcomes: KPIs, cost and ROI, customer satisfaction, baselines and the threshold trade-off.
-- 2026-10-17 — Chapter 5 — Choosing metrics for a project: an 8-step checklist, including drift monitoring.
-- 2026-10-17 — Chapter 5 — Cheat sheet and sources: chapter complete.
-- 2026-10-17 — Chapters 2–4 — Links to Chapter 5 now open the exact section.
-- 2026-10-17 — Introduction — What you need to know first: vectors, dot product, matrix multiplication, transpose, neurons, loss and embeddings.
-- 2026-10-17 — Introduction — Historical evolution: from one model per task to one model for all tasks.
-- 2026-10-17 — Introduction — Vector embeddings: one-hot vectors, Word2Vec and their limits.
-- 2026-10-17 — Introduction — RNNs and LSTMs: how they read text in order, and the three problems attention removed.
-- 2026-10-17 — Introduction — Cheat sheet and sources: chapter complete.
-- 2026-10-17 — CME295 review — Lecture 1: compared with the book; 5 missing topics proposed in fix.md.
-- 2026-10-17 — CME295 review — Lecture 2: 7 missing topics proposed in fix.md, including Mixture of Experts and a new prompting and reasoning chapter.
-- 2026-10-17 — CME295 review — Lecture 3: 9 missing topics proposed in fix.md, mostly for Chapter 2, plus reasoning models for Chapter 6.
-- 2026-10-17 — Chapter 2 — Where pre-training data comes from, data mixtures and model collapse (CME295 L3-1, L3-2).
-- 2026-10-17 — Chapter 2 — Packing: the alternative to padding, with the document mask (CME295 L3-4).
-- 2026-10-17 — Chapter 2 — Masked language modelling: how encoder-only models such as BERT are trained (CME295 L2-4).
-- 2026-10-17 — Chapter 2 — Preference training in detail: reward model, KL penalty, DPO loss and their costs (CME295 L3-6).
-- 2026-10-17 — Chapter 2 — Cheap fine-tuning with LoRA and QLoRA; instruction tuning named (CME295 L3-5).
-- 2026-10-17 — Chapter 2 — Distillation: a small model learns from a large one; linked from Chapter 4 (CME295 L3-8).
-- 2026-10-17 — Chapter 4 — Stretching the context of a trained model with RoPE scaling (CME295 L2-6).
-- 2026-10-17 — Chapter 4 — Mixture of Experts: more weights, same compute (CME295 L2-1).
-- 2026-10-17 — Chapter 3 — What a chat looks like as tokens: the Llama 3 chat template (CME295 L1-3).
-- 2026-10-17 — Chapter 3 — Constrained decoding: forcing a valid format, on the fraud label (CME295 L2-3).
-- 2026-10-17 — Chapter 3 — How big a context window is, and why a bigger window is not a perfect memory (CME295 L2-7, L2-5).
-- 2026-10-17 — Chapter 5 — Bits per byte: comparing models with different tokenizers (CME295 L3-3).
-- 2026-10-17 — Chapter 5 — Benchmark families, pass@k and Elo ratings (CME295 L3-9, L2-5).
-- 2026-10-17 — Chapter 1 — Word, character, subword or byte tokens compared (CME295 L1-2).
-- 2026-10-17 — Chapter 1 — WordPiece, Unigram and SentencePiece compared with BPE (CME295 L1-4).
-- 2026-10-17 — Chapter 1 — Special tokens in one table, linked to where each is explained (CME295 L1-3).
-- 2026-10-17 — Introduction — How Word2Vec is trained: its network and negative sampling (CME295 L1-5).
-- 2026-10-17 — Introduction — The context bottleneck: why RNN translation needed attention (CME295 L1-1).
-- 2026-10-17 — Chapter 6 — New chapter started: in-context learning with zero-shot and few-shot fraud prompts (CME295 L2-2).
-- 2026-10-17 — Chapter 6 — Chain-of-thought: asking for the steps before the answer (CME295 L2-2).
-- 2026-10-17 — Chapter 6 — Self-consistency: sampling several chains and taking the majority answer (CME295 L2-2).
-- 2026-10-17 — Chapter 6 — Reasoning models: thinking tokens, test-time compute, verifiable rewards and GRPO (CME295 L3-7).
-- 2026-10-17 — Chapter 6 — Cheat sheet, sources and links from Chapters 1, 2, 3 and 5: chapter written (draft).
-
-## Credits
-
-- Vaswani et al., [Attention Is All You Need](https://arxiv.org/abs/1706.03762) (2017).
-- Umar Jamil, [Transformer from scratch](https://github.com/hkproj/transformer-from-scratch-notes) slides (CC BY-NC 4.0), used as a reference for explanations.
-- Stanford University, [CME295: Transformers & Large Language Models](https://cme295.stanford.edu/syllabus/), by Afshine Amidi and Shervine Amidi (lectures on YouTube, slides on the course site). Used to check which topics the book should cover; explanations are paraphrased, and no slide content is copied.
-- Google Gemini notebook summaries of the CME295 lectures, used as a topic checklist for that review. They are kept locally and not published.
+Every push to `main` publishes the site to GitHub Pages through GitHub Actions.

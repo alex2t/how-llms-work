@@ -1,5 +1,5 @@
 site_name: How LLMs Work
-site_description: A plain-English book on how large language models work, with worked numeric examples.
+site_description: Plain-English notes on how large language models work, with worked numeric examples.
 site_author: Alexandre Dutier
 site_url: https://alex2t.github.io/how-llms-work/
 repo_url: https://github.com/alex2t/how-llms-work
