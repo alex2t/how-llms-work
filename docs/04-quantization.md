@@ -274,3 +274,112 @@ Do not rely on the label: measure the quantized model against the original on th
 1. **Perplexity** on a sample of text ([Chapter 2](02-training.md#perplexity-the-same-number-in-friendlier-units)): a small rise means a small loss of quality. Both models must use the same tokenizer, which is always true here, since quantization never changes the tokenizer.
 2. **Task results** on examples from the real use case, such as the fraud labels of [Chapter 5](05-evaluation.md). A model that is "only slightly worse" on average can still be worse exactly where it matters.
 3. **Speed and memory** on the real hardware: the integer formats only pay off if the software and GPU handle them efficiently.
+
+## What changed since 2017
+
+The Transformer explained in [Chapter 1](01-transformers.md) is the 2017 original. Today's models keep its core, attention plus a feed-forward network in a stack of layers, but almost every part has since been replaced by a better-working variant. Several of these changes, like quantization, exist to save memory or make training more stable. This section lists them, so a reader of a modern model card can map each term back to the Chapter 1 section it modifies.
+
+### Overview
+
+| Change | What it is | Why it was adopted | Replaces, in Chapter 1 |
+| --- | --- | --- | --- |
+| Decoder-only | Drop the encoder and cross-attention; one stack reads the prompt and writes the answer | Simpler, and one model handles every task as "continue the text" | [Three ways the block is used today](01-transformers.md#three-ways-the-block-is-used-today) |
+| Pre-norm | Normalise **before** each sublayer instead of after the addition | Much more stable training of deep stacks | [The pieces inside each layer](01-transformers.md#the-pieces-inside-each-layer) |
+| RMSNorm | Normalisation without subtracting the mean | Cheaper, works as well | [Layer normalisation in detail](01-transformers.md#layer-normalisation-in-detail) |
+| RoPE | Position added by rotating Q and K, not by adding a vector to the embedding | Encodes relative distance; extends better to long texts | [Positional encoding](01-transformers.md#positional-encoding) |
+| Grouped-query attention (GQA) | Several query heads share one key/value head | Shrinks the KV cache | [Multi-head attention](01-transformers.md#multi-head-attention) |
+| SwiGLU | A gated feed-forward network with a smooth activation | Better quality for the same compute | [The feed-forward network in detail](01-transformers.md#the-feed-forward-network-in-detail) |
+| Larger context and vocabulary | Thousands to millions of tokens of context; vocabularies over 100,000 tokens | Longer documents and conversations; fewer tokens per text | [Token embeddings](01-transformers.md#token-embeddings) |
+
+### The base model and a modern model side by side
+
+Llama 3 8B, an open model released in 2024, is a typical modern design:
+
+| Setting | 2017 base model | Llama 3 8B |
+| --- | --- | --- |
+| Weights | 65 million | 8 billion |
+| Architecture | Encoder–decoder | Decoder-only |
+| Layers | 6 encoder + 6 decoder | 32 |
+| d\_model | 512 | 4,096 |
+| Attention heads | 8 | 32 query heads sharing 8 key/value heads (GQA) |
+| Feed-forward size d\_ff | 2,048, ReLU | 14,336, SwiGLU |
+| Normalisation | LayerNorm after each sublayer (post-norm) | RMSNorm before each sublayer (pre-norm) |
+| Position | Sinusoidal vectors added to the embeddings | RoPE |
+| Vocabulary | About 37,000 BPE tokens | 128,256 tokens |
+| Context | Single sentences | 8,192 tokens |
+
+### Decoder-only
+
+Chapter 1 described both stacks, and [Chapter 3](03-inference.md#decoder-only-how-chat-models-generate) showed how a decoder-only model puts the prompt and the answer in one sequence. Almost every chat model is decoder-only: translation, summarising and answering questions all become "continue this text", so one architecture and one training objective cover everything.
+
+### Pre-norm
+
+The 2017 model normalises after adding the sublayer's output to its input (**post-norm**). Modern models normalise the sublayer's input instead (**pre-norm**):
+
+$$
+\text{post-norm (2017):}\quad x \leftarrow \text{Norm}\big(x + \text{Sublayer}(x)\big) \qquad\qquad \text{pre-norm:}\quad x \leftarrow x + \text{Sublayer}\big(\text{Norm}(x)\big)
+$$
+
+In pre-norm, the residual path x passes from the first layer to the last with nothing but additions on it. Gradients ([Chapter 2](02-training.md#backpropagation-computing-every-gradient-at-once)) flow back along it easily, so stacks of dozens of layers train stably and depend less on a careful warm-up schedule.
+
+### RMSNorm
+
+**RMSNorm** (root-mean-square normalisation) keeps layer normalisation's goal, a stable scale for each token's vector, but drops the mean subtraction and the shift β. It divides each number by the vector's **root mean square** (the square root of the average of the squared numbers), then multiplies by the learned γ.
+
+**Worked example** with the same vector as Chapter 1, x = \[2, 4, 6, 8\]:
+
+| Step | LayerNorm (Chapter 1) | RMSNorm |
+| --- | --- | --- |
+| Centre | Subtract the mean 5 | No centring |
+| Scale | Divide by the standard deviation 2.236 | Divide by RMS = √((4 + 16 + 36 + 64) ÷ 4) = √30 = 5.477 |
+| Result (γ = 1) | \[−1.342, −0.447, 0.447, 1.342\] | \[0.365, 0.730, 1.095, 1.461\] |
+
+Both results have a controlled size, which is what matters for stable training. RMSNorm needs fewer calculations and has no β to learn, and in practice it works as well.
+
+### RoPE: rotary position embedding
+
+The 2017 model adds a position vector to each token's embedding once, at the bottom of the stack. **RoPE** instead encodes position inside every attention layer, by **rotating** the query and key vectors. Each pair of numbers in q and k is treated as a point in a plane and rotated by an angle equal to the token's position times a fixed speed, with a different speed for each pair (as the sinusoidal encoding uses a different frequency for each dimension).
+
+The useful property is that the attention score between two tokens then depends only on **how far apart** they are, not on where they sit in the text.
+
+**Worked example** with one pair of numbers, q = k = (1, 0), and a speed of 0.1 radian per position (made-up values):
+
+| Query position | Key position | Rotation angles | Score q · k = cos(angle difference) |
+| --- | --- | --- | --- |
+| 2 | 5 | 0.2 and 0.5 | cos(0.3) = 0.955 |
+| 12 | 15 | 1.2 and 1.5 | cos(0.3) = 0.955 |
+
+Both pairs are 3 positions apart, so they get the same score, wherever they are in the text. Because nothing is added to the embeddings, the [table in Chapter 1](01-transformers.md#what-is-learned-and-what-changes-after-training) lists RoPE as having no learned weights, like the sinusoidal encoding.
+
+### Grouped-query attention (GQA)
+
+In the original multi-head attention, each of the 8 heads has its own W\_Q, W\_K and W\_V, so every head stores its own keys and values in the KV cache. **Grouped-query attention** keeps a separate query for each head but lets a **group** of query heads share one key head and one value head. (The extreme case, all query heads sharing a single key/value head, is called multi-query attention.)
+
+**Worked example: the KV cache of Llama 3 8B** (32 layers, head size 128, 16-bit numbers), using the formula from [Chapter 3](03-inference.md#how-much-memory-the-cache-needs) with the key/value heads counted explicitly:
+
+| Attention type | Key/value heads per layer | Cache per token: 2 × 32 × heads × 128 × 2 bytes | 32 users × 4,096 tokens |
+| --- | --- | --- | --- |
+| Multi-head (one per query head) | 32 | 524,288 bytes ≈ 0.52 MB | ≈ 68.7 GB |
+| GQA (as in Llama 3 8B) | 8 | 131,072 bytes ≈ 0.13 MB | ≈ 17.2 GB |
+
+Sharing each key/value head among 4 query heads makes the cache 4 times smaller, with little loss of quality. Combined with an 8-bit KV cache, it would shrink by another half.
+
+### SwiGLU feed-forward network
+
+The 2017 feed-forward network expands each token's vector, applies ReLU, and shrinks it back. The **SwiGLU** version, used in most modern models, has **three** weight matrices instead of two:
+
+$$
+\text{FFN}(x) = \big(\text{Swish}(x W_1) \odot x W_3\big)\, W_2 \qquad \text{Swish}(a) = a \cdot \frac{1}{1 + e^{-a}}
+$$
+
+- **x W₁** and **x W₃** are two separate expansions of the token's vector to d\_ff numbers.
+- **Swish** is a smooth activation: like ReLU it keeps large positive values and suppresses negative ones, but without a sharp corner at 0. For example Swish(2) = 1.762 (ReLU gives 2) and Swish(−1) = −0.269 (ReLU gives 0).
+- **⊙** multiplies two vectors number by number. One expansion acts as a **gate**: where Swish(x W₁) is near 0, that number of x W₃ is switched off.
+- **W₂** shrinks the result back to d\_model numbers.
+
+Because of the third matrix, models usually choose a smaller expansion to keep the weight count similar: Llama 3 8B uses d\_ff = 14,336, which is 3.5 × d\_model, instead of the 4 × d\_model of the 2017 model.
+
+### Larger context and vocabulary
+
+- **Context.** The 2017 model translated single sentences. Modern models are trained on long documents, with context windows of 8,192 tokens (Llama 3 8B) and, in later models, 128,000 tokens or more. Long contexts are what make the KV cache so large ([Chapter 3](03-inference.md#the-context-window-a-hard-limit)), which is why GQA and KV-cache quantization matter.
+- **Vocabulary.** A larger vocabulary means common words and code fragments become single tokens, so the same text needs fewer tokens and generates faster. The cost is a larger embedding matrix E: Llama 3 8B's has 128,256 × 4,096 = 525,336,576 weights, about 6.5% of the whole model, compared with about 37,000 × 512 ≈ 19 million in the 2017 model.

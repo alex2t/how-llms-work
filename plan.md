@@ -76,13 +76,13 @@ Goal: give the reader the background needed before Chapter 1, and the story of w
 - [x] How quantization works: scale and zero-point; worked example rounding a few weights to INT8 and back; the rounding error.
 - [x] Kinds of quantization: post-training vs quantization-aware; weights-only vs weights + activations; KV-cache quantization; GPTQ, AWQ, GGUF at a high level.
 - [x] Quality vs speed trade-offs; when quality drops noticeably.
-- [ ] "What changed since 2017" box (table: what it is, why adopted, which Chapter 1 section it modifies):
-  - [ ] decoder-only instead of encoder–decoder
-  - [ ] pre-norm instead of post-norm; RMSNorm instead of LayerNorm
-  - [ ] RoPE instead of sinusoidal positional encoding
-  - [ ] grouped-query attention (GQA) to shrink the KV cache
-  - [ ] SwiGLU instead of ReLU in the feed-forward network
-  - [ ] larger context windows and vocabularies
+- [x] "What changed since 2017" box (table: what it is, why adopted, which Chapter 1 section it modifies):
+  - [x] decoder-only instead of encoder–decoder
+  - [x] pre-norm instead of post-norm; RMSNorm instead of LayerNorm
+  - [x] RoPE instead of sinusoidal positional encoding
+  - [x] grouped-query attention (GQA) to shrink the KV cache
+  - [x] SwiGLU instead of ReLU in the feed-forward network
+  - [x] larger context windows and vocabularies
 - [ ] Cheat sheet + Sources.
 
 ## Phase 5 — Chapter 5: Evaluation (`docs/05-evaluation.md`)
