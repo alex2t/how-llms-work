@@ -11,11 +11,20 @@ A language model turns text into numbers, mixes those numbers with attention, an
 5. **Predict.** The final vector is scored against every token in the vocabulary. Softmax turns the scores into probabilities.
 6. **Generate.** Pick a token, append it to the input, and repeat.
 
+```mermaid
+flowchart LR
+  T["1. Text<br/>'YOUR CAT IS A LOVELY'"] --> ID["2. Token IDs<br/>[105, 6587, 5475, 3578, 65]"]
+  ID --> X["3. Embeddings + Position<br/>Matrix X (5 × 512)"]
+  X --> B["4. Transformer Blocks (×N)<br/>Attention + Feed-forward"]
+  B --> P["5. Linear + Softmax<br/>CAT: 0.772, DOG: 0.211, ..."]
+  P --> G["6. Pick & Append<br/>'YOUR CAT IS A LOVELY CAT'"]
+```
+
 The rest of this document walks through each step, with most detail on attention and where Q, K and V come from.
 
 ## BPE tokenizer: from text to token IDs
 
-Byte Pair Encoding (BPE) builds a vocabulary by repeatedly merging the most frequent pair of adjacent symbols, starting from single characters. Frequent words end up as one token; rare words split into known pieces.
+Before a neural network can read a sentence, it must cut the raw text into discrete pieces called **tokens** and map each piece to an integer ID. Byte Pair Encoding (BPE) builds a vocabulary by repeatedly merging the most frequent pair of adjacent symbols, starting from single characters. Frequent words end up as one token; rare words split into known pieces.
 
 ### Word, character, subword or byte?
 
@@ -31,6 +40,15 @@ A word missing from a word vocabulary is called **out-of-vocabulary (OOV)**. A w
 | Byte | Fixed at 256 | Long | No: any text is a sequence of bytes | 12 bytes, the same as characters for plain English letters |
 
 **Why bytes help.** Computers store text as **bytes** (numbers from 0 to 255) using the UTF-8 encoding. A plain English letter takes 1 byte, but other characters take more: `é` in `café` takes 2 bytes (so the 4-character word is 5 bytes), and the emoji 😀 takes 4. A character vocabulary would need an entry for every character of every language, more than 150,000; a byte vocabulary never needs more than 256. **Byte-level BPE** starts from those 256 bytes and then learns merges exactly as below, so common words still become single tokens while any rare symbol can always fall back to its bytes. This is why modern models never produce `[UNK]`.
+
+!!! note "Quick refresher: Characters vs UTF-8 bytes"
+    In computer memory, every file or string is stored as a stream of **bytes**, where 1 byte is 8 bits (an integer from 0 to 255). The universal standard for text, **UTF-8**, uses a variable number of bytes per character:
+
+    - Basic English letters, digits and punctuation (ASCII) use **1 byte** each (values 0 to 127).
+    - Most European accented letters (such as `é`), Greek and Cyrillic letters use **2 bytes**.
+    - Chinese, Japanese and Korean characters use **3 bytes**, and emoji (such as 😀) use **4 bytes**.
+
+    Because every UTF-8 character is built from bytes in the range 0 to 255, starting BPE from those 256 single-byte tokens guarantees that any string on earth can be tokenized without ever failing on an unfamiliar character.
 
 ### Training: learning the merges
 
@@ -51,7 +69,16 @@ A word missing from a word vocabulary is called **out-of-vocabulary (OOV)**. A w
 | 4 | `l` + `o` | 7 | low 5 + lower 2 | `lo` |
 | 5 | `lo` + `w` | 7 | low 5 + lower 2 | `low` |
 
-After five merges, `newest` is `n e w est</w>` and `low` is a single token. The word `lowest` never appeared in the corpus, yet it encodes cleanly as `low` · `est</w>`: two tokens built from patterns the tokenizer did learn.
+How the four corpus words look before step 1 and after step 5:
+
+| Word (count) | Before merges (single characters) | After 5 merges |
+| --- | --- | --- |
+| `low` (×5) | `l` `o` `w` `</w>` | `low` `</w>` |
+| `lower` (×2) | `l` `o` `w` `e` `r` `</w>` | `low` `e` `r` `</w>` |
+| `newest` (×6) | `n` `e` `w` `e` `s` `t` `</w>` | `n` `e` `w` `est</w>` |
+| `widest` (×3) | `w` `i` `d` `e` `s` `t` `</w>` | `w` `i` `d` `est</w>` |
+
+After five merges, `newest` is `n e w est</w>` and `low` is a single token (followed by `</w>`). The word `lowest` never appeared in the corpus, yet it encodes cleanly as `low` · `est</w>`: two tokens built from patterns the tokenizer did learn.
 
 ### Encoding new text
 
@@ -87,7 +114,7 @@ Result: 2 tokens, `low` and `est</w>`. With illustrative IDs, that becomes \[103
 
 **Other subword algorithms.** BPE is the most common way to build a subword vocabulary, but two others are widely used:
 
-- **WordPiece** also merges pairs, but chooses the pair with the highest score = frequency of the pair ÷ (frequency of the first part × frequency of the second part), so it favours parts that rarely appear apart. On the corpus above, BPE's first merge is `e` + `s` (9 times); WordPiece's is `i` + `d`, which occurs only 3 times but never separately: 3 ÷ (3 × 3) = 0.333, against 9 ÷ (17 × 9) = 0.059 for `e` + `s`. WordPiece marks a piece that continues a word with `##`, for example `play` `##ing`.
+- **WordPiece** also merges pairs, but chooses the pair with the highest score = frequency of the pair ÷ (frequency of the first part × frequency of the second part), so it favours parts that rarely appear apart. On the corpus above, BPE's first merge is `e` + `s` (9 times); WordPiece's is `i` + `d`, which occurs only 3 times (in `widest` ×3) but never separately: 3 ÷ (3 × 3) = 0.333, against 9 ÷ (17 × 9) = 0.059 for `e` + `s` (since `e` appears 17 times in total across `lower` ×2, `newest` ×6×2 = 12, and `widest` ×3, while `s` appears 9 times). WordPiece marks a piece that continues a word with `##`, for example `play` `##ing`.
 - **Unigram** works the other way round: it starts from a very large vocabulary of candidate pieces and repeatedly removes the pieces whose removal hurts least, until the target size is reached. To encode a word, it picks the most probable of the possible splits.
 
 | Algorithm | Builds the vocabulary by | Used by (examples) |
@@ -179,6 +206,10 @@ $$
 \text{token} \xrightarrow{\text{tokenizer}} \text{token ID } k \xrightarrow{\text{row } k \text{ of } E} \text{embedding } \in \mathbb{R}^{d_{model}}
 $$
 
+- **k** is the integer token ID (for example 6587 for `CAT`).
+- **E** is the embedding matrix (vocabulary size × d\_model).
+- **$\in \mathbb{R}^{d_{model}}$** is shorthand for "is a vector of d\_model real (decimal) numbers" (512 numbers in the base model).
+
 ### Positional encoding
 
 A position vector of the same size as the embedding (512 numbers) is **added** to each token's embedding, so every token carries both what it means and where it sits.
@@ -220,6 +251,12 @@ $$
 - **i** indexes dimension pairs: 2i is an even dimension, 2i + 1 the odd one after it, up to dimension 511.
 - The divisor 10000^(2i/d\_model) grows with i, so early dimensions oscillate fast and later dimensions oscillate very slowly.
 
+!!! note "Quick refresher: Radians, sine, cosine and binary counters"
+    If you have not used trigonometry since school or university:
+
+    - **Sine ($\sin$) and cosine ($\cos$)** are smooth wave functions that repeat every $2\pi \approx 6.283$ units (measured in **radians**). Their values always stay between −1 and +1. At 0, $\sin(0) = 0$ and $\cos(0) = 1$. At 1 radian, $\sin(1) \approx 0.841$ and $\cos(1) \approx 0.540$.
+    - **Why vary the divisor?** Think of how a 3-bit binary counter numbers positions: `000`, `001`, `010`, `011`, `100`… The rightmost bit flips at every step, the middle bit flips every 2 steps, and the leftmost bit flips every 4 steps. Dividing `pos` by divisors that grow from 1 up to nearly 10,000 creates a smooth, continuous version of that binary counter: the early dimensions change rapidly from one word to the next, while the later dimensions drift slowly across hundreds of words.
+
 **Worked numbers** with a tiny d\_model = 4 (dimension 0–1 use divisor 1; dimensions 2–3 use divisor 10000^(2/4) = 100):
 
 | pos | dim 0: sin(pos) | dim 1: cos(pos) | dim 2: sin(pos/100) | dim 3: cos(pos/100) |
@@ -244,7 +281,23 @@ $$
 X = \text{Embedding}(\text{token IDs}) \cdot \sqrt{d_{model}} + PE \qquad X \in \mathbb{R}^{n \times d_{model}}
 $$
 
-n is the number of tokens; the √d\_model scaling of the embeddings is a detail from the paper. Many modern models replace the sine and cosine table with learned position vectors (GPT-2, BERT) or RoPE (rotary position embedding), which rotates Q and K by an angle that depends on position.
+- **X** is the final input matrix fed into the first Transformer layer.
+- **n** is the number of tokens in the sequence (6 for `YOUR CAT IS A LOVELY CAT`).
+- **d\_model** is the vector length of each token (512 in the base model).
+- **$\sqrt{d_{model}}$** ($\sqrt{512} \approx 22.63$) scales up the learned embeddings before PE is added. The paper does not say why; a common explanation is that it keeps the position signal from drowning out the small embedding numbers.
+- **PE** is the n × d\_model matrix of position vectors.
+- **$\in \mathbb{R}^{n \times d_{model}}$** means X is a table of real numbers with n rows and d\_model columns.
+
+```mermaid
+flowchart LR
+  IDs["Token IDs<br/>(n integers)"] --> Emb["Lookup in E<br/>(n × d_model)"]
+  Emb --> Scale["Multiply by √d_model"]
+  Scale --> Add["+ (Element-by-element)"]
+  PE["Positional Encoding PE<br/>(n × d_model)"] --> Add
+  Add --> X["Input Matrix X<br/>(n × d_model)"]
+```
+
+Many modern models replace the sine and cosine table with learned position vectors (GPT-2, BERT) or RoPE (rotary position embedding), which rotates Q and K by an angle that depends on position.
 
 ### What is learned, and what changes after training?
 
@@ -279,6 +332,13 @@ $$
 - **W\_Q, W\_K, W\_V** are ordinary trainable weights of shape d\_model × d\_k (512 × 64 per head in the paper). They start as random numbers and are learned by backpropagation, exactly like every other weight in the network. Nobody designs them by hand.
 - Each token row of X produces one query, one key and one value vector.
 
+```mermaid
+flowchart LR
+  X["Input Matrix X<br/>(6 × 512)"] --> WQ["× W_Q (512 × 64)"] --> Q["Queries Q<br/>(6 × 64)"]
+  X --> WK["× W_K (512 × 64)"] --> K["Keys K<br/>(6 × 64)"]
+  X --> WV["× W_V (512 × 64)"] --> V["Values V<br/>(6 × 64)"]
+```
+
 ### Which X? All tokens, layer by layer
 
 **X covers every token of the input at once.** X has one row per token of the whole sentence, and Q = X·W\_Q produces one query row per token in a single matrix multiplication. Likewise for K and V. For `YOUR CAT IS A LOVELY CAT` (6 tokens), X is 6 × 512, so Q, K and V are each 6 rows: one query, one key and one value for each word.
@@ -288,6 +348,10 @@ $$
 $$
 X^{(1)} = \text{Embedding} + PE \qquad Q^{(\ell)} = X^{(\ell)} W_Q^{(\ell)},\; K^{(\ell)} = X^{(\ell)} W_K^{(\ell)},\; V^{(\ell)} = X^{(\ell)} W_V^{(\ell)} \qquad X^{(\ell+1)} = \text{Layer}_{\ell}\big(X^{(\ell)}\big)
 $$
+
+- **$\ell$** is the layer index (running from $\ell = 1$ to $6$ in the base model).
+- **$X^{(\ell)}$** is the 6 × 512 token matrix entering layer $\ell$, and **$X^{(\ell+1)}$** is the updated 6 × 512 matrix leaving layer $\ell$.
+- **$W_Q^{(\ell)}, W_K^{(\ell)}, W_V^{(\ell)}$** are layer $\ell$'s own query, key and value weight matrices.
 
 **Example** with the 6-layer model and the sentence `YOUR CAT IS A LOVELY CAT`, following the row for `LOVELY`:
 
@@ -328,6 +392,12 @@ $$
 W_Q = \begin{bmatrix} 1 & 0 \\ 0 & 1 \\ 1 & 0 \\ 0 & 1 \end{bmatrix} \quad W_K = \begin{bmatrix} 0 & 1 \\ 1 & 0 \\ 0 & 1 \\ 1 & 0 \end{bmatrix} \quad W_V = \begin{bmatrix} 1 & 0 \\ 0 & 1 \\ 0 & 0 \\ 0 & 0 \end{bmatrix}
 $$
 
+To see how a row is computed, take `cat` ($x = [0, 2, 0, 2]$) and take the dot product with each column of $W_Q$, $W_K$ and $W_V$:
+
+- **q = x · W\_Q:** column 1 gives $(0\times 1) + (2\times 0) + (0\times 1) + (2\times 0) = 0$; column 2 gives $(0\times 0) + (2\times 1) + (0\times 0) + (2\times 1) = 4$ → **\[0, 4\]**.
+- **k = x · W\_K:** column 1 gives $(0\times 0) + (2\times 1) + (0\times 0) + (2\times 1) = 4$; column 2 gives $(0\times 1) + (2\times 0) + (0\times 1) + (2\times 0) = 0$ → **\[4, 0\]**.
+- **v = x · W\_V:** column 1 gives $(0\times 1) + (2\times 0) + (0\times 0) + (2\times 0) = 0$; column 2 gives $(0\times 0) + (2\times 1) + (0\times 0) + (2\times 0) = 2$ → **\[0, 2\]**.
+
 Multiplying each token vector by each matrix gives:
 
 | Token | x | q = x·W\_Q | k = x·W\_K | v = x·W\_V |
@@ -346,11 +416,36 @@ $$
 \text{Attention}(Q, K, V) = \text{softmax}\!\left(\frac{Q K^{T}}{\sqrt{d_k}}\right) V
 $$
 
+- **Q** is the n × d\_k matrix of queries (one row per token).
+- **K** is the n × d\_k matrix of keys, and **Kᵀ** is its transpose (d\_k × n), so **Q Kᵀ** is the n × n table of query–key dot products.
+- **d\_k** is the length of each query and key vector (64 in the base model, so $\sqrt{d_k} = 8$).
+- **softmax** converts each row of scores into positive weights that add up to 1.
+- **V** is the n × d\_v matrix of values (where $d_v = d_k = 64$ in the base model).
+
+The calculation runs in five steps:
+
 1. **Score.** Compute Q·Kᵀ, an n × n table. Cell (i, j) is the dot product of token i's query with token j's key: large when they point in the same direction.
 2. **Scale.** Divide by √d\_k. Dot products grow with vector length; without scaling, softmax becomes nearly one-hot and gradients vanish, so training stalls.
 3. **Mask (decoder only).** Set every score where j comes after i to −∞. After softmax those become 0, so a token cannot peek at words it is supposed to predict.
 4. **Softmax each row.** Each row becomes positive weights that sum to 1: how token i splits its attention.
 5. **Mix the values.** Multiply the weights by V. Token i's output is the weighted average of every token's value vector.
+
+```mermaid
+flowchart LR
+  QK["Q (6×64) · Kᵀ (64×6)"] --> S1["1. Scores<br/>(6×6 table)"]
+  S1 --> S2["2. Scale<br/>÷ √d_k"]
+  S2 --> S3["3. Mask (decoder)<br/>future cells → −∞"]
+  S3 --> S4["4. Softmax rows<br/>Weights (6×6, rows sum to 1)"]
+  S4 --> S5["5. Multiply by V (6×64)<br/>Output (6×64)"]
+```
+
+!!! note "Quick refresher: How softmax works, and why we divide by √d_k"
+    **Softmax** turns any row of raw scores $[s_1, s_2, \dots, s_n]$ into a probability distribution:
+
+    1. Raise Euler's number $e \approx 2.718$ to the power of each score: $e^{s_1}, e^{s_2}, \dots, e^{s_n}$. Because $e^x > 0$ for any number $x$, even negative scores become positive, and $e^{-\infty} = 0$.
+    2. Divide each $e^{s_j}$ by the sum of the row so the weights add up to 1.0.
+
+    **Why divide by $\sqrt{d_k}$?** When two vectors have length $d_k = 64$, their dot product is the sum of 64 products, so its typical size grows in proportion to $\sqrt{64} = 8$ (when the numbers are random with a spread of 1). Because $e^x$ grows exponentially, unscaled scores like 16 vs 8 produce $e^{16} \approx 8{,}886{,}111$ vs $e^8 \approx 2{,}981$ (about 2,981 to 1), forcing softmax to put 99.97% of the weight on a single token. Dividing by $\sqrt{64} = 8$ brings those scores back to 2 vs 1 ($e^2 \approx 7.39$ vs $e^1 \approx 2.72$), keeping attention weights smooth and learnable.
 
 ### What the mask looks like
 
@@ -376,7 +471,7 @@ The first word sees only itself; the last word sees the whole sentence. The allo
 | Without mask | 0.147 | 0.132 | 0.262 | 0.097 | 0.218 | 0.145 |
 | With mask | 0.272 | 0.244 | 0.484 | 0 | 0 | 0 |
 
-The three future words drop to 0 and the remaining weights grow so the row still sums to 1. `IS` can now only gather information from `YOUR`, `CAT` and itself.
+The three future words (`A`, `LOVELY`, `CAT`) have their raw scores set to −∞ before softmax, so their exponentials become $e^{-\infty} = 0$. The three allowed words (`YOUR`, `CAT`, `IS`) keep their original exponentials, so their weights simply re-divide by their kept total (0.147 + 0.132 + 0.262 = 0.541): 0.147 ÷ 0.541 = 0.272, 0.132 ÷ 0.541 = 0.244, and 0.262 ÷ 0.541 = 0.484, which sum to 1.000. `IS` can now only gather information from `YOUR`, `CAT` and itself.
 
 The encoder uses **no** causal mask, because it reads a complete input sentence and every word may look at every other word. Decoder-only models such as GPT and Claude apply this mask in every layer.
 
@@ -386,15 +481,26 @@ Take `cat` as the query, q = \[0, 4\], and d\_k = 2 so √d\_k ≈ 1.414.
 
 | Key token | k | q · k | ÷ √2 | Softmax weight | Weighted value |
 | --- | --- | --- | --- | --- | --- |
-| the | \[0, 2\] | 8 | 5.66 | 0.499 | 0.499 × \[1, 0\] |
-| cat | \[4, 0\] | 0 | 0 | 0.002 | 0.002 × \[0, 2\] |
-| sat | \[2, 2\] | 8 | 5.66 | 0.499 | 0.499 × \[1, 1\] |
+| the | \[0, 2\] | 8 | 5.66 | 0.499 | 0.499 × \[1, 0\] = \[0.499, 0.000\] |
+| cat | \[4, 0\] | 0 | 0 | 0.002 | 0.002 × \[0, 2\] = \[0.000, 0.004\] |
+| sat | \[2, 2\] | 8 | 5.66 | 0.499 | 0.499 × \[1, 1\] = \[0.499, 0.499\] |
 
-The output for `cat` is the sum of the last column: **\[1.00, 0.50\]**. Notice `cat` barely attends to itself (0.002) because its query and its own key point in different directions. That is only possible because W\_Q and W\_K are different matrices.
+How the last two columns are computed from the scaled scores:
+
+- **Softmax weights:** $e^{5.66} \approx 287.1$, $e^0 = 1.0$, $e^{5.66} \approx 287.1$. The total is $287.1 + 1.0 + 287.1 = 575.2$. Dividing each by 575.2 gives $287.1 \div 575.2 = 0.499$ for `the` and `sat`, and $1.0 \div 575.2 = 0.002$ for `cat`.
+- **Sum of weighted values:** Adding the three weighted value vectors position by position gives $[0.499 + 0.000 + 0.499,\; 0.000 + 0.004 + 0.499] = [0.998, 0.503]$, which rounds to **\[1.00, 0.50\]**.
+
+Notice `cat` barely attends to itself (0.002) because its query and its own key point in different directions. That is only possible because W\_Q and W\_K are different matrices.
 
 ### The cost of attention
 
 Every token is scored against every other token, so the work grows with n². Doubling the context length roughly quadruples the attention compute and memory. This is the main reason long context windows are expensive.
+
+| Sequence length (n) | Token-to-token pairs (n²) | Relative attention cost |
+| --- | --- | --- |
+| 1,000 tokens | 1,000,000 | 1× |
+| 4,000 tokens (4× longer) | 16,000,000 | 16× |
+| 32,000 tokens (32× longer) | 1,024,000,000 | 1,024× |
 
 ## Multi-head attention
 
@@ -403,6 +509,21 @@ Instead of one attention operation, the model runs h smaller ones in parallel, e
 $$
 \text{head}_i = \text{Attention}(X W_Q^{(i)},\; X W_K^{(i)},\; X W_V^{(i)}) \qquad \text{MultiHead}(X) = \text{Concat}(\text{head}_1, \dots, \text{head}_8)\, W_O
 $$
+
+- **$\text{head}_i$** is the n × 64 output matrix of attention head i (for i = 1 to 8).
+- **$W_Q^{(i)}, W_K^{(i)}, W_V^{(i)}$** are head i's own 512 × 64 projection matrices.
+- **Concat** joins the 8 matrices of shape n × 64 side by side into a single n × 512 matrix.
+- **$W_O$** is a learned output weight matrix of shape 512 × 512 that mixes information across all 8 heads.
+
+```mermaid
+flowchart LR
+  X["Input X<br/>(n × 512)"] --> H1["Head 1<br/>(n × 64)"]
+  X --> H2["Head 2<br/>(n × 64)"]
+  X --> HD["..."]
+  X --> H8["Head 8<br/>(n × 64)"]
+  H1 & H2 & HD & H8 --> C["Concat side by side<br/>(n × 512)"]
+  C --> WO["× W_O (512 × 512)<br/>Output (n × 512)"]
+```
 
 - The 8 outputs (64 numbers each) are concatenated back to 512 numbers, then mixed by one more learned matrix W\_O (512 × 512).
 - **Why bother:** one softmax can only express one way of distributing attention. Eight heads can each specialise: one may track the previous word, another subject–verb links, another which noun a pronoun refers to.
@@ -437,6 +558,23 @@ $$
 \text{FFN}(x) = \max(0,\; x W_1 + b_1)\, W_2 + b_2 \qquad \text{output} = \text{LayerNorm}(x + \text{Sublayer}(x))
 $$
 
+- **x** is a single token's 512-number vector entering the sublayer.
+- **$W_1$** (512 × 2,048) and **$b_1$** (2,048 numbers) are the weights and bias of the first feed-forward layer; **$\max(0, \dots)$** is the ReLU activation.
+- **$W_2$** (2,048 × 512) and **$b_2$** (512 numbers) are the weights and bias of the second feed-forward layer, returning a 512-number vector.
+- **Sublayer(x)** is the output of either multi-head attention or the feed-forward network, which is added back to the original **x** before **LayerNorm**.
+
+```mermaid
+flowchart LR
+  In["Layer Input x<br/>(n × 512)"] --> Attn["Multi-Head<br/>Attention"]
+  Attn --> Add1["+ (Residual)"]
+  In -- "skip connection" --> Add1
+  Add1 --> LN1["LayerNorm"]
+  LN1 --> FFN["Feed-Forward<br/>(512 → 2048 → 512)"]
+  FFN --> Add2["+ (Residual)"]
+  LN1 -- "skip connection" --> Add2
+  Add2 --> LN2["LayerNorm"] --> Out["Layer Output<br/>(n × 512)"]
+```
+
 ### Layer normalisation in detail
 
 After each sublayer the numbers in a token's vector can drift very large or very small, and across many layers that makes training unstable. Layer normalisation rescales **each token's vector on its own** so its numbers have an average of 0 and a spread of 1, then lets the model adjust that scale.
@@ -451,6 +589,18 @@ For one token vector x with d\_model numbers:
 $$
 \hat{x}_j = \frac{x_j - \mu}{\sqrt{\sigma^2 + \epsilon}} \qquad y_j = \gamma_j \, \hat{x}_j + \beta_j
 $$
+
+- **$x_j$** is the j-th number inside the token's vector, and **$\hat{x}_j$** (read "x-hat") is its normalised value.
+- **$\mu$** (Greek letter mu) is the mean of the token's numbers, and **$\sigma^2$** (sigma squared) is their variance.
+- **$\epsilon$** (epsilon) is a tiny constant added inside the square root so the denominator is never zero.
+- **$\gamma_j$** (gamma) and **$\beta_j$** (beta) are the learned scale and shift for dimension j, and **$y_j$** is the final output.
+
+!!! note "Quick refresher: Mean (μ), variance (σ²) and standard deviation (σ)"
+    To measure the centre and spread of a list of numbers $[2, 4, 6, 8]$:
+
+    - **Mean ($\mu$):** Add the numbers and divide by how many there are: $(2 + 4 + 6 + 8) \div 4 = 5$.
+    - **Variance ($\sigma^2$):** Subtract the mean from each number to find its deviation ($2 - 5 = -3$, $4 - 5 = -1$, $6 - 5 = +1$, $8 - 5 = +3$). Square each deviation so negative and positive signs do not cancel out ($9, 1, 1, 9$), and take their average: $(9 + 1 + 1 + 9) \div 4 = 5$.
+    - **Standard deviation ($\sigma = \sqrt{\sigma^2}$):** Take the square root of the variance ($\sqrt{5} \approx 2.236$) to return to the original scale of the numbers. Subtracting $\mu$ centres the list at 0; dividing by $\sqrt{\sigma^2}$ gives it a standard spread of 1.
 
 **Worked example** with a 4-number vector x = \[2, 4, 6, 8\]:
 
@@ -504,6 +654,10 @@ Say the model has read `YOUR CAT IS A LOVELY` and must predict the next word.
 $$
 \text{logits} = x_{\text{last}} \, W_{out} \in \mathbb{R}^{|V|} \qquad P(\text{token } k) = \frac{e^{\text{logit}_k}}{\sum_{j} e^{\text{logit}_j}}
 $$
+
+- **$x_{\text{last}}$** is the 512-number output vector of the final token position (`LOVELY`).
+- **$W_{out}$** is the output weight matrix of shape 512 × $|V|$, where **$|V|$** is the vocabulary size (for example 50,000).
+- **$\text{logit}_k$** is the raw score for token k, and **$P(\text{token } k)$** is its softmax probability after dividing $e^{\text{logit}_k}$ by the sum across all vocabulary tokens j.
 
 **Worked example.** Pretend, for readability, that the vocabulary had only four tokens (the logits are illustrative):
 

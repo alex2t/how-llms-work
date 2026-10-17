@@ -13,7 +13,7 @@ This file defines Antigravity's role, rules, and workflow for this repository. A
 | `<CHAPTER>` | Original File (`<FILE>`) | AGY Rewrite Output | Claude Review File | Rewrite Status |
 | --- | --- | --- | --- | --- |
 | `introduction` | `docs/00-introduction.md` | `gemini/introduction_agy.md` | `gemini/introduction_rw_claude.md` | Completed |
-| `transformers` | `docs/01-transformers.md` | `gemini/transformers_agy.md` | `gemini/transformers_rw_claude.md` | Pending |
+| `transformers` | `docs/01-transformers.md` | `gemini/transformers_agy.md` | `gemini/transformers_rw_claude.md` | Completed |
 | `training` | `docs/02-training.md` | `gemini/training_agy.md` | `gemini/training_rw_claude.md` | Pending |
 | `inference` | `docs/03-inference.md` | `gemini/inference_agy.md` | `gemini/inference_rw_claude.md` | Pending |
 | `quantization` | `docs/04-quantization.md` | `gemini/quantization_agy.md` | `gemini/quantization_rw_claude.md` | Pending |
@@ -46,12 +46,13 @@ The goal of each rewrite is to make the chapter **substantially clearer, better 
    - Every reader should understand every paragraph on the first reading.
 
 2. **More visual Explanations:**
-   - Add **Mermaid diagrams** (`flowchart LR`, `flowchart TD`, `sequenceDiagram`, `stateDiagram-v2`) to illustrate architectures, pipelines, step-by-step data flows, and training/inference loops.
+   - Add **Mermaid diagrams** (`flowchart LR`, `flowchart TD`, `sequenceDiagram`, `stateDiagram-v2`) to illustrate architectures, pipelines, step-by-step data flows, and training/inference loops. Do not repeat in a diagram the exact numbers already shown in an adjacent table; use diagrams to show structure and flow.
    - Use **structured tables** to break down multi-step calculations, side-by-side comparisons, and tensor shape transformations so the reader can trace how inputs become outputs.
    - Use **callouts** (`!!! note`, `!!! tip "Key idea"`, `!!! warning`) to highlight intuition, quick refreshers, and common pitfalls.
 
 3. **Zero content loss:**
-   - Every topic, worked example, table, diagram, cheat-sheet row, and source from the original `<FILE>` must remain present in the rewrite unless it is factually or mathematically wrong.
+   - Every topic, paragraph, worked example, table, diagram, cheat-sheet row, and source from the original `<FILE>` must remain present in the rewrite unless it is factually or mathematically wrong.
+   - Never drop existing sentences or replace a paragraph with a table without keeping the paragraph's text.
    - If anything is removed, moved, or renamed, document it explicitly in the top `<!-- CHANGES ... -->` block.
 
 ---
@@ -59,7 +60,11 @@ The goal of each rewrite is to make the chapter **substantially clearer, better 
 ## 4. Audience, Style & Pedantic Rules
 
 - **Call it "notes", never "book"**: Never refer to the project as a "book".
-- **Sentence style**: Use short, direct, complete sentences. No unfinished fragments, no unexplained jargon, and no emoji.
+- **Sentence style**: Use short, direct, complete sentences. Avoid joining long clauses with em dashes (`—`). No unfinished fragments, no unexplained jargon, and no emoji.
+- **Formatting consistency with other chapters**:
+  - Do **not** wrap plain numbers or dimensions in LaTeX (`512`, `0.81`, `6 × 512`, not `$512$`, `$0.81$`, `$6 \times 512$`).
+  - Do **not** add horizontal rules (`---`) between sections.
+  - Match the original chapter's use of code font vs plain text for words and tokens.
 - **Section openings**: Open every `##` section with one or two sentences stating what the section explains and why it matters.
 - **Term & formula definitions**: Define every technical term in plain words the first time it appears. Explain **every single letter and symbol** immediately after every formula.
 - **Worked examples & verified arithmetic**:
@@ -70,10 +75,11 @@ The goal of each rewrite is to make the chapter **substantially clearer, better 
 
 ## 5. Running Examples (Reuse — Do Not Invent New Mystery Numbers)
 
-Always reuse the established running examples across chapters:
+Always reuse the established running examples across chapters (and check the exact vectors in `docs/01-transformers.md` before using them):
 
 1. **Sentence:** `YOUR CAT IS A LOVELY CAT`
    - Token IDs: `YOUR = 105`, `CAT = 6587`, `IS = 5475`, `A = 3578`, `LOVELY = 65` (and `DOG = 4012` for comparison).
+   - 3-number toy embeddings: `LOVELY = [0.45, 0.62, −0.11]`, `YOUR = [0.12, −0.40, 0.33]`, `A = [−0.05, 0.08, 0.91]`, `DOG = [0.77, 0.15, −0.48]`, `IS = [−0.30, 0.66, 0.05]`, `CAT = [0.81, 0.10, −0.52]`.
 2. **Base model (2017 Transformer):**
    - $d_{\text{model}} = 512$, $8$ attention heads, $d_k = d_v = 64$, $6$ layers, $d_{\text{ff}} = 2{,}048$.
 3. **Translation example:**
@@ -96,7 +102,7 @@ Always reuse the established running examples across chapters:
   - Preserve all links to other chapters in the format `[text](02-training.md#heading-anchor)`.
 - **Math formatting:**
   - Inline math: `$...$`
-  - Display math: on its own lines between `$$` lines:
+  - Display math: always on its own lines between `$$` lines (never `$$ ... $$` on a single line, and never unindented inside a numbered list, which breaks MkDocs HTML lists):
     ```markdown
     $$
     \text{Attention}(Q,K,V) = \text{softmax}\left(\frac{QK^T}{\sqrt{d_k}}\right)V
