@@ -237,3 +237,40 @@ Most quantization in practice is post-training. The smart PTQ methods below impr
 | What | Weights only; weights + activations; KV cache | Weights only (W4A16 or W8A16), often plus an 8-bit KV cache |
 | How | Plain rounding; GPTQ; AWQ; other methods | GPTQ or AWQ for GPU serving; GGUF files for laptops and desktops |
 | Granularity | One scale per matrix, per row, or per group | Per group of 32 to 128 weights |
+
+## Quality vs speed
+
+Every bit removed saves memory and time, but each step down adds more rounding error to every weight. This section shows where the trade-off usually lands and how to check it for a particular model, instead of trusting the file name.
+
+### The trade-off for a 7-billion-weight model
+
+Sizes include one 16-bit scale per group of 32 weights; speeds are the upper limit on the same illustrative GPU (2,000 GB/s) used earlier. The quality column describes the pattern widely reported for models of this size, not a measurement.
+
+| Format | Bits per weight | Size | Max tokens per second | Typical quality compared with BF16 |
+| --- | --- | --- | --- | --- |
+| BF16 | 16 | 14.0 GB | 143 | The reference |
+| INT8, groups of 32 | 8.5 | 7.4 GB | 269 | Practically the same |
+| INT4, groups of 32 | 4.5 | 3.9 GB | 508 | Slightly worse; usually acceptable with GPTQ, AWQ or a good GGUF type |
+| 3-bit | 3.5 | 3.1 GB | 653 | Noticeably worse |
+| 2-bit | 2.5 | 2.2 GB | 914 | Often badly damaged |
+
+The pattern: going from 16 to 8 bits is almost free, 4 bits is the usual sweet spot, and below 4 bits quality falls quickly, because with 8 or 4 integer levels the rounding errors become a large fraction of every weight (compare the INT8 and INT4 tables in "How quantization works").
+
+### When quality drops noticeably
+
+- **Below 4 bits per weight**, as in the table.
+- **Small models.** A small model has fewer weights doing each job, so each rounding error matters more. Large models tolerate low bit counts better.
+- **Plain rounding instead of a smart method.** GPTQ, AWQ and the better GGUF types exist because naive rounding at 4 bits loses noticeably more quality.
+- **Demanding tasks.** Long chains of reasoning, maths and code tend to suffer first, because one slightly wrong token early can derail the rest of the answer ([Chapter 3](03-inference.md#generation-step-by-step)). Short, simple answers are more robust.
+
+### A bigger model at low precision often beats a smaller one at high precision
+
+With a fixed memory budget, the choice is often between a small model at 16 bits and a larger model at 4 bits. A 7-billion-weight model at 16 bits needs 14 GB; a 70-billion-weight model at 4.5 bits needs 70,000,000,000 × 4.5 ÷ 8 ≈ 39 GB. For a given amount of memory, a larger model quantized to about 4 bits usually gives better answers than a smaller model kept at 16 bits. This is one reason 4-bit models are so popular for running on personal computers.
+
+### How to check a quantized model
+
+Do not rely on the label: measure the quantized model against the original on the same inputs.
+
+1. **Perplexity** on a sample of text ([Chapter 2](02-training.md#perplexity-the-same-number-in-friendlier-units)): a small rise means a small loss of quality. Both models must use the same tokenizer, which is always true here, since quantization never changes the tokenizer.
+2. **Task results** on examples from the real use case, such as the fraud labels of [Chapter 5](05-evaluation.md). A model that is "only slightly worse" on average can still be worse exactly where it matters.
+3. **Speed and memory** on the real hardware: the integer formats only pay off if the software and GPU handle them efficiently.
