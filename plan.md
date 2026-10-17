@@ -37,7 +37,7 @@ Goal: give the reader the background needed before Chapter 1, and the story of w
   - [x] RNN: hidden state carried from step to step; small diagram (x1 → RNN → y1, state passed to the next step); worked 3-step example.
   - [x] LSTM: adds a cell state and gates to keep information longer (high level only).
   - [x] Limitations: vanishing/exploding gradients, long-range dependencies are hard, sequential processing blocks parallel training. Close with a bridge to Chapter 1: attention removes all three.
-- [ ] Cheat sheet + Sources.
+- [x] Cheat sheet + Sources.
 
 ## Phase 2 — Chapter 2: Training (`docs/02-training.md`)
 

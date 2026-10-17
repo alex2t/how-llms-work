@@ -9,7 +9,7 @@ A plain-English book that explains how large language models work, written as fi
 | # | Chapter | File | Status |
 | --- | --- | --- | --- |
 | — | Home page (about the book, how to read it) | `docs/index.md` | Written (draft) |
-| 0 | Introduction: foundations and history | `docs/00-introduction.md` | In progress |
+| 0 | Introduction: foundations and history | `docs/00-introduction.md` | Written (draft) |
 | 1 | How Transformers Work: BPE, Attention and Q/K/V | `docs/01-transformers.md` | Written, imported and live |
 | 2 | Training: how the model learns | `docs/02-training.md` | Written (draft); fixes listed in `fix.md` |
 | 3 | Inference and decoding | `docs/03-inference.md` | Written (draft) |
@@ -135,3 +135,4 @@ Add one line per implemented section, newest at the bottom: `YYYY-MM-DD — Chap
 - 2026-10-17 — Introduction — Historical evolution of text modelling — timeline 1997–2026; task-specific RNN era; 2017 turning point; scaling table (65M → 1.5B → 175B, about 2,700×); agents.
 - 2026-10-17 — Introduction — Vector embeddings — one-hot on a 5-word vocabulary (all dot products 0, all distances 1.414); Word2Vec CBOW and skip-gram; Paris − France + Germany = (4, 3), nearest Berlin (0.14); polysemy and word-order limits.
 - 2026-10-17 — Introduction — RNNs and LSTMs — RNN formula and diagram; 3-step worked example (h = 0.462, 0.551, 0.189); LSTM gates; vanishing/exploding table (0.8ⁿ vs 1.2ⁿ); long-range and sequential limits; bridge table to Chapter 1.
+- 2026-10-17 — Introduction — Cheat sheet + Sources — 19-row cheat sheet and 13 sources; chapter complete (draft).

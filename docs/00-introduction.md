@@ -308,3 +308,43 @@ The Transformer removes all three problems by dropping recurrence and using **at
 | Sequential processing | All positions are computed at once in training ([Chapter 2](02-training.md#why-training-happens-in-one-time-step)), so GPUs are fully used |
 
 That last point is what made today's models possible: once training could use parallel hardware fully, models and datasets could grow by thousands of times, as the timeline above shows. [Chapter 1](01-transformers.md) explains how the Transformer works, step by step.
+
+## Cheat sheet
+
+| Concept | One-line meaning |
+| --- | --- |
+| Vector | An ordered list of numbers; one per token in a language model |
+| Dot product | Multiply number by number and add: large when two vectors are similar |
+| Matrix and shape | A table of numbers, described as rows × columns |
+| Matrix multiplication | Row-by-column dot products; (m × n) · (n × p) = (m × p) |
+| Transpose | Swap rows and columns; QKᵀ compares every query with every key |
+| Neuron | Weighted sum + bias, then an activation such as ReLU |
+| Layer and network | Many neurons side by side; layers stacked one after another |
+| Loss and training | A number measuring error; adjust the weights to lower it |
+| Embedding | A learned vector per item, read from a table |
+| Task-specific era | One separately trained model per task, usually an RNN |
+| Pre-train, then adapt | One large model trained on plain text, then used for many tasks |
+| One-hot vector | A 1 at the word's position, 0 elsewhere: no notion of similarity |
+| Word2Vec | Dense word vectors learned by predicting words from their context (CBOW) or context from a word (skip-gram) |
+| Vector arithmetic | Paris − France + Germany ≈ Berlin: directions in the space carry meaning |
+| Static embedding | One vector per word in every sentence: no polysemy, no word order |
+| RNN | Reads tokens one at a time, carrying a hidden state as memory |
+| LSTM | An RNN with a cell state and gates that keep information longer |
+| Vanishing / exploding gradient | Signals shrink or grow when multiplied through many steps |
+| Why the Transformer won | Attention connects any two tokens directly and trains all positions in parallel |
+
+## Sources
+
+- [Deep Learning (Goodfellow, Bengio and Courville, 2016)](https://www.deeplearningbook.org/): linear algebra, neural networks and recurrent networks
+- [Speech and Language Processing, 3rd edition draft (Jurafsky and Martin)](https://web.stanford.edu/~jurafsky/slp3/): word vectors, RNNs and LSTMs
+- [Efficient Estimation of Word Representations in Vector Space (Mikolov et al., 2013)](https://arxiv.org/abs/1301.3781): Word2Vec, CBOW and skip-gram
+- [Distributed Representations of Words and Phrases and their Compositionality (Mikolov et al., 2013)](https://arxiv.org/abs/1310.4546): word-vector arithmetic
+- [Long Short-Term Memory (Hochreiter and Schmidhuber, 1997)](https://doi.org/10.1162/neco.1997.9.8.1735)
+- [Sequence to Sequence Learning with Neural Networks (Sutskever et al., 2014)](https://arxiv.org/abs/1409.3215)
+- [Neural Machine Translation by Jointly Learning to Align and Translate (Bahdanau et al., 2014)](https://arxiv.org/abs/1409.0473): attention added to recurrent translation
+- [Attention Is All You Need (Vaswani et al., 2017)](https://arxiv.org/abs/1706.03762)
+- [BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding (Devlin et al., 2018)](https://arxiv.org/abs/1810.04805)
+- [Improving Language Understanding by Generative Pre-Training (Radford et al., 2018)](https://cdn.openai.com/research-covers/language-unsupervised/language_understanding_paper.pdf): GPT
+- [Language Models are Unsupervised Multitask Learners (Radford et al., 2019)](https://cdn.openai.com/better-language-models/language_models_are_unsupervised_multitask_learners.pdf): GPT-2
+- [Language Models are Few-Shot Learners (Brown et al., 2020)](https://arxiv.org/abs/2005.14165): GPT-3
+- [Scaling Laws for Neural Language Models (Kaplan et al., 2020)](https://arxiv.org/abs/2001.08361): why larger models and datasets keep improving results

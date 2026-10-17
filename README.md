@@ -8,7 +8,7 @@ A plain-English book on how large language models work, with worked numeric exam
 
 | # | Chapter | Status |
 | --- | --- | --- |
-| 0 | Introduction: foundations and history | In progress |
+| 0 | Introduction: foundations and history | Written (draft) |
 | 1 | How Transformers Work: BPE, Attention and Q/K/V | Written |
 | 2 | Training: how the model learns | Written (draft) |
 | 3 | Inference and decoding | Written (draft) |
@@ -71,6 +71,7 @@ One line per implemented section, newest at the bottom.
 - 2026-10-17 — Introduction — Historical evolution: from one model per task to one model for all tasks.
 - 2026-10-17 — Introduction — Vector embeddings: one-hot vectors, Word2Vec and their limits.
 - 2026-10-17 — Introduction — RNNs and LSTMs: how they read text in order, and the three problems attention removed.
+- 2026-10-17 — Introduction — Cheat sheet and sources: chapter complete.
 
 ## Credits
 
