@@ -713,7 +713,7 @@ The structure is the same as the reward model's loss: −ln σ of a difference. 
 | New answers generated during training? | Yes, the model writes answers that are then scored | No, it learns from a fixed set of pairs |
 | Strength | Can keep improving on fresh answers of its own | Simpler, cheaper and more stable |
 
-Reasoning models use another reinforcement-learning method, GRPO, which drops the value model; it is covered with reasoning models in Chapter 6.
+Reasoning models use another reinforcement-learning method, GRPO, which drops the value model; it is covered with reasoning models in [Chapter 6](06-prompting.md#grpo-learning-from-a-group-of-answers).
 
 ### What changes in each stage
 

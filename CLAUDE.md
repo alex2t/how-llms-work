@@ -15,7 +15,7 @@ A plain-English book that explains how large language models work, written as fi
 | 3 | Inference and decoding | `docs/03-inference.md` | Written (draft) |
 | 4 | Quantization, efficiency and the modern Transformer | `docs/04-quantization.md` | Written (draft) |
 | 5 | Evaluation: how we measure a model | `docs/05-evaluation.md` | Written (draft) |
-| 6 | Prompting, reasoning and agents | `docs/06-prompting.md` | In progress |
+| 6 | Prompting, reasoning and agents | `docs/06-prompting.md` | Written (draft); agents to come with later lectures |
 
 `plan.md` is the single source of truth for what is done and what is left.
 
@@ -177,3 +177,4 @@ Add one line per implemented section, newest at the bottom: `YYYY-MM-DD — Chap
 - 2026-10-17 — Chapter 6 — Chain-of-thought (L2-2 part) — why writing steps helps (more passes, scratch paper); €45 + €120 + €80 = 245, ÷ 50 = 4.9 example; few-shot and zero-shot CoT; limits (200 tokens = 1.4 s).
 - 2026-10-17 — Chapter 6 — Self-consistency (L2-2 part) — 5 sampled chains, majority 4.9 (3 of 5); voting table at p = 0.6 (0.600 / 0.683 / 0.753); cost and when to use it.
 - 2026-10-17 — Chapter 6 — Reasoning models (L3-7) — <think> example; test-time compute; cost table (2,000 tokens = 14 s, 1,049 MB or 262 MB with GQA); RLVR; GRPO formula and 3 groups (1,0,1,1 → +0.577 / −1.732; all-correct → no signal); no value model; R1-Zero emergent behaviour; CoT vs reasoning model table.
+- 2026-10-17 — Chapter 6 — Cheat sheet + Sources + links — 11-row cheat sheet and 8 sources; links to Chapter 6 from Chapters 1, 2, 3 (new bullet on thinking-token cost) and 5; chapter written (draft); agents pending later lectures.

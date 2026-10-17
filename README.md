@@ -14,7 +14,7 @@ A plain-English book on how large language models work, with worked numeric exam
 | 3 | Inference and decoding | Written (draft) |
 | 4 | Quantization, efficiency and the modern Transformer | Written (draft) |
 | 5 | Evaluation: how we measure a model | Written (draft) |
-| 6 | Prompting, reasoning and agents | In progress |
+| 6 | Prompting, reasoning and agents | Written (draft) |
 
 The detailed task list is in [`plan.md`](plan.md). Proposed changes to written chapters, including topics found missing when comparing the book with Stanford's CME295 course (one lecture at a time), are in [`fix.md`](fix.md).
 
@@ -98,6 +98,7 @@ One line per implemented section, newest at the bottom.
 - 2026-10-17 — Chapter 6 — Chain-of-thought: asking for the steps before the answer (CME295 L2-2).
 - 2026-10-17 — Chapter 6 — Self-consistency: sampling several chains and taking the majority answer (CME295 L2-2).
 - 2026-10-17 — Chapter 6 — Reasoning models: thinking tokens, test-time compute, verifiable rewards and GRPO (CME295 L3-7).
+- 2026-10-17 — Chapter 6 — Cheat sheet, sources and links from Chapters 1, 2, 3 and 5: chapter written (draft).
 
 ## Credits
 

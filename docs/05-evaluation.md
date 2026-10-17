@@ -315,7 +315,7 @@ Model announcements quote many benchmark names. Most belong to a few families, e
 | Long context | Needle in a haystack, RULER | Find or combine facts placed at different depths of a long document ([Chapter 3](03-inference.md#a-bigger-window-is-not-a-perfect-memory)) | Accuracy at each length and depth |
 | Human preference | Chatbot Arena | Give the answer people prefer in blind side-by-side comparisons | Elo rating (see below) |
 
-Maths and code benchmarks are popular because answers can be **checked automatically**: a number is right or wrong, and tests pass or fail. The same property makes them useful for training reasoning models, as Chapter 6 explains.
+Maths and code benchmarks are popular because answers can be **checked automatically**: a number is right or wrong, and tests pass or fail. The same property makes them useful for training reasoning models, as [Chapter 6](06-prompting.md#training-with-verifiable-rewards) explains.
 
 ### Scoring code: pass@k
 

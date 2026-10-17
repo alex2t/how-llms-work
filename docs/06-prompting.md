@@ -213,3 +213,30 @@ Reasoning ability can also be passed to smaller models: R1's reasoning answers w
 | Reasoning length | Short, a few steps | Often thousands of tokens, with checks and corrections |
 | Cost per question | A little more than a direct answer | Much more: decode time and KV cache grow with the thinking |
 | Best for | Moderately multi-step tasks | Hard maths, code, planning |
+
+## Cheat sheet
+
+| Concept | One-line meaning |
+| --- | --- |
+| In-context learning | The model learns a task from the prompt alone; no weights change |
+| Zero-shot / few-shot | Instructions only / instructions plus a few solved examples |
+| Cost of examples | Every example adds tokens to every request: longer prefill, higher cost |
+| Chain-of-thought | Ask for the steps before the answer; more tokens means more computation on the problem |
+| Zero-shot CoT | Add "Let's think step by step" to the prompt |
+| Self-consistency | Sample several chains at T > 0 and return the majority answer |
+| Reasoning model | Trained to write long reasoning (for example between `<think>` tags) before answering |
+| Test-time compute | Spending more tokens at answer time to get better answers |
+| RLVR | Reinforcement learning with rewards from an automatic checker (correct answer, passing tests) |
+| GRPO | Each answer's advantage = (reward − group mean) ÷ group std; no value model needed |
+| No-signal groups | If all answers in a group score the same, the group teaches nothing |
+
+## Sources
+
+- [Language Models are Few-Shot Learners (Brown et al., 2020)](https://arxiv.org/abs/2005.14165): in-context learning, zero-shot and few-shot prompts
+- [Chain-of-Thought Prompting Elicits Reasoning in Large Language Models (Wei et al., 2022)](https://arxiv.org/abs/2201.11903)
+- [Large Language Models are Zero-Shot Reasoners (Kojima et al., 2022)](https://arxiv.org/abs/2205.11916): "Let's think step by step"
+- [Self-Consistency Improves Chain of Thought Reasoning in Language Models (Wang et al., 2022)](https://arxiv.org/abs/2203.11171)
+- [DeepSeekMath: Pushing the Limits of Mathematical Reasoning in Open Language Models (Shao et al., 2024)](https://arxiv.org/abs/2402.03300): GRPO
+- [DeepSeek-R1: Incentivizing Reasoning Capability in LLMs via Reinforcement Learning (DeepSeek-AI, 2025)](https://arxiv.org/abs/2501.12948): thinking tokens, R1-Zero, emergent behaviour, distillation
+- [Tulu 3: Pushing Frontiers in Open Language Model Post-Training (Lambert et al., 2024)](https://arxiv.org/abs/2411.15124): reinforcement learning with verifiable rewards
+- [CME295: Transformers & Large Language Models, Lectures 2 and 3 (Stanford University, Afshine and Shervine Amidi)](https://cme295.stanford.edu/syllabus/): prompting, reasoning and GRPO topics

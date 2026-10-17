@@ -191,6 +191,7 @@ Prefill handled 1,000 tokens in 28 ms; decode would need 1,000 × 7 ms = 7 secon
 - **Long prompts delay the first token.** Prefill time grows with the prompt length, so a 10,000-token document takes about ten times longer to process than a 1,000-token prompt before any answer appears.
 - **Streaming speed depends on memory speed and model size.** Each decode step reads every weight, so a smaller model, or the same model stored in fewer bytes per weight, generates faster. This is a main reason for quantization ([Chapter 4](04-quantization.md#fewer-bytes-also-means-faster-generation)).
 - **Serving many users at once is efficient.** When several users' decode steps are grouped into one batch, the weights are read once and used for all of them. The memory cost is shared, which is why providers batch requests together.
+- **Reasoning models think before they answer.** Their hidden thinking tokens are decoded like any others: 2,000 of them add about 2,000 × 7 ms = 14 seconds on this model, and grow the KV cache described next ([Chapter 6](06-prompting.md#thinking-tokens-and-test-time-compute)).
 
 ## The KV cache
 

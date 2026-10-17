@@ -112,7 +112,7 @@ Besides the pieces of ordinary text, every vocabulary contains a few **special t
 | `[CLS]`, `[SEP]` | — | Summary position for the whole input; boundary between segments (BERT) | [Chapter 2: `[CLS]` and `[SEP]`](02-training.md#next-sentence-prediction-and-the-tokens-cls-and-sep) |
 | Role tokens | <code>&lt;&#124;start_header_id&#124;&gt;</code> … <code>&lt;&#124;end_header_id&#124;&gt;</code>, <code>&lt;&#124;im_start&#124;&gt;</code> | Mark who wrote each message in a chat (system, user, assistant) | [Chapter 3: Decoder-only generation](03-inference.md#decoder-only-how-chat-models-generate) |
 
-Reasoning models add a few more, such as `<think>` and `</think>` around their hidden reasoning; Chapter 6 covers them.
+Reasoning models add a few more, such as `<think>` and `</think>` around their hidden reasoning; [Chapter 6](06-prompting.md#thinking-tokens-and-test-time-compute) covers them.
 
 ### Does the tokenizer change during or after training?
 
