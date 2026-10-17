@@ -64,7 +64,7 @@ Goal: give the reader the background needed before Chapter 1, and the story of w
   - [x] Greedy decoding and beam search (beam of 2 worked through).
   - [x] Temperature: divide logits by T before softmax; T = 0.5, 1, 2 on the same logits.
   - [x] Top-k: keep the k most likely tokens, renormalise.
-  - [ ] Top-p (nucleus): keep the smallest set summing to p, renormalise.
+  - [x] Top-p (nucleus): keep the smallest set summing to p, renormalise.
   - [ ] How they combine; typical settings for factual vs creative output.
 - [ ] Stopping: `<EOS>`, max tokens, stop sequences.
 - [ ] Cheat sheet + Sources.

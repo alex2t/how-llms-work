@@ -380,3 +380,44 @@ Even at a sensible temperature, sampling can occasionally pick a token that make
 | "My favourite colour is" | blue 0.20, green 0.18, red 0.17, purple 0.15, yellow 0.12, black 0.10; the remaining 0.08 spread over other tokens | Keeps only blue (0.526) and green (0.474), dropping red although it is almost as likely as green | Keeps all the good colours, plus some unlikely tokens |
 
 No single k suits both prompts: when the model is confident, even a small k lets in tokens that should be excluded, and when it is unsure, a small k cuts out good options. Top-p sampling, next, fixes this by letting the number of kept tokens change with the model's confidence.
+
+### Top-p (nucleus) sampling
+
+**Top-p sampling**, also called **nucleus sampling**, keeps the smallest group of top tokens whose probabilities add up to at least p, then renormalises and samples from that group. The kept group is called the **nucleus**. Because the rule is about probability, not about a number of tokens, the nucleus is small when the model is confident and large when it is unsure.
+
+**The procedure:**
+
+1. Sort the tokens from most to least likely.
+2. Add their probabilities one by one, keeping a running total (the **cumulative probability**).
+3. Stop at the first token where the running total reaches p. Keep that token and every token before it; drop the rest.
+4. Renormalise the kept probabilities and sample.
+
+**Worked example, p = 0.9.**
+
+| Token | Probability | Running total | Kept? |
+| --- | --- | --- | --- |
+| CAT | 0.772 | 0.772 | Yes: 0.772 is below 0.9, so continue |
+| DOG | 0.211 | 0.983 | Yes: 0.983 reaches 0.9, so stop here |
+| IS | 0.013 | 0.996 | No |
+| LOVELY | 0.004 | 1.000 | No |
+
+The nucleus is {CAT, DOG}, with a total of 0.983. Renormalising gives CAT 0.772 / 0.983 = 0.785 and DOG 0.211 / 0.983 = 0.215: on this example, the same result as top-k with k = 2.
+
+**Different values of p on the same example:**
+
+| p | Running total at the stop | Nucleus | Renormalised probabilities |
+| --- | --- | --- | --- |
+| 0.7 | 0.772 | CAT | CAT 1: same as greedy |
+| 0.9 | 0.983 | CAT, DOG | CAT 0.785, DOG 0.215 |
+| 0.99 | 0.996 | CAT, DOG, IS | CAT 0.775, DOG 0.212, IS 0.013 |
+
+**How it fixes top-k's weakness.** The same two prompts as in the top-k section, with p = 0.9:
+
+| Prompt | Running total | Nucleus | Tokens kept |
+| --- | --- | --- | --- |
+| "The capital of France is" | Paris alone: 0.97, already above 0.9 | Paris | 1 |
+| "My favourite colour is" | blue 0.20 → green 0.38 → red 0.55 → purple 0.70 → yellow 0.82 → black 0.92 | All six colours | 6 |
+
+With one setting, top-p keeps 1 token for the confident prompt and 6 for the unsure one. After renormalising (dividing by 0.92), the colours become blue 0.217, green 0.196, red 0.185, purple 0.163, yellow 0.130 and black 0.109: red is kept this time, and every unlikely token outside the nucleus is excluded.
+
+Common values are p = 0.9 to 0.95. A lower p makes answers safer and more predictable; p = 1 keeps every token, which is plain sampling.
