@@ -336,7 +336,7 @@ The value 0.383 is the number training tries to reduce. All four positions came 
 
 ### Perplexity: the same number in friendlier units
 
-**Perplexity** is e raised to the average loss. It can be read as "how many tokens the model is hesitating between, on average". Here e^0.383 ≈ 1.47: the model is about as uncertain as if it were choosing between 1.5 equally likely tokens. A perfect model has perplexity 1. Model papers often report perplexity instead of the raw loss. [Chapter 5](05-evaluation.md) shows how perplexity is used to compare models, and why it is only comparable between models that share a tokenizer.
+**Perplexity** is e raised to the average loss. It can be read as "how many tokens the model is hesitating between, on average". Here e^0.383 ≈ 1.47: the model is about as uncertain as if it were choosing between 1.5 equally likely tokens. A perfect model has perplexity 1. Model papers often report perplexity instead of the raw loss. [Chapter 5](05-evaluation.md#perplexity) shows how perplexity is used to compare models, and why it is only comparable between models that share a tokenizer.
 
 ## Backpropagation, gradient descent and the optimiser
 

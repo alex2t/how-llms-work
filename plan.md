@@ -106,6 +106,7 @@ Goal: give the reader the background needed before Chapter 1, and the story of w
   - [x] Trade-off table: threshold vs recall, precision, analyst workload, customer friction.
 - [x] Choosing metrics for a project: checklist (objective → KPI → model metric → baseline → target → post-go-live measurement and drift monitoring).
 - [x] Cheat sheet + Sources.
+- [x] Point earlier links to Chapter 5 at exact sections (`fix.md`, F9).
 
 ## Phase 6 — Polish
 

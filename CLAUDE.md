@@ -130,3 +130,4 @@ Add one line per implemented section, newest at the bottom: `YYYY-MM-DD — Chap
 - 2026-10-17 — Chapter 5 — Business outcomes — KPI chain table; precision falls from 0.571 (sample) to 0.197 (real traffic); rules engine vs LLM (€370,000 vs €200,867 a month, 311 hours saved, ROI ≈ 5.8, payback 1.8 months); CSAT/NPS/complaints; baselines and A/B tests; threshold trade-off table (0.5 meets all KPI targets).
 - 2026-10-17 — Chapter 5 — Choosing metrics for a project — 8-step checklist (objective to drift monitoring) filled in for the fraud example; data vs concept drift; re-evaluate after quantization or decoding changes.
 - 2026-10-17 — Chapter 5 — Cheat sheet + Sources — 22-row cheat sheet and 9 sources; chapter complete (draft).
+- 2026-10-17 — Chapters 2–4 — Links to Chapter 5 (F9) — three page links pointed to exact sections.

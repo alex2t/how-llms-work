@@ -13,19 +13,7 @@ Legend: `[ ]` waiting · `[x]` approved and applied · `[-]` rejected
 
 ## Waiting for approval
 
-### F9. Point links to Chapter 5 at exact sections `[ ]`
-
-**Where:** three links written before Chapter 5 existed, which open only the top of the page.
-
-| File and line | Link text | Would open |
-| --- | --- | --- |
-| `docs/02-training.md`, line 339 | Chapter 5 (perplexity teaser) | `05-evaluation.md#perplexity` |
-| `docs/03-inference.md`, line 459 | fraud example (temperature 0) | `05-evaluation.md#the-big-picture` (where the fraud example is defined) |
-| `docs/04-quantization.md`, line 275 | Chapter 5 (fraud labels) | `05-evaluation.md#classification-metrics-the-fraud-example` |
-
-The wording stays the same; only the link targets change. The home page table keeps its page-level link on purpose.
-
-**Decision:**
+(Nothing waiting.)
 
 ---
 
@@ -39,3 +27,4 @@ The wording stays the same; only the link targets change. The home page table ke
 - 2026-10-17 — F7 — Home page: added the logits and fraud running examples.
 - 2026-10-17 — F1 — Ch 1, "Training and generation": the two 4-step lists replaced by a 2-bullet summary linking to exact sections of Chapters 2 and 3 (approved wording; links made section-specific once Chapter 3 existed).
 - 2026-10-17 — F8 — Ch 3: four links to the Chapter 4 page now point to exact sections (number formats ×2, faster generation, KV-cache quantization), and "grouped-query attention" is now a link to its section. Wording unchanged.
+- 2026-10-17 — F9 — Ch 2, 3, 4: three links to the Chapter 5 page now open the perplexity, fraud-example and classification-metrics sections. Wording unchanged.

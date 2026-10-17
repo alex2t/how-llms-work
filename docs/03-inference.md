@@ -456,7 +456,7 @@ Compare the two results. Raising the temperature from 1 to 2 made `DOG` more lik
 | General questions and chat | about 0.7 | 0.9 to 0.95 | Natural-sounding variety, with unlikely tokens filtered out |
 | Brainstorming, fiction | 0.9 to 1 | 0.95 | More variety; top-p still blocks nonsense |
 
-These are starting points, not rules; each model and provider documents its own defaults. Many API guides recommend changing **either** temperature **or** top-p, not both at once, because both control the same thing (how far the choice strays from the top token) and their effects are hard to predict together. For the [fraud example](05-evaluation.md) in Chapter 5, where a model labels transactions, a temperature of 0 is the natural choice: the same transaction should always get the same label.
+These are starting points, not rules; each model and provider documents its own defaults. Many API guides recommend changing **either** temperature **or** top-p, not both at once, because both control the same thing (how far the choice strays from the top token) and their effects are hard to predict together. For the [fraud example](05-evaluation.md#the-big-picture) in Chapter 5, where a model labels transactions, a temperature of 0 is the natural choice: the same transaction should always get the same label.
 
 ## Stopping
 

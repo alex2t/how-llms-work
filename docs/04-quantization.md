@@ -272,7 +272,7 @@ With a fixed memory budget, the choice is often between a small model at 16 bits
 Do not rely on the label: measure the quantized model against the original on the same inputs.
 
 1. **Perplexity** on a sample of text ([Chapter 2](02-training.md#perplexity-the-same-number-in-friendlier-units)): a small rise means a small loss of quality. Both models must use the same tokenizer, which is always true here, since quantization never changes the tokenizer.
-2. **Task results** on examples from the real use case, such as the fraud labels of [Chapter 5](05-evaluation.md). A model that is "only slightly worse" on average can still be worse exactly where it matters.
+2. **Task results** on examples from the real use case, such as the fraud labels of [Chapter 5](05-evaluation.md#classification-metrics-the-fraud-example). A model that is "only slightly worse" on average can still be worse exactly where it matters.
 3. **Speed and memory** on the real hardware: the integer formats only pay off if the software and GPU handle them efficiently.
 
 ## What changed since 2017

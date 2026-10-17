@@ -66,6 +66,7 @@ One line per implemented section, newest at the bottom.
 - 2026-10-17 — Chapter 5 — Business outcomes: KPIs, cost and ROI, customer satisfaction, baselines and the threshold trade-off.
 - 2026-10-17 — Chapter 5 — Choosing metrics for a project: an 8-step checklist, including drift monitoring.
 - 2026-10-17 — Chapter 5 — Cheat sheet and sources: chapter complete.
+- 2026-10-17 — Chapters 2–4 — Links to Chapter 5 now open the exact section.
 
 ## Credits
 
