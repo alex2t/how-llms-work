@@ -45,6 +45,7 @@ One line per implemented section, newest at the bottom.
 - 2026-10-17 — Chapter 3 — Sampling and temperature: the CAT/DOG logits at T = 0.5, 1 and 2.
 - 2026-10-17 — Chapter 3 — Top-k sampling: keep the k most likely tokens and renormalise, with its main weakness.
 - 2026-10-17 — Chapter 3 — Top-p sampling: the nucleus grows and shrinks with the model's confidence.
+- 2026-10-17 — Chapter 3 — How the rules combine: temperature, top-k and top-p applied in sequence, plus typical settings.
 
 ## Credits
 

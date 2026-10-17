@@ -421,3 +421,39 @@ The nucleus is {CAT, DOG}, with a total of 0.983. Renormalising gives CAT 0.772 
 With one setting, top-p keeps 1 token for the confident prompt and 6 for the unsure one. After renormalising (dividing by 0.92), the colours become blue 0.217, green 0.196, red 0.185, purple 0.163, yellow 0.130 and black 0.109: red is kept this time, and every unlikely token outside the nucleus is excluded.
 
 Common values are p = 0.9 to 0.95. A lower p makes answers safer and more predictable; p = 1 keeps every token, which is plain sampling.
+
+### How the rules combine
+
+In practice the rules are not alternatives: an application sets several of them at once, and they run one after the other at every decode step. A common order, used for example by the Hugging Face Transformers library, is:
+
+```mermaid
+flowchart LR
+  L[Logits] --> T["Divide by temperature T"] --> S[Softmax] --> K["Top-k: keep k tokens"] --> P["Top-p: keep the nucleus"] --> R[Renormalise] --> C[Sample one token]
+```
+
+Each filter renormalises what it keeps, so the next one works on probabilities that add up to 1. The order matters: temperature runs first, so it changes the probabilities that top-k and top-p then filter.
+
+**Worked example: T = 2, k = 3, p = 0.9** on the CAT/DOG logits.
+
+| Stage | CAT | DOG | IS | LOVELY |
+| --- | --- | --- | --- | --- |
+| Logits | 6.2 | 4.9 | 2.1 | 1.0 |
+| Softmax at T = 2 (from the temperature table) | 0.580 | 0.303 | 0.075 | 0.043 |
+| Top-k, k = 3: drop LOVELY, divide by 0.580 + 0.303 + 0.075 = 0.958 | 0.605 | 0.316 | 0.078 | 0 |
+| Top-p, p = 0.9: running total 0.605, then 0.921, so stop after DOG; divide by 0.921 | **0.657** | **0.343** | 0 | 0 |
+
+The final step samples `CAT` with probability 0.657 and `DOG` with probability 0.343. (The top-k row adds up to 0.999 because of rounding.)
+
+**The same settings with T = 1:** softmax gives the original 0.772, 0.211, 0.013, 0.004; top-k with k = 3 gives 0.775, 0.212, 0.013 (as in the top-k table); top-p stops at a running total of 0.987 and leaves **CAT 0.785, DOG 0.215**.
+
+Compare the two results. Raising the temperature from 1 to 2 made `DOG` more likely (0.215 → 0.343), which is the variety temperature is meant to add. But `IS` and `LOVELY`, which T = 2 alone had raised to 0.075 and 0.043, were still filtered out by top-p. This is why the rules are used together: temperature adds variety among good candidates, and top-k and top-p stop that variety from reaching unlikely tokens.
+
+### Typical settings
+
+| Task | Temperature | Top-p | Why |
+| --- | --- | --- | --- |
+| Extracting data, classification, code | 0 to 0.2 | 1 (has little effect) | One right answer: the most likely token is wanted every time |
+| General questions and chat | about 0.7 | 0.9 to 0.95 | Natural-sounding variety, with unlikely tokens filtered out |
+| Brainstorming, fiction | 0.9 to 1 | 0.95 | More variety; top-p still blocks nonsense |
+
+These are starting points, not rules; each model and provider documents its own defaults. Many API guides recommend changing **either** temperature **or** top-p, not both at once, because both control the same thing (how far the choice strays from the top token) and their effects are hard to predict together. For the [fraud example](05-evaluation.md) in Chapter 5, where a model labels transactions, a temperature of 0 is the natural choice: the same transaction should always get the same label.
