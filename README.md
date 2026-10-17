@@ -91,6 +91,7 @@ One line per implemented section, newest at the bottom.
 - 2026-10-17 — Chapter 5 — Benchmark families, pass@k and Elo ratings (CME295 L3-9, L2-5).
 - 2026-10-17 — Chapter 1 — Word, character, subword or byte tokens compared (CME295 L1-2).
 - 2026-10-17 — Chapter 1 — WordPiece, Unigram and SentencePiece compared with BPE (CME295 L1-4).
+- 2026-10-17 — Chapter 1 — Special tokens in one table, linked to where each is explained (CME295 L1-3).
 
 ## Credits
 

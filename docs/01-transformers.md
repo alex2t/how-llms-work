@@ -98,6 +98,22 @@ Result: 2 tokens, `low` and `est</w>`. With illustrative IDs, that becomes \[103
 
 **SentencePiece** is not a fourth algorithm but a widely used library that runs BPE or Unigram directly on raw text, treating the space as an ordinary symbol, written `▁`. This suits languages such as Japanese or Chinese that do not separate words with spaces.
 
+### Special tokens
+
+Besides the pieces of ordinary text, every vocabulary contains a few **special tokens**: entries added on purpose to mark structure, such as where a sentence starts or who is speaking. Each has its own ID and its own row in the embedding table, like any other token, but it is never produced by splitting ordinary text; it is inserted by the software that prepares the input. Different models write the same idea with different names, so the table lists the common ones.
+
+| Token in this book | Other common names | Purpose | Explained in |
+| --- | --- | --- | --- |
+| `<SOS>` (start of sequence) | `[BOS]`, `<s>`, <code>&lt;&#124;begin_of_text&#124;&gt;</code> | Marks the start; gives the first position something to read | [Chapter 2: The special tokens](02-training.md#the-special-tokens) |
+| `<EOS>` (end of sequence) | `[EOS]`, `</s>`, <code>&lt;&#124;eot_id&#124;&gt;</code> (end of turn) | Marks the end; generating it stops the answer | [Chapter 2: The special tokens](02-training.md#the-special-tokens), [Chapter 3: Stopping](03-inference.md#stopping) |
+| `<pad>` | `[PAD]` | Filler that makes the rows of a batch equally long | [Chapter 2: Padding](02-training.md#step-1-pad-the-short-sentences) |
+| `[UNK]` | `<unk>` | Stands for a word missing from the vocabulary; not needed with byte-level BPE | [Word, character, subword or byte?](#word-character-subword-or-byte) above |
+| `[MASK]` | — | Hides a token that an encoder model must predict | [Chapter 2: Masked language modelling](02-training.md#masked-language-modelling-mlm) |
+| `[CLS]`, `[SEP]` | — | Summary position for the whole input; boundary between segments (BERT) | [Chapter 2: `[CLS]` and `[SEP]`](02-training.md#next-sentence-prediction-and-the-tokens-cls-and-sep) |
+| Role tokens | <code>&lt;&#124;start_header_id&#124;&gt;</code> … <code>&lt;&#124;end_header_id&#124;&gt;</code>, <code>&lt;&#124;im_start&#124;&gt;</code> | Mark who wrote each message in a chat (system, user, assistant) | [Chapter 3: Decoder-only generation](03-inference.md#decoder-only-how-chat-models-generate) |
+
+Reasoning models add a few more, such as `<think>` and `</think>` around their hidden reasoning; Chapter 6 covers them.
+
 ### Does the tokenizer change during or after training?
 
 No. The BPE tokenizer is trained **first**, on its own, by counting and merging pairs as above. That step has no neural network and no gradients. Its output (the merge list and the token-to-ID table) is then frozen.
@@ -566,6 +582,10 @@ Every weight in the model, including W\_Q, W\_K, W\_V, W\_O, the embeddings and 
 | Multi-head | Several smaller attentions in parallel, then merged by W\_O |
 | Feed-forward | Per-token processing after attention |
 | Residual + LayerNorm | Keeps deep stacks stable and trainable |
+| Out-of-vocabulary (OOV) | A word missing from a word vocabulary; becomes `[UNK]` |
+| Byte-level BPE | BPE starting from the 256 byte values: any text can be encoded, nothing is unknown |
+| WordPiece / Unigram | Other subword algorithms: merge the highest-scoring pair (BERT) / prune a large vocabulary (T5) |
+| Special tokens | Inserted markers with their own IDs: start, end, padding, mask, roles |
 
 ## Sources
 
@@ -576,3 +596,4 @@ Every weight in the model, including W\_Q, W\_K, W\_V, W\_O, the embeddings and 
 - [Subword Regularization (Kudo, 2018)](https://arxiv.org/abs/1804.10959): the Unigram tokenizer
 - [SentencePiece (Kudo and Richardson, 2018)](https://arxiv.org/abs/1808.06226)
 - [Tokenizer summary, Hugging Face Transformers documentation](https://huggingface.co/docs/transformers/tokenizer_summary): BPE, WordPiece and Unigram compared
+- [CME295: Transformers & Large Language Models, Lecture 1 (Stanford University, Afshine and Shervine Amidi)](https://cme295.stanford.edu/syllabus/): tokenizer granularity and special-token topics

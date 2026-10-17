@@ -43,7 +43,7 @@ Reviewed 2026-10-17. Lecture 1 overlaps heavily with the Introduction and Chapte
 
 **Decision:** Approved (user, 2026-10-17). Written 2026-10-17.
 
-#### L1-3. Special tokens in one place, including `[UNK]` and chat role tokens `[ ]`
+#### L1-3. Special tokens in one place, including `[UNK]` and chat role tokens `[x]`
 
 - **Missing:** the book explains `<SOS>`, `<EOS>` and `<pad>` (Chapter 2) and mentions in one sentence that chats use "special tokens that mark who is speaking" (Chapter 3). The **unknown token** `[UNK]` is not covered, and no example shows what a chat looks like as tokens. The lecture also uses other names: `[BOS]` (beginning of sequence) for the book's `<SOS>`, and `[PAD]` for `<pad>`, which readers will meet elsewhere.
 - **Recommendation:** existing chapters.
@@ -51,7 +51,7 @@ Reviewed 2026-10-17. Lecture 1 overlaps heavily with the Introduction and Chapte
     - **Chapter 3 → "Decoder-only: how chat models generate"**: a worked chat example showing role tokens around a user message and an assistant answer.
 - **Priority:** Medium.
 
-**Decision:** Approved (user, 2026-10-17). Not written yet.
+**Decision:** Approved (user, 2026-10-17). Written 2026-10-17.
 
 #### L1-4. Other subword algorithms: WordPiece and Unigram `[x]`
 
