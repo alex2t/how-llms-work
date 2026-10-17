@@ -9,6 +9,19 @@ The earlier chapters explained how a model is built, trained and run. This chapt
 3. **Self-consistency:** asking several times and taking the majority answer.
 4. **Reasoning models:** models trained with reinforcement learning to write long reasoning before answering.
 
+```mermaid
+flowchart LR
+  subgraph PromptTime["Steered at inference time (weights frozen)"]
+    direction TB
+    P1["1. In-context learning<br/>Instructions + few-shot examples"] --> P2["2. Chain-of-thought<br/>Write intermediate steps first"] --> P3["3. Self-consistency<br/>Sample several chains, take majority vote"]
+  end
+  subgraph TrainedReasoning["Trained to reason + test-time compute"]
+    direction TB
+    P4["4. Reasoning models<br/>Trained with RLVR and GRPO<br/>Write &lt;think&gt; tokens before answering"]
+  end
+  PromptTime --> TrainedReasoning
+```
+
 !!! note "Work in progress"
     Agents (models that use tools and act over many steps) and retrieval will be added to this chapter as the matching lectures of the CME295 course are reviewed.
 
@@ -49,6 +62,15 @@ Both prompts end with `Label:`, so the most likely next token is the label itsel
 
 The model is still doing nothing but next-token prediction ([Chapter 1](01-transformers.md#from-the-last-vector-back-to-a-word)). During pre-training it saw countless texts where a pattern is set up and then continued, such as lists of questions and answers, so continuing the pattern in the prompt is exactly what it learned to do. Attention lets the last position look back at the examples while it predicts the label.
 
+```mermaid
+flowchart LR
+  INST["Instruction:<br/>Label as FRAUD or OK"] --> EX1["Example 1:<br/>€38 supermarket → OK"]
+  EX1 --> EX2["Example 2:<br/>€1,950 gift cards → FRAUD"]
+  EX2 --> Q["New transaction:<br/>€2,400 abroad, 03:12, Label:"]
+  EX1 & EX2 -.->|"Attention looks back<br/>(weights frozen)"| Q
+  Q --> OUT["Next-token prediction:<br/>FRAUD"]
+```
+
 Examples are not free: every example adds tokens that must be processed at every request.
 
 | | Zero-shot | Few-shot with 3 examples of about 60 tokens |
@@ -72,6 +94,18 @@ Some questions need several steps of reasoning, and a model that must give the a
 ### Why writing the steps helps
 
 A model produces one token per forward pass, and each pass does a fixed amount of computation ([Chapter 3](03-inference.md#generation-step-by-step)). When the answer must come immediately, all the reasoning has to happen inside a single pass. When the model first writes the steps, every written step becomes part of the input for the next token: the model can read its own intermediate results, exactly as a person uses scratch paper. More output tokens means more computation spent on the problem.
+
+```mermaid
+flowchart TD
+  subgraph Direct["Direct answer: 1 pass before answering"]
+    direction LR
+    DQ["Question:<br/>45, 120, 80 vs 50 daily spend"] --> DP["Single forward pass"] --> DA["Immediate guess:<br/>'About 3 times.' (Wrong)"]
+  end
+  subgraph CoT["Chain-of-thought: written steps act as scratch paper"]
+    direction LR
+    CQ["Question"] --> S1["Step 1:<br/>45 + 120 + 80 = 245"] --> S2["Step 2 (reads 245):<br/>245 ÷ 50 = 4.9"] --> CA["Final answer:<br/>'4.9 times.' (Right)"]
+  end
+```
 
 ### Worked example
 
@@ -115,6 +149,16 @@ A single chain of thought can take a wrong turn. **Self-consistency** asks the s
 
 4.9 appears 3 times out of 5, so self-consistency answers 4.9. Correct chains tend to agree with each other, while mistakes scatter in different directions.
 
+```mermaid
+flowchart LR
+  Q["Question<br/>(sampled 5 times at T > 0)"] --> C1["Chain 1: 245 ÷ 50 → 4.9"]
+  Q --> C2["Chain 2: ratio 4.9 → 4.9"]
+  Q --> C3["Chain 3: 260 ÷ 50 → 5.2"]
+  Q --> C4["Chain 4: 245 ÷ 50 → 4.9"]
+  Q --> C5["Chain 5: 245 ÷ 100 → 2.45"]
+  C1 & C2 & C3 & C4 & C5 --> VOTE["Majority vote<br/>(4.9 wins with 3 of 5)"]
+```
+
 ### Why voting helps, in numbers
 
 Suppose each chain is right with probability 0.6, independently of the others. The vote is certainly right when more than half of the chains are right:
@@ -126,6 +170,20 @@ Suppose each chain is right with probability 0.6, independently of the others. T
 | 11 | 6 | 0.753 |
 
 (These are lower bounds: when the wrong answers all differ, a smaller group of matching right answers can still win the vote.)
+
+!!! note "Quick refresher: how majority-vote probability is computed"
+    When n chains are sampled independently and each has probability p = 0.6 of being right (and 1 − p = 0.4 of being wrong), the probability that **exactly k** chains are right is given by the binomial formula:
+
+    $$
+    P(\text{exactly } k \text{ right}) = \binom{n}{k} p^k (1 - p)^{n - k}
+    $$
+
+    Here (n choose k) is the number of ways to pick which k chains are right ([Chapter 5](05-evaluation.md#scoring-code-passk)). For n = 5 chains, a majority means 3, 4, or 5 right chains:
+
+    - **Exactly 3 right:** (5 choose 3) × 0.6³ × 0.4² = 10 × 0.216 × 0.16 = 0.3456
+    - **Exactly 4 right:** (5 choose 4) × 0.6⁴ × 0.4¹ = 5 × 0.1296 × 0.4 = 0.2592
+    - **All 5 right:** (5 choose 5) × 0.6⁵ × 0.4⁰ = 1 × 0.07776 × 1 = 0.0778
+    - **Total (at least 3 right):** 0.3456 + 0.2592 + 0.0778 = **0.6826 ≈ 0.683**
 
 The cost grows with every chain: 5 chains cost about 5 times the decode time and tokens of one. Self-consistency therefore suits questions with a short, checkable final answer, such as a number or a label, where the extra accuracy is worth the price. It does not help with open-ended writing, where no two answers are identical and there is nothing to vote on.
 
@@ -158,7 +216,7 @@ The cost is real, and Chapter 3's arithmetic applies to every thinking token. Fo
 | Extra KV cache, multi-head attention ([Chapter 3](03-inference.md#how-much-memory-the-cache-needs)) | 2,000 × 0.52 MB | ≈ 1,049 MB |
 | Extra KV cache with GQA, as in Llama 3 8B ([Chapter 4](04-quantization.md#grouped-query-attention-gqa)) | 2,000 × 0.13 MB | ≈ 262 MB |
 
-This is why reasoning models are slower and more expensive per question, and why many let the user choose how much to think.
+This is why reasoning models are slower and more expensive per question, and why many let the user choose how much to think. (The cache totals use the unrounded per-token sizes from Chapters 3 and 4: 524,288 bytes = 0.524288 MB and 131,072 bytes = 0.131072 MB per token.)
 
 ### Training with verifiable rewards
 
@@ -186,6 +244,14 @@ $$
 
 4. Training raises the probability of every token in answers with a positive advantage and lowers it in answers with a negative advantage, with a KL penalty keeping the model close to its reference, as in RLHF ([Chapter 2](02-training.md#inside-rlhf-the-kl-penalty-and-reward-hacking)).
 
+```mermaid
+flowchart LR
+  Q["Question"] --> GEN["1. Sample group of G answers<br/>from trained model π"]
+  GEN --> CHK["2. Automatic checker<br/>assigns rewards r₁...r_G (1 or 0)"]
+  CHK --> ADV["3. Group advantage<br/>A_i = (r_i − mean) ÷ std"]
+  ADV --> UPD["4. Update weights of π<br/>Push up A_i > 0, push down A_i < 0<br/>(with KL penalty to π_ref)"]
+```
+
 **Worked example:** a group of 4 answers to one question (rewards made up; standard deviation computed over the group):
 
 | Group's rewards | Mean | Std | Advantages | What training does |
@@ -193,6 +259,17 @@ $$
 | 1, 0, 1, 1 | 0.75 | 0.433 | +0.577, −1.732, +0.577, +0.577 | A strong push away from the one wrong answer, a mild push toward the three right ones |
 | 0, 0, 0, 1 | 0.25 | 0.433 | −0.577, −0.577, −0.577, +1.732 | A strong push toward the single right answer |
 | 1, 1, 1, 1 | 1.00 | 0 | none | Nothing: every answer equals the average, so there is nothing to learn |
+
+!!! note "Quick refresher: computing the group mean, standard deviation and advantages"
+    In the first row (`1, 0, 1, 1`), the four rewards are compared against each other using the same three steps as [layer normalisation in Chapter 1](01-transformers.md#layer-normalisation-in-detail):
+
+    1. **Mean (average):** (1 + 0 + 1 + 1) ÷ 4 = **0.75**.
+    2. **Standard deviation (typical distance from the mean):** subtract the mean from each reward (`+0.25, −0.75, +0.25, +0.25`), square those differences and average them to get the variance:
+       (0.0625 + 0.5625 + 0.0625 + 0.0625) ÷ 4 = 0.1875,
+       then take the square root: √0.1875 ≈ **0.433**.
+    3. **Advantages (standardised scores):** divide each difference by 0.433. The three right answers get +0.25 ÷ 0.433 = **+0.577**, and the single wrong answer gets −0.75 ÷ 0.433 = **−1.732**.
+
+    Because the differences from the mean always add up to 0, the advantages in a group always sum to 0 (3 × 0.577 − 1.732 ≈ 0), and a rare success or rare failure automatically gets a stronger push than the common outcome.
 
 The last row shows a practical point: questions that are always solved, or never solved, teach the model nothing. Training sets for reasoning models are therefore chosen to be hard but not impossible for the current model.
 
