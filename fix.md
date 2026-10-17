@@ -13,7 +13,13 @@ Legend: `[ ]` waiting · `[x]` approved and applied · `[-]` rejected
 
 ## Waiting for approval
 
-(Nothing waiting.)
+### L1-7. Hands-on exercises `[ ]`
+
+- **Not in the book:** the lecture suggests labs (build a BPE tokenizer, attention from scratch, a mini Transformer). The book is a reading book with worked examples, so this is out of its current scope.
+- **Recommendation:** optional and not needed for completeness. If wanted later, add a short "Try it yourself" box at the end of each chapter pointing to small exercises.
+- **Priority:** Low (your call).
+
+**Decision:**
 
 ---
 
@@ -76,14 +82,7 @@ Reviewed 2026-10-17. Lecture 1 overlaps heavily with the Introduction and Chapte
 
 **Decision:**
 
-#### L1-7. Hands-on exercises `[ ]`
-
-- **Not in the book:** the lecture suggests labs (build a BPE tokenizer, attention from scratch, a mini Transformer). The book is a reading book with worked examples, so this is out of its current scope.
-- **Recommendation:** optional and not needed for completeness. If wanted later, add a short "Try it yourself" box at the end of each chapter pointing to small exercises.
-- **Priority:** Low (your call).
-
-**Decision:**
-
+#### L1-7. Hands-on exercises: moved to the top of this file, under "Waiting for approval".
 ### Lecture 2 — Model families, Mixture of Experts, normalisation, context, decoding, prompting
 
 Reviewed 2026-10-17. Normalisation (RMSNorm, pre-norm), RoPE, attention's quadratic cost, the 0.75-words-per-token rule and temperature, top-k and top-p sampling are already covered. Two topics are large enough to need real space: Mixture of Experts (in Chapter 4) and prompting and reasoning (a new chapter is recommended).

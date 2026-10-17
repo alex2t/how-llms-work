@@ -74,6 +74,7 @@ The book is being checked against Stanford's [CME295: Transformers & Large Langu
 5. **Check every number.** Any worked example must be computed, not guessed. Use a quick Python snippet to verify arithmetic (softmax, log, means, memory sizes) before writing it.
 6. **Keep the navigation in sync.** Every new page must be added to `nav:` in `mkdocs.yml`; never leave a page out of the navigation bar.
 7. **Commit messages:** `chN: <section> — <what changed>`, e.g. `ch2: padding mask — add 2-sentence batch example`.
+8. **Chapter review by the user.** The user reads one chapter at a time and asks for clarifications. Make each requested change (propose first if it changes or removes existing text, per rules 1 and 2), run `mkdocs build --strict`, and update the logs, but **do not commit during the review**. Commit, push and deploy once, at the end of that chapter's review. Open decisions stay at the top of `fix.md`, under "Waiting for approval".
 
 ## Writing style (match Chapter 1)
 

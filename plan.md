@@ -151,4 +151,4 @@ Compare the book with each lecture of Stanford's CME295 (summaries in `sources/`
 - [ ] Lecture 7 (when published).
 - [ ] Lecture 8 (when published).
 - [ ] Lecture 9 (when published), then the glossary (Phase 6).
-- [ ] User read-through of every chapter; rewrite the parts flagged as unclear.
+- [ ] User read-through, one chapter at a time; rewrite the parts flagged as unclear; one commit, push and deploy per chapter (`CLAUDE.md`, rule 8).
