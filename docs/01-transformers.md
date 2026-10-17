@@ -17,7 +17,20 @@ The rest of this document walks through each step, with most detail on attention
 
 Byte Pair Encoding (BPE) builds a vocabulary by repeatedly merging the most frequent pair of adjacent symbols, starting from single characters. Frequent words end up as one token; rare words split into known pieces.
 
+### Word, character, subword or byte?
+
 **Why not just use words or characters?** A word vocabulary cannot handle a word it never saw (a typo, a new name, `Trusteer`). A character vocabulary handles anything but makes sequences very long, and attention cost grows with length squared. BPE sits in the middle. It started as a compression algorithm (Gage, 1994) and was adapted for translation by Sennrich et al. (2016). GPT-2 and later models use byte-level BPE: the starting alphabet is the 256 possible bytes, so any text in any language can be encoded with no "unknown" token.
+
+A word missing from a word vocabulary is called **out-of-vocabulary (OOV)**. A word-level tokenizer can only replace it with a special unknown token, `[UNK]`, and its meaning is lost. The four possible sizes of token compare as follows:
+
+| Token unit | Vocabulary size | Sequence length | Unknown words? | Example: `unbelievable` |
+| --- | --- | --- | --- | --- |
+| Word | Very large (hundreds of thousands of words) | Shortest | Yes: OOV words become `[UNK]` | 1 token if the word is in the vocabulary, otherwise `[UNK]` |
+| Character | Small (letters, digits, punctuation) | Very long | No | 12 tokens: `u` `n` `b` `e` `l` `i` `e` `v` `a` `b` `l` `e` |
+| Subword (BPE) | Medium, typically 32,000 to 128,000 | Medium | No: rare words split into known pieces | 3 tokens: `un` · `believ` · `able` |
+| Byte | Fixed at 256 | Long | No: any text is a sequence of bytes | 12 bytes, the same as characters for plain English letters |
+
+**Why bytes help.** Computers store text as **bytes** (numbers from 0 to 255) using the UTF-8 encoding. A plain English letter takes 1 byte, but other characters take more: `é` in `café` takes 2 bytes (so the 4-character word is 5 bytes), and the emoji 😀 takes 4. A character vocabulary would need an entry for every character of every language, more than 150,000; a byte vocabulary never needs more than 256. **Byte-level BPE** starts from those 256 bytes and then learns merges exactly as below, so common words still become single tokens while any rare symbol can always fall back to its bytes. This is why modern models never produce `[UNK]`.
 
 ### Training: learning the merges
 

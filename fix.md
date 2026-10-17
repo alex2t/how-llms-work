@@ -35,13 +35,13 @@ Reviewed 2026-10-17. Lecture 1 overlaps heavily with the Introduction and Chapte
 
 **Decision:** Approved (user, 2026-10-17). Not written yet.
 
-#### L1-2. Word, character, subword or byte tokens: the comparison `[ ]`
+#### L1-2. Word, character, subword or byte tokens: the comparison `[x]`
 
 - **Missing:** Chapter 1 has one paragraph, "Why not just use words or characters?". The lecture compares four granularities (word, character, subword, byte) on vocabulary size, sequence length and unknown words. The book never names **out-of-vocabulary (OOV)** words, and does not cover **byte-level** tokenization (used by GPT-2 and most modern models: 256 base symbols, so any text, including emoji, can be encoded and no token is ever "unknown").
 - **Recommendation:** existing chapter. **Chapter 1 → "BPE tokenizer: from text to token IDs"**: expand that paragraph into a subsection "Word, character, subword or byte?" with a comparison table and one worked example (the same word split at each granularity, with the token count for each).
 - **Priority:** Medium.
 
-**Decision:** Approved (user, 2026-10-17). Not written yet.
+**Decision:** Approved (user, 2026-10-17). Written 2026-10-17.
 
 #### L1-3. Special tokens in one place, including `[UNK]` and chat role tokens `[ ]`
 
