@@ -95,3 +95,4 @@ Publishing is automatic: push to `main` and the workflow deploys to GitHub Pages
 Add one line per implemented section, newest at the bottom: `YYYY-MM-DD — Chapter N — Section — one-sentence summary`.
 
 - 2026-10-17 — Setup — Repository scaffold — MkDocs Material site, navigation tabs, GitHub Pages workflow, home page and placeholders for the Introduction and Chapters 1–5 created.
+- 2026-10-17 — Setup — GitHub Pages — site published at https://alex2t.github.io/how-llms-work/; workflow actions updated to Node 24 versions.

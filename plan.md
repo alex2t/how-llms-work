@@ -9,7 +9,7 @@ Legend: `[ ]` to do · `[x]` done · `[~]` in progress
 ## Phase 0 — Setup and import
 
 - [x] Scaffold: `mkdocs.yml` (Material theme, navigation tabs, prev/next footer, search, MathJax), `requirements.txt`, GitHub Pages workflow, home page, chapter placeholders.
-- [ ] Create the GitHub repo `how-llms-work`, push, and set Settings → Pages → Source = **GitHub Actions**. Confirm the site loads.
+- [x] Create the GitHub repo `how-llms-work`, push, and set Settings → Pages → Source = **GitHub Actions**. Confirm the site loads.
 - [ ] Import Chapter 1: the user exports the Claude Doc "How Transformers Work: BPE, Attention and Q/K/V" as Markdown and saves it as `docs/01-transformers.md` (replacing the placeholder). Then:
   - [ ] Convert every ```` ```latex ```` block to a `$$ … $$` math block.
   - [ ] Remove the date/byline line under the title; keep the `#` title.

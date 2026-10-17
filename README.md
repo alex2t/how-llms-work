@@ -32,6 +32,7 @@ Every push to `main` publishes the site through GitHub Actions (`.github/workflo
 One line per implemented section, newest at the bottom.
 
 - 2026-10-17 — Setup — Repository scaffold: MkDocs Material site with a chapter navigation bar, GitHub Pages workflow, home page and chapter placeholders.
+- 2026-10-17 — Setup — GitHub Pages: site published; workflow actions updated to Node 24 versions.
 
 ## Credits
 
