@@ -616,7 +616,7 @@ A chat model like Claude is not trained once but in several stages, each with di
 
 ### Stage 2: supervised fine-tuning (SFT)
 
-**Fine-tuning** means continuing training from the pre-trained weights on a smaller, specially chosen dataset. In **supervised fine-tuning**, the data is examples of good conversations: a user prompt and a high-quality answer, often written or checked by people. The loss is still cross-entropy on the next token, but only the **answer** tokens count: the prompt tokens are excluded from the loss, exactly as `<pad>` tokens are ("Step 4: ignore padding in the loss"). The model learns the *format* of a helpful assistant: answer the question, follow instructions, stop when done.
+**Fine-tuning** means continuing training from the pre-trained weights on a smaller, specially chosen dataset. In **supervised fine-tuning**, the data is examples of good conversations: a user prompt and a high-quality answer, often written or checked by people. When the examples are instructions paired with good responses, as here, this is also called **instruction tuning**. The loss is still cross-entropy on the next token, but only the **answer** tokens count: the prompt tokens are excluded from the loss, exactly as `<pad>` tokens are ("Step 4: ignore padding in the loss"). The model learns the *format* of a helpful assistant: answer the question, follow instructions, stop when done.
 
 **Example** (illustrative):
 
@@ -728,7 +728,48 @@ Reasoning models use another reinforcement-learning method, GRPO, which drops th
 | Result | Base model: continues text | Follows instructions | Helpful, honest, safer answers |
 | Compute | By far the largest | Small in comparison | Small to medium |
 
+### Cheap fine-tuning: LoRA
+
 **LoRA (low-rank adaptation)** is a cheap way to fine-tune: the original weights are frozen and small extra matrices are trained and added to them. For example, instead of changing a 512 × 512 matrix (262,144 numbers), LoRA with rank 8 trains a 512 × 8 and an 8 × 512 matrix (8,192 numbers in total), about 3% as many.
+
+**The formula.** For a weight matrix W₀ with d rows and k columns, LoRA learns a change ΔW written as the product of two thin matrices:
+
+$$
+W = W_0 + \Delta W = W_0 + B \cdot A \qquad B: d \times r \qquad A: r \times k
+$$
+
+- **W₀** is the original, frozen weight matrix.
+- **B** and **A** are the two small trainable matrices; their product B · A has the same shape as W₀.
+- **r** is the **rank**, a small number such as 8 or 16. It limits how complex the change can be, and sets how many numbers are trained: r × (d + k) instead of d × k.
+- **B starts at zero**, so at the beginning B · A = 0 and the model behaves exactly like the original. Training then moves B and A away from zero.
+
+**Worked example** with a 2 × 2 matrix and rank 1 (made-up numbers):
+
+$$
+W_0 = \begin{bmatrix} 1 & 2 \\ 3 & 4 \end{bmatrix} \qquad B = \begin{bmatrix} 1 \\ 0.5 \end{bmatrix} \qquad A = \begin{bmatrix} 0.2 & -0.4 \end{bmatrix}
+$$
+
+$$
+B \cdot A = \begin{bmatrix} 0.2 & -0.4 \\ 0.1 & -0.2 \end{bmatrix} \qquad W = W_0 + B \cdot A = \begin{bmatrix} 1.2 & 1.6 \\ 3.1 & 3.8 \end{bmatrix}
+$$
+
+At this tiny size there is no saving (4 trained numbers either way). The saving grows with the matrix: for a 4,096 × 4,096 matrix, the full change has 16,777,216 numbers, while rank 8 trains 8 × (4,096 + 4,096) = 65,536, about 0.4%.
+
+**Where the adapters go.** The original LoRA paper added B · A only to W\_Q and W\_V in the attention layers. Today it is common to add them to every weight matrix of attention and of the feed-forward network, which usually works better for little extra cost. For a model with settings like Llama 2 7B (32 layers, d\_model = 4,096, d\_ff = 11,008), rank 8 on all of them trains about 20 million numbers, about 0.3% of the model's 6.7 billion weights.
+
+**Why it is so cheap.**
+
+| | Full fine-tuning | LoRA | QLoRA |
+| --- | --- | --- | --- |
+| Base weights | Trained | Frozen, 16-bit | Frozen, **4-bit** ([Chapter 4](04-quantization.md#how-quantization-works)) |
+| Memory for a 7-billion-weight model (weights, plus gradients and Adam's m and v for whatever is trained) | 4 numbers × 4 bytes × 7 billion ≈ 112 GB | About 14 GB of frozen weights, plus a small amount for the adapters | About 3.5 GB of frozen weights, plus the adapters |
+| Trained numbers | 7 billion | About 20 million | About 20 million |
+
+The memory figures cover the weights and optimiser state only (as in [Chapter 3](03-inference.md#why-inference-needs-less-memory)); activations add more in every case. **QLoRA** combines LoRA with a base model quantized to 4 bits, which makes it possible to fine-tune large models on a single GPU.
+
+**One base model, many tasks.** Because the base weights never change, a company can keep one copy of the base model in memory and train a separate small adapter for each task (for example fraud labelling, email triage, translation), then swap adapters in and out as requests arrive.
+
+**Other parameter-efficient methods.** LoRA belongs to a family called **parameter-efficient fine-tuning (PEFT)**. Two other members: **adapters**, small extra layers inserted inside each Transformer block, and **prefix tuning**, which trains a few extra key and value vectors that every token can attend to, as if a learned prompt were placed in front of the input.
 
 After the last stage, all weights are frozen again and the model is ready for inference, which is the subject of [Chapter 3](03-inference.md).
 
@@ -780,3 +821,6 @@ After the last stage, all weights are frozen again and the model is ready for in
 - [BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding (Devlin et al., 2018)](https://arxiv.org/abs/1810.04805): masked language modelling, next sentence prediction, `[CLS]` and `[SEP]`
 - [RoBERTa: A Robustly Optimized BERT Pretraining Approach (Liu et al., 2019)](https://arxiv.org/abs/1907.11692): training without next sentence prediction
 - [Proximal Policy Optimization Algorithms (Schulman et al., 2017)](https://arxiv.org/abs/1707.06347): PPO
+- [QLoRA: Efficient Finetuning of Quantized LLMs (Dettmers et al., 2023)](https://arxiv.org/abs/2305.14314)
+- [Parameter-Efficient Transfer Learning for NLP (Houlsby et al., 2019)](https://arxiv.org/abs/1902.00751): adapters
+- [Prefix-Tuning: Optimizing Continuous Prompts for Generation (Li and Liang, 2021)](https://arxiv.org/abs/2101.00190)

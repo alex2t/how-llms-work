@@ -80,6 +80,7 @@ One line per implemented section, newest at the bottom.
 - 2026-10-17 — Chapter 2 — Packing: the alternative to padding, with the document mask (CME295 L3-4).
 - 2026-10-17 — Chapter 2 — Masked language modelling: how encoder-only models such as BERT are trained (CME295 L2-4).
 - 2026-10-17 — Chapter 2 — Preference training in detail: reward model, KL penalty, DPO loss and their costs (CME295 L3-6).
+- 2026-10-17 — Chapter 2 — Cheap fine-tuning with LoRA and QLoRA; instruction tuning named (CME295 L3-5).
 
 ## Credits
 

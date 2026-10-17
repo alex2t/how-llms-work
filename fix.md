@@ -184,13 +184,13 @@ Reviewed 2026-10-17. The next-token objective, teacher forcing, and supervised f
 
 **Decision:** Approved (user, 2026-10-17). Written 2026-10-17.
 
-#### L3-5. LoRA in depth, and the term "instruction tuning" `[ ]`
+#### L3-5. LoRA in depth, and the term "instruction tuning" `[x]`
 
 - **Missing:** Chapter 2 gives LoRA one paragraph (frozen weights, a 512 × 8 and an 8 × 512 matrix). Missing: the formula W = W₀ + B·A with every letter explained; **where** adapters are placed (the original paper: W\_Q and W\_V only; common practice today: all linear layers); **swapping adapters** so one base model serves many tasks; **QLoRA** (LoRA on a 4-bit quantized base model, linking to Chapter 4); and a one-line mention of other parameter-efficient methods (adapters, prefix tuning). Also, Stage 2 never uses the common name **instruction tuning** for supervised fine-tuning on instruction-following examples.
 - **Recommendation:** existing chapter. **Chapter 2 → "Stages of an LLM's life"**: turn the LoRA paragraph into a subsection "**Cheap fine-tuning: LoRA**" with a worked example (a 2 × 2 weight matrix plus B·A with rank 1). Add "instruction tuning" to the Stage 2 text.
 - **Priority:** Medium.
 
-**Decision:** Approved (user, 2026-10-17). Not written yet.
+**Decision:** Approved (user, 2026-10-17). Written 2026-10-17.
 
 #### L3-6. Preference training in detail: reward model, KL penalty, DPO `[x]`
 
