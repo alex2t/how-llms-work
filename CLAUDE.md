@@ -169,3 +169,4 @@ Add one line per implemented section, newest at the bottom: `YYYY-MM-DD — Chap
 - 2026-10-17 — Chapter 5 — Bits per byte (L3-3) — formula; two-tokenizer example gives 0.144 for both models (perplexity 1.65 vs 1.35).
 - 2026-10-17 — Chapter 5 — Benchmarks, pass@k and Elo (L3-9, L2-5 Chapter 5 part) — benchmark families table (knowledge, maths, code, software, long context, preference); pass@k (n = 10, c = 3: 0.300 and 0.917); Elo (1,300 vs 1,200: 64%; upset → 1,279.5 / 1,220.5); 4 cheat-sheet rows and 6 sources.
 - 2026-10-17 — Chapter 1 — Word, character, subword or byte? (L1-2) — existing paragraph kept under a new subsection; OOV and [UNK]; 4-way comparison table on `unbelievable`; UTF-8 bytes (café = 5 bytes, 😀 = 4); byte-level BPE.
+- 2026-10-17 — Chapter 1 — Other subword algorithms (L1-4) — WordPiece score on the chapter corpus (first merge i + d at 0.333 vs BPE e + s); Unigram; algorithm table; SentencePiece.

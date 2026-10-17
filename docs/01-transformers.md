@@ -85,6 +85,19 @@ Result: 2 tokens, `low` and `est</w>`. With illustrative IDs, that becomes \[103
 - **Letter-level tasks are hard.** The model sees `strawberry` as two or three chunks, not ten letters, which is why counting letters trips models up.
 - **The tokenizer is fixed before model training.** The model learns about tokens; it never sees raw characters.
 
+**Other subword algorithms.** BPE is the most common way to build a subword vocabulary, but two others are widely used:
+
+- **WordPiece** also merges pairs, but chooses the pair with the highest score = frequency of the pair ÷ (frequency of the first part × frequency of the second part), so it favours parts that rarely appear apart. On the corpus above, BPE's first merge is `e` + `s` (9 times); WordPiece's is `i` + `d`, which occurs only 3 times but never separately: 3 ÷ (3 × 3) = 0.333, against 9 ÷ (17 × 9) = 0.059 for `e` + `s`. WordPiece marks a piece that continues a word with `##`, for example `play` `##ing`.
+- **Unigram** works the other way round: it starts from a very large vocabulary of candidate pieces and repeatedly removes the pieces whose removal hurts least, until the target size is reached. To encode a word, it picks the most probable of the possible splits.
+
+| Algorithm | Builds the vocabulary by | Used by (examples) |
+| --- | --- | --- |
+| BPE (usually byte-level) | Merging the most frequent pair | GPT-2 and later GPT models, Llama 3 |
+| WordPiece | Merging the highest-scoring pair | BERT and its family |
+| Unigram | Removing the least useful pieces from a large set | T5 |
+
+**SentencePiece** is not a fourth algorithm but a widely used library that runs BPE or Unigram directly on raw text, treating the space as an ordinary symbol, written `▁`. This suits languages such as Japanese or Chinese that do not separate words with spaces.
+
 ### Does the tokenizer change during or after training?
 
 No. The BPE tokenizer is trained **first**, on its own, by counting and merging pairs as above. That step has no neural network and no gradients. Its output (the merge list and the token-to-ID table) is then frozen.
@@ -559,4 +572,7 @@ Every weight in the model, including W\_Q, W\_K, W\_V, W\_O, the embeddings and 
 - [Attention Is All You Need (Vaswani et al., 2017)](https://arxiv.org/abs/1706.03762)
 - [Neural Machine Translation of Rare Words with Subword Units (Sennrich et al., 2016)](https://arxiv.org/abs/1508.07909)
 - [Transformer from scratch, slides by Umar Jamil (CC BY-NC 4.0)](https://github.com/hkproj/transformer-from-scratch-notes)
-
+- [Japanese and Korean Voice Search (Schuster and Nakajima, 2012)](https://static.googleusercontent.com/media/research.google.com/en//pubs/archive/37842.pdf): WordPiece
+- [Subword Regularization (Kudo, 2018)](https://arxiv.org/abs/1804.10959): the Unigram tokenizer
+- [SentencePiece (Kudo and Richardson, 2018)](https://arxiv.org/abs/1808.06226)
+- [Tokenizer summary, Hugging Face Transformers documentation](https://huggingface.co/docs/transformers/tokenizer_summary): BPE, WordPiece and Unigram compared

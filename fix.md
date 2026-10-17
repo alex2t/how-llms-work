@@ -53,13 +53,13 @@ Reviewed 2026-10-17. Lecture 1 overlaps heavily with the Introduction and Chapte
 
 **Decision:** Approved (user, 2026-10-17). Not written yet.
 
-#### L1-4. Other subword algorithms: WordPiece and Unigram `[ ]`
+#### L1-4. Other subword algorithms: WordPiece and Unigram `[x]`
 
 - **Missing:** the book presents BPE only. The lecture mentions Unigram as an alternative; WordPiece (used by BERT) is the other common one.
 - **Recommendation:** existing chapter. **Chapter 1 → BPE tokenizer → "Practical consequences"**: a 3- or 4-sentence note with a small table (algorithm, main idea, example models). Model names to be checked against the original papers before writing.
 - **Priority:** Low.
 
-**Decision:** Approved (user, 2026-10-17). Not written yet.
+**Decision:** Approved (user, 2026-10-17). Written 2026-10-17.
 
 #### L1-5. How Word2Vec is trained: the network and negative sampling `[ ]`
 

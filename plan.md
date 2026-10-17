@@ -123,7 +123,7 @@ Compare the book with each lecture of Stanford's CME295 (summaries in `sources/`
   - [ ] L1-1: Introduction → "Why RNNs hit a wall": the context bottleneck as a fourth problem, plus a row in the bridge table.
   - [x] L1-2: Chapter 1 → BPE tokenizer: subsection "Word, character, subword or byte?" with a table and worked example.
   - [ ] L1-3: Chapter 1 special-tokens table; Chapter 3 worked chat example with role tokens. (Chapter 3 part done.)
-  - [ ] L1-4: Chapter 1 → Practical consequences: short note on WordPiece and Unigram.
+  - [x] L1-4: Chapter 1 → Practical consequences: short note on WordPiece and Unigram.
   - [ ] L1-5: Introduction → Word2Vec: the network and negative sampling.
 - [x] Lecture 2 — Model families, Mixture of Experts, normalisation, context, decoding, prompting. Gap analysis in `fix.md`; L2-1 to L2-7 approved.
   - [x] L2-1: Chapter 4 → new section "Mixture of Experts: more weights, same compute" + row in the overview table.
