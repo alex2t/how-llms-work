@@ -27,13 +27,13 @@ Topics the book already covers are checked but not listed. Item IDs: `L<lecture>
 
 Reviewed 2026-10-17. Lecture 1 overlaps heavily with the Introduction and Chapter 1. No new chapter is needed.
 
-#### L1-1. The context bottleneck of sequence-to-sequence RNNs `[ ]`
+#### L1-1. The context bottleneck of sequence-to-sequence RNNs `[x]`
 
 - **Missing:** an RNN encoder–decoder squeezes the whole source sentence into **one fixed-size vector** (the last hidden state) before the decoder starts. Long sentences lose information. Attention was first added to RNN translation (Bahdanau et al., 2014) to fix exactly this, by letting the decoder look back at every encoder state. The Introduction mentions 2014 attention in its timeline, but never explains the problem it solved, so the step from RNNs to the Transformer is less clear than it could be.
 - **Recommendation:** existing chapter. **Introduction → "Why RNNs hit a wall"**: add a fourth problem, "One fixed-size summary", with a small example (a 30-word sentence squeezed into one vector), and add a row to the bridge table ("decoder reads all encoder states through attention"). Link to Chapter 1's cross-attention.
 - **Priority:** High. It is the historical origin of attention.
 
-**Decision:** Approved (user, 2026-10-17). Not written yet.
+**Decision:** Approved (user, 2026-10-17). Written 2026-10-17.
 
 #### L1-2. Word, character, subword or byte tokens: the comparison `[x]`
 

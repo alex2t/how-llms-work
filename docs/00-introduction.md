@@ -309,14 +309,19 @@ With a factor below 1, the signal from 50 words back almost disappears, so the n
 
 **3. Sequential processing blocks parallel training.** Step t cannot start until step t − 1 has finished. A 1,000-token text needs 1,000 steps one after another, even on a GPU that could do thousands of calculations at once. This makes RNNs slow to train on large datasets, which kept them small.
 
+**4. One fixed-size summary: the context bottleneck.** For translation, the 2014 sequence-to-sequence models used two RNNs: an **encoder** read the whole source sentence, and a **decoder** wrote the translation. The only thing passed between them was the encoder's **last hidden state**, one vector of fixed size. To translate "I love you very much", the decoder had to produce "Ti amo molto" from that single vector, with no way to look back at the individual English words. A 5-word sentence fits; a 30-word sentence must be squeezed into the same 512 numbers, and details are lost. Experiments at the time showed translation quality falling quickly as sentences got longer.
+
+The fix, also from 2014, was the first use of **attention**: instead of one summary, the decoder keeps all the encoder's hidden states, one per source word, and at each output step computes a weight for each of them, then takes their weighted sum. When writing "molto", it can put most of its weight on the states for "very much". This is the same idea as attention in Chapter 1; the Transformer kept the attention and dropped the recurrence.
+
 ### The bridge to Chapter 1
 
-The Transformer removes all three problems by dropping recurrence and using **attention**: every token looks directly at every other token ([Chapter 1](01-transformers.md#the-problem-it-solved)).
+The Transformer removes all four problems by dropping recurrence and using **attention**: every token looks directly at every other token ([Chapter 1](01-transformers.md#the-problem-it-solved)).
 
 | RNN problem | How attention removes it |
 | --- | --- |
 | Vanishing and exploding gradients across many steps | Any two tokens are one attention step apart, so the gradient between them does not pass through a long chain of multiplications |
 | Long-range dependencies squeezed into one hidden state | "are" can attend to "keys" directly, however far back it is |
+| The whole source squeezed into one fixed-size vector | Every output step attends to every source token, so nothing has to fit in a single summary ([Chapter 1](01-transformers.md#self-attention-vs-cross-attention)) |
 | Sequential processing | All positions are computed at once in training ([Chapter 2](02-training.md#why-training-happens-in-one-time-step)), so GPUs are fully used |
 
 That last point is what made today's models possible: once training could use parallel hardware fully, models and datasets could grow by thousands of times, as the timeline above shows. [Chapter 1](01-transformers.md) explains how the Transformer works, step by step.
@@ -344,6 +349,7 @@ That last point is what made today's models possible: once training could use pa
 | LSTM | An RNN with a cell state and gates that keep information longer |
 | Vanishing / exploding gradient | Signals shrink or grow when multiplied through many steps |
 | Why the Transformer won | Attention connects any two tokens directly and trains all positions in parallel |
+| Context bottleneck | An RNN encoder–decoder passes the whole source as one fixed-size vector; attention removed this limit |
 
 ## Sources
 
@@ -360,3 +366,5 @@ That last point is what made today's models possible: once training could use pa
 - [Language Models are Unsupervised Multitask Learners (Radford et al., 2019)](https://cdn.openai.com/better-language-models/language_models_are_unsupervised_multitask_learners.pdf): GPT-2
 - [Language Models are Few-Shot Learners (Brown et al., 2020)](https://arxiv.org/abs/2005.14165): GPT-3
 - [Scaling Laws for Neural Language Models (Kaplan et al., 2020)](https://arxiv.org/abs/2001.08361): why larger models and datasets keep improving results
+- [On the Properties of Neural Machine Translation: Encoder-Decoder Approaches (Cho et al., 2014)](https://arxiv.org/abs/1409.1259): translation quality falls on long sentences
+- [CME295: Transformers & Large Language Models, Lecture 1 (Stanford University, Afshine and Shervine Amidi)](https://cme295.stanford.edu/syllabus/): context bottleneck and Word2Vec training topics

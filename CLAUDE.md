@@ -172,3 +172,4 @@ Add one line per implemented section, newest at the bottom: `YYYY-MM-DD — Chap
 - 2026-10-17 — Chapter 1 — Other subword algorithms (L1-4) — WordPiece score on the chapter corpus (first merge i + d at 0.333 vs BPE e + s); Unigram; algorithm table; SentencePiece.
 - 2026-10-17 — Chapter 1 — Special tokens (L1-3, Chapter 1 part) — table of 7 token kinds with other names, purpose and links to Chapters 2 and 3; 4 cheat-sheet rows; CME295 Lecture 1 credited.
 - 2026-10-17 — Introduction — How Word2Vec is trained (L1-5) — one-hidden-layer network, first layer = embedding table; negative sampling example (losses 0.127 + 0.313 + 0.974 = 1.414; 3 dot products instead of 50,000).
+- 2026-10-17 — Introduction — Context bottleneck (L1-1) — fourth RNN problem with the "I love you very much" example; 2014 attention as the fix; bridge-table row added before "Sequential processing"; "all three" → "all four"; cheat-sheet row and 2 sources.

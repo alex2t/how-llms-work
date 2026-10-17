@@ -120,7 +120,7 @@ Compare the book with each lecture of Stanford's CME295 (summaries in `sources/`
 
 - [x] Set-up: `sources/` git-ignored; credits in `README.md`; workflow in `CLAUDE.md`.
 - [x] Lecture 1 — Transformer foundations, tokenization, embeddings, attention. Gap analysis in `fix.md`; L1-1 to L1-5 approved.
-  - [ ] L1-1: Introduction → "Why RNNs hit a wall": the context bottleneck as a fourth problem, plus a row in the bridge table.
+  - [x] L1-1: Introduction → "Why RNNs hit a wall": the context bottleneck as a fourth problem, plus a row in the bridge table.
   - [x] L1-2: Chapter 1 → BPE tokenizer: subsection "Word, character, subword or byte?" with a table and worked example.
   - [x] L1-3: Chapter 1 special-tokens table; Chapter 3 worked chat example with role tokens.
   - [x] L1-4: Chapter 1 → Practical consequences: short note on WordPiece and Unigram.
