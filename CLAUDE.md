@@ -102,3 +102,4 @@ Add one line per implemented section, newest at the bottom: `YYYY-MM-DD — Chap
 - 2026-10-17 — Chapter 2 — Status and number check — chapter recorded as written; worked numbers checked (33 of 36 correct); proposed fixes listed in fix.md.
 - 2026-10-17 — Chapter 2 — Fixes F2–F7 — three number corrections, perplexity link to Chapter 5, 23 chapter links, two running examples added to the home page.
 - 2026-10-17 — Chapter 3 — Big picture + Inference vs training — the generation loop; what is switched off at inference; memory example (260 MB vs 1,040 MB); why the forward pass is deterministic.
+- 2026-10-17 — Chapter 3 — Generation step by step — Ti amo molto generated in 4 decoder passes with the encoder run once; decoder-only version with a prompt; comparison table.
