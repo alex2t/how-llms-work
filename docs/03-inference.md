@@ -306,3 +306,47 @@ Three practical details:
 - **Logarithms instead of products.** Multiplying many probabilities gives numbers too small for a computer to store accurately, so implementations add the logarithms instead: ln 0.211 + ln 0.95 = −1.607 is higher than ln 0.772 + ln 0.20 = −1.868, giving the same ranking.
 - **Length penalty.** Every extra token multiplies the score by a number below 1, so plain beam search favours short answers. Implementations divide the score by a function of the length to correct this. The original Transformer used a beam width of 4 for translation, with a length penalty.
 - **Where it is used.** Beam search suits tasks with one best answer, such as translation and speech recognition. Chat models rarely use it: it is slower (several beams per step), and its answers tend to be bland and repetitive. They use sampling instead, described next.
+
+### Sampling and temperature
+
+Instead of always taking the top token, a model can **sample**: pick a token at random, with each token's chance equal to its probability. With the table above, sampling picks `CAT` 77.2% of the time, `DOG` 21.1%, `IS` 1.3% and `LOVELY` 0.4%. Over 1,000 runs of the same prompt you would expect about 772 `CAT`, 211 `DOG`, 13 `IS` and 4 `LOVELY`. Sampling is what lets a chat model give a different answer each time you ask.
+
+**Temperature** controls how adventurous sampling is. Before softmax, every logit is divided by a number T, the temperature:
+
+$$
+p_k = \frac{e^{z_k / T}}{\sum_{j} e^{z_j / T}}
+$$
+
+- **z\_k** is the logit of token k, and **p\_k** its probability after softmax.
+- **T** is the temperature, a positive number chosen by the user or the application.
+- **j** runs over every token in the vocabulary, so the probabilities add up to 1.
+
+Dividing by T stretches or squeezes the gaps between logits. A small T makes the gaps bigger, so the top token takes even more of the probability. A large T makes the gaps smaller, so the probabilities become more even. T = 1 leaves the model's probabilities unchanged.
+
+**Worked example, T = 2.**
+
+1. Divide each logit by 2: CAT 3.1, DOG 2.45, IS 1.05, LOVELY 0.5.
+2. Take e to each: e^3.1 = 22.20, e^2.45 = 11.59, e^1.05 = 2.86, e^0.5 = 1.65. Their sum is 38.29.
+3. Divide each by the sum: CAT 22.20 / 38.29 = 0.580, DOG 0.303, IS 0.075, LOVELY 0.043.
+
+**The same logits at three temperatures:**
+
+| Token | Logit | T = 0.5 | T = 1 | T = 2 |
+| --- | --- | --- | --- | --- |
+| CAT | 6.2 | 0.931 | 0.772 | 0.580 |
+| DOG | 4.9 | 0.069 | 0.211 | 0.303 |
+| IS | 2.1 | 0.0003 | 0.013 | 0.075 |
+| LOVELY | 1.0 | 0.00003 | 0.004 | 0.043 |
+
+(Values are rounded, so a column can add up to 1.001 instead of exactly 1.)
+
+- **T = 0.5 (low):** `CAT` rises from 0.772 to 0.931. Sampling almost always gives the top token; `IS` comes up about 3 times in 10,000.
+- **T = 1:** the model's own probabilities.
+- **T = 2 (high):** `CAT` falls to 0.580, and `LOVELY` becomes about ten times more likely (0.004 → 0.043). Answers are more varied but more often odd or wrong.
+
+Two points that are easy to miss:
+
+- **The order never changes.** Dividing every logit by the same positive number keeps `CAT` first and `LOVELY` last at every temperature. Temperature only changes how much the top tokens dominate.
+- **T = 0 means greedy.** Dividing by 0 is not possible, but as T gets closer to 0 the top token's probability gets closer to 1. APIs therefore treat a temperature of 0 as "always pick the top token", which is greedy decoding.
+
+Low temperatures (around 0 to 0.3) suit tasks with one right answer, such as extracting data or writing code. Higher ones (around 0.7 to 1) suit open-ended writing. Very high values make the text drift into nonsense, because unlikely tokens keep getting picked.

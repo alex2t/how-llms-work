@@ -62,7 +62,7 @@ Goal: give the reader the background needed before Chapter 1, and the story of w
 - [x] The KV cache: why earlier keys and values are stored; memory estimate.
 - [ ] Choosing the next token, on one shared probability example:
   - [x] Greedy decoding and beam search (beam of 2 worked through).
-  - [ ] Temperature: divide logits by T before softmax; T = 0.5, 1, 2 on the same logits.
+  - [x] Temperature: divide logits by T before softmax; T = 0.5, 1, 2 on the same logits.
   - [ ] Top-k: keep the k most likely tokens, renormalise.
   - [ ] Top-p (nucleus): keep the smallest set summing to p, renormalise.
   - [ ] How they combine; typical settings for factual vs creative output.
