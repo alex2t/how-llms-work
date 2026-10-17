@@ -459,3 +459,42 @@ The previous sections described many measures. A real project needs only a few, 
 The model's weights are frozen at inference ([Chapter 3](03-inference.md#inference-vs-training)), so it cannot adapt on its own. Monitoring catches the drop; the response can be a new threshold, an updated prompt, fine-tuning on recent labelled cases ([Chapter 2](02-training.md#stage-2-supervised-fine-tuning-sft)), or a different model.
 
 The same re-evaluation is needed after **any** change to the model, including ones meant only to save money: a quantized version ([Chapter 4](04-quantization.md#how-to-check-a-quantized-model)) or new decoding settings ([Chapter 3](03-inference.md#typical-settings)) must be measured on the same evaluation data, against the same targets, before it replaces the model in use.
+
+## Cheat sheet
+
+| Concept | One-line meaning |
+| --- | --- |
+| Three levels | Training loss → model metrics → business outcomes |
+| Loss vs metric | Loss guides training and must be smooth; a metric judges results for people |
+| Perplexity | e^(average cross-entropy): roughly how many tokens the model hesitates between |
+| Perplexity caveat | Only comparable between models with the same tokenizer, on the same text |
+| MSE | Average squared error, for numbers on a scale; RMSE is its square root, MAE the average absolute error |
+| Confusion matrix | TP, FN, FP, TN: the four outcomes of a yes/no prediction |
+| Accuracy | (TP + TN) ÷ all; misleading on imbalanced data |
+| Precision | TP ÷ (TP + FP): how many alerts are real |
+| Recall (TPR) | TP ÷ (TP + FN): how many real cases are caught |
+| F1 | 2 TP ÷ (2 TP + FP + FN): one number balancing precision and recall |
+| False positive rate | FP ÷ (FP + TN): share of negatives wrongly flagged |
+| ROC curve | TPR against FPR for every threshold |
+| AUC | Area under the ROC curve: 0.5 = coin flip, 1.0 = perfect |
+| Base-rate effect | Precision falls when the positive class is rarer in real use than in the test sample |
+| Benchmark | Public test set; watch for contamination and saturation |
+| Contamination | Test questions present in the training data, so scores measure memory |
+| LLM-as-judge | A model rates outputs with a rubric; check it against humans; watch position and length bias |
+| KPI | Business number tied to an objective, linked to a model metric |
+| ROI | (benefit − cost) ÷ cost |
+| Baseline / A/B test | Compare against the current process; split traffic randomly to credit the difference to the model |
+| Threshold | A business choice: trade recall against workload and customer friction |
+| Drift | Real data stops matching evaluation data; keep measuring after go-live |
+
+## Sources
+
+- [Speech and Language Processing, 3rd edition draft (Jurafsky and Martin)](https://web.stanford.edu/~jurafsky/slp3/): perplexity, classification metrics
+- [An introduction to ROC analysis (Fawcett, 2006)](https://doi.org/10.1016/j.patrec.2005.10.010): ROC curves and AUC
+- [Metrics and scoring, scikit-learn documentation](https://scikit-learn.org/stable/modules/model_evaluation.html): definitions of precision, recall, F1, ROC AUC, MSE and MAE
+- [Measuring Massive Multitask Language Understanding (Hendrycks et al., 2020)](https://arxiv.org/abs/2009.03300): the MMLU benchmark
+- [Evaluating Large Language Models Trained on Code (Chen et al., 2021)](https://arxiv.org/abs/2107.03374): the HumanEval benchmark
+- [NLP Evaluation in trouble: On the Need to Measure LLM Data Contamination for each Benchmark (Sainz et al., 2023)](https://arxiv.org/abs/2310.18018): data contamination
+- [Holistic Evaluation of Language Models (Liang et al., 2022)](https://arxiv.org/abs/2211.09110): evaluating LLMs on many tasks and criteria
+- [Judging LLM-as-a-Judge with MT-Bench and Chatbot Arena (Zheng et al., 2023)](https://arxiv.org/abs/2306.05685): LLM judges and their position, length and self-preference biases
+- [Chatbot Arena: An Open Platform for Evaluating LLMs by Human Preference (Chiang et al., 2024)](https://arxiv.org/abs/2403.04132): pairwise human comparison at scale

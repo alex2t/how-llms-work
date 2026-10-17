@@ -105,7 +105,7 @@ Goal: give the reader the background needed before Chapter 1, and the story of w
   - [x] Benchmark comparison against a baseline (manual process, rules engine, previous model); A/B tests, before/after.
   - [x] Trade-off table: threshold vs recall, precision, analyst workload, customer friction.
 - [x] Choosing metrics for a project: checklist (objective → KPI → model metric → baseline → target → post-go-live measurement and drift monitoring).
-- [ ] Cheat sheet + Sources.
+- [x] Cheat sheet + Sources.
 
 ## Phase 6 — Polish
 

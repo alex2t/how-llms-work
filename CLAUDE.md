@@ -14,7 +14,7 @@ A plain-English book that explains how large language models work, written as fi
 | 2 | Training: how the model learns | `docs/02-training.md` | Written (draft); fixes listed in `fix.md` |
 | 3 | Inference and decoding | `docs/03-inference.md` | Written (draft) |
 | 4 | Quantization, efficiency and the modern Transformer | `docs/04-quantization.md` | Written (draft) |
-| 5 | Evaluation: how we measure a model | `docs/05-evaluation.md` | In progress |
+| 5 | Evaluation: how we measure a model | `docs/05-evaluation.md` | Written (draft) |
 
 `plan.md` is the single source of truth for what is done and what is left.
 
@@ -129,3 +129,4 @@ Add one line per implemented section, newest at the bottom: `YYYY-MM-DD — Chap
 - 2026-10-17 — Chapter 5 — Evaluating generative LLMs — benchmarks (MMLU, HumanEval) and contamination; human evaluation; LLM-as-judge checked against an analyst (88% agreement); judge biases table; method comparison.
 - 2026-10-17 — Chapter 5 — Business outcomes — KPI chain table; precision falls from 0.571 (sample) to 0.197 (real traffic); rules engine vs LLM (€370,000 vs €200,867 a month, 311 hours saved, ROI ≈ 5.8, payback 1.8 months); CSAT/NPS/complaints; baselines and A/B tests; threshold trade-off table (0.5 meets all KPI targets).
 - 2026-10-17 — Chapter 5 — Choosing metrics for a project — 8-step checklist (objective to drift monitoring) filled in for the fraud example; data vs concept drift; re-evaluate after quantization or decoding changes.
+- 2026-10-17 — Chapter 5 — Cheat sheet + Sources — 22-row cheat sheet and 9 sources; chapter complete (draft).
