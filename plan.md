@@ -91,7 +91,7 @@ Goal: give the reader the background needed before Chapter 1, and the story of w
 - [x] Three levels of evaluation (opening table): training loss → model metrics → business outcomes.
 - [x] Loss vs metric; link to cross-entropy in Chapter 2.
 - [x] Perplexity: e^cross-entropy, worked example from CAT/DOG/IS/LOVELY; what a good value means; only comparable with the same tokenizer.
-- [ ] MSE loss: worked example on predicted vs true numbers; why it suits regression, not next-token prediction.
+- [x] MSE loss: worked example on predicted vs true numbers; why it suits regression, not next-token prediction.
 - [ ] Classification metrics on the fraud example (100 transactions):
   - [ ] Confusion matrix (TP, FP, TN, FN).
   - [ ] Accuracy and why it misleads on imbalanced data (2% fraud).

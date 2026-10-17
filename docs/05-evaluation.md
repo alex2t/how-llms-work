@@ -114,3 +114,52 @@ Model B looks better, but both models assign the text exactly the same probabili
 ### What perplexity does not tell you
 
 Perplexity measures how well a model predicts text, not whether its answers are correct, helpful or safe. A model can have a low perplexity and still answer `OK` to an obvious fraud. Task metrics, covered next, are needed for that.
+
+## Mean squared error (MSE)
+
+Cross-entropy suits answers that are one choice out of many, such as the next token or a fraud label. When the answer is a **number**, such as an amount of money, the usual measure is the mean squared error. This section shows how it works and why it is the wrong tool for next-token prediction.
+
+### Definitions
+
+- **Regression:** predicting a number on a continuous scale (an amount, a temperature, a price), as opposed to **classification**, which predicts a category (fraud / not fraud, or one token from the vocabulary).
+- **Error:** predicted value minus true value.
+- **Mean squared error (MSE):** the average of the squared errors.
+
+$$
+\text{MSE} = \frac{1}{n}\sum_{i=1}^{n} \left(\hat{y}_i - y_i\right)^2
+$$
+
+- **n** is the number of examples.
+- **ŷ\_i** (y-hat) is the predicted value for example i, and **y\_i** the true value.
+
+Squaring does two things: it makes every error positive, so errors above and below cannot cancel out, and it makes large errors count much more than small ones.
+
+### Worked example: estimating the amount at risk
+
+For each flagged transaction, the bank also asks the model to estimate how much money is at risk, in euros. Four cases, with made-up numbers:
+
+| Case | True amount y | Predicted ŷ | Error ŷ − y | Squared error |
+| --- | --- | --- | --- | --- |
+| 1 | 120 | 100 | −20 | 400 |
+| 2 | 80 | 90 | +10 | 100 |
+| 3 | 300 | 240 | −60 | 3,600 |
+| 4 | 50 | 55 | +5 | 25 |
+| | | | **Sum** | 4,125 |
+| | | | **MSE (÷ 4)** | **1,031.25** |
+
+- **Large errors dominate.** Case 3's error of 60 contributes 3,600 of the 4,125 total, 87%, although it is only one case out of four.
+- **The unit is squared.** An MSE of 1,031.25 is in "squared euros", which is hard to picture. Taking the square root gives the **root mean squared error (RMSE)**: √1,031.25 = 32.11 euros, a typical error size in the original unit.
+- **A gentler alternative** is the **mean absolute error (MAE)**, the average of the errors without their signs: (20 + 10 + 60 + 5) ÷ 4 = 23.75 euros. It does not give large errors extra weight.
+
+### Why MSE does not suit next-token prediction
+
+MSE needs a meaningful distance between the predicted and the true value: 240 is closer to 300 than 100 is. Token IDs have no such distance. In the running example, CAT has ID 6587 and DOG has ID 4012 ([Chapter 1](01-transformers.md#what-is-a-token-id)). If the correct token is CAT, predicting the ID 6,500 is not "nearly right": 6,500 is just some other token, unrelated to cats. The IDs are labels, not quantities.
+
+So for next-token prediction, the model outputs a probability for every token and is scored with cross-entropy, which only asks how much probability went to the correct token ([Chapter 2](02-training.md#the-loss-cross-entropy)).
+
+| | Cross-entropy | MSE |
+| --- | --- | --- |
+| Kind of answer | A category (token, label) | A number on a scale |
+| Model outputs | A probability for every category | One number |
+| Measures | −ln of the probability of the correct category | Average squared distance from the true value |
+| Used for | Next-token prediction, classification | Regression: amounts, scores, forecasts |
