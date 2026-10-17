@@ -200,3 +200,40 @@ The standard fix is **group-wise quantization**: split each row of weights into 
 | 128 | 4.125 | 8.125 |
 
 So a "4-bit" 7-billion-weight model with groups of 32 really uses 4.5 bits per weight: 7,000,000,000 × 4.5 ÷ 8 ≈ 3.9 GB, not 3.5 GB.
+
+## Kinds of quantization
+
+"A 4-bit model" can mean several quite different things. Quantization methods differ in **when** the quantization is done, **what** is quantized, and **how** the rounding is chosen. This section sorts them out, so that names such as GPTQ, AWQ or a GGUF file can be placed at a glance.
+
+### When: after training, or during it
+
+| | Post-training quantization (PTQ) | Quantization-aware training (QAT) |
+| --- | --- | --- |
+| When | After training is finished | During training (or extra fine-tuning) |
+| How | Take the trained weights and round them, as in the previous section | The forward pass simulates the rounding, so the model learns weights that still work after rounding |
+| Cost | Minutes to hours; needs at most a few hundred example prompts | A training run, with all its data and compute ([Chapter 2](02-training.md)) |
+| Quality | Very good at 8 bits; good at 4 bits with a smart method | Best at very low bit counts |
+| Typical use | Almost all open models you can download in quantized form | Models whose makers publish an official low-bit version |
+
+Most quantization in practice is post-training. The smart PTQ methods below improve on plain rounding by using a small set of example inputs, called **calibration data**, to see which weights matter most.
+
+### What: weights, activations, or the KV cache
+
+- **Weights only.** The weights are stored as INT8 or INT4 and dequantized to 16 bits just before each matrix multiplication; the arithmetic itself stays in 16 bits. This saves memory and, because decode is memory-bound ([Chapter 3](03-inference.md#why-decode-is-limited-by-memory-not-arithmetic)), it speeds up generation. It is the most common kind. Such setups are written **W4A16**: 4-bit weights, 16-bit activations.
+- **Weights and activations.** The **activations** (the vectors flowing between layers while the model runs) are quantized too, so the matrix multiplication itself runs in 8-bit integers (**W8A8**). This also speeds up the arithmetic, which helps prefill, which is compute-bound. It is harder: activations change with every input, and large models have a few activation dimensions with very large values (outliers) that must be handled separately.
+- **KV cache.** The keys and values stored during generation can be quantized as well. With the 7-billion-weight model of [Chapter 3](03-inference.md#how-much-memory-the-cache-needs), INT8 halves the cache from 0.52 MB to 0.26 MB per token, so 32 users with 4,096 tokens each need about 34.4 GB instead of 68.7 GB.
+
+### How: three names you will meet
+
+- **GPTQ** (2022) quantizes a layer's weights one column at a time. After rounding each column, it slightly adjusts the weights not yet quantized to compensate for the error just introduced, using calibration data to measure which errors affect the layer's output most. The result is much better than rounding every weight independently, especially at 4 bits.
+- **AWQ** (activation-aware weight quantization, 2023) starts from the observation that about 1% of weights matter far more than the rest: those multiplied by large activations. It finds them from calibration data and scales them up before quantization, so they lose less precision, while the matching activations are scaled down to keep the result the same.
+- **GGUF** is not a quantization method but a **file format**, used by the llama.cpp project and tools built on it, for running models on ordinary computers. A GGUF file holds the weights already quantized in blocks, using types named like `Q8_0` or `Q4_K_M`. For example, `Q8_0` stores blocks of 32 weights as 8-bit integers with one 16-bit scale per block: (32 × 8 + 16) ÷ 32 = 8.5 bits per weight. `Q4_0` does the same with 4-bit integers: 4.5 bits per weight. These are the group-wise scales of the previous section.
+
+### Summary
+
+| Choice | Options | Most common today |
+| --- | --- | --- |
+| When | Post-training (PTQ) or quantization-aware training (QAT) | PTQ |
+| What | Weights only; weights + activations; KV cache | Weights only (W4A16 or W8A16), often plus an 8-bit KV cache |
+| How | Plain rounding; GPTQ; AWQ; other methods | GPTQ or AWQ for GPU serving; GGUF files for laptops and desktops |
+| Granularity | One scale per matrix, per row, or per group | Per group of 32 to 128 weights |

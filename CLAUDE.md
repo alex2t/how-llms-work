@@ -116,3 +116,4 @@ Add one line per implemented section, newest at the bottom: `YYYY-MM-DD — Chap
 - 2026-10-17 — Chapter 4 — Big picture + Why size matters — memory = weights × bytes; 7B model at 28 / 14 / 7 / 3.5 GB; decode speed limit 71 / 143 / 286 / 571 tokens/s.
 - 2026-10-17 — Chapter 4 — Number formats — sign/exponent/fraction; FP32, FP16, BF16 bit layouts; stored-value table computed with NumPy (FP16 overflow at 70,000, underflow at 1e-8); INT8/INT4 ranges.
 - 2026-10-17 — Chapter 4 — How quantization works — scale formula; five weights to INT8 (max error 0.0018) and INT4 (0.0576); zero point; outlier problem; group-wise scales (4.5 bits per weight, 3.9 GB for 7B).
+- 2026-10-17 — Chapter 4 — Kinds of quantization — PTQ vs QAT table; weights-only (W4A16), weights + activations (W8A8), KV cache (68.7 → 34.4 GB); GPTQ, AWQ, GGUF (Q8_0 = 8.5 bits, Q4_0 = 4.5 bits).

@@ -52,6 +52,7 @@ One line per implemented section, newest at the bottom.
 - 2026-10-17 — Chapter 4 — Why size matters: memory and decode speed of a 7B model in each number format.
 - 2026-10-17 — Chapter 4 — Number formats: range and precision of FP32, FP16, BF16, INT8 and INT4.
 - 2026-10-17 — Chapter 4 — How quantization works: scale, zero point, rounding error, outliers and group-wise scales.
+- 2026-10-17 — Chapter 4 — Kinds of quantization: when, what and how, including GPTQ, AWQ and GGUF.
 
 ## Credits
 
