@@ -105,3 +105,4 @@ Add one line per implemented section, newest at the bottom: `YYYY-MM-DD — Chap
 - 2026-10-17 — Chapter 3 — Generation step by step — Ti amo molto generated in 4 decoder passes with the encoder run once; decoder-only version with a prompt; comparison table.
 - 2026-10-17 — Chapter 3 — Prefill vs decode — prefill is compute-bound, decode memory-bound; base-model FLOPs-per-byte table; 7B example (28 ms first token, 7 ms per token, 143 tokens/s).
 - 2026-10-17 — Chapter 3 — The KV cache — why earlier K and V never change; cache growth table (4 vs 10 positions); memory formula; base model 24.6 KB/token, 7B model 0.52 MB/token and 68.7 GB for 32 users.
+- 2026-10-17 — Chapter 3 — Choosing the next token: greedy and beam search — shared CAT/DOG table; beam of 2 finds DOG <EOS> (0.200) where greedy ends at 0.154; log scores and length penalty.

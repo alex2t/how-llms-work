@@ -41,6 +41,7 @@ One line per implemented section, newest at the bottom.
 - 2026-10-17 — Chapter 3 — Generation step by step: the translation generated one token per pass, for encoder–decoder and chat models.
 - 2026-10-17 — Chapter 3 — Prefill vs decode: why the first token is slower, with a 7B-model timing example.
 - 2026-10-17 — Chapter 3 — The KV cache: what it stores, why it is safe, and how much memory it needs.
+- 2026-10-17 — Chapter 3 — Greedy decoding and beam search: a beam of 2 worked through on the CAT/DOG example.
 
 ## Credits
 

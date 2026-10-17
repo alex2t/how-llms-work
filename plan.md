@@ -61,7 +61,7 @@ Goal: give the reader the background needed before Chapter 1, and the story of w
 - [x] Prefill (prompt processing) vs decode (token generation); why the first token is slower.
 - [x] The KV cache: why earlier keys and values are stored; memory estimate.
 - [ ] Choosing the next token, on one shared probability example:
-  - [ ] Greedy decoding and beam search (beam of 2 worked through).
+  - [x] Greedy decoding and beam search (beam of 2 worked through).
   - [ ] Temperature: divide logits by T before softmax; T = 0.5, 1, 2 on the same logits.
   - [ ] Top-k: keep the k most likely tokens, renormalise.
   - [ ] Top-p (nucleus): keep the smallest set summing to p, renormalise.

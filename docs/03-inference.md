@@ -258,3 +258,51 @@ The weights of this model take 14 GB (previous section). With 32 users the cache
 - **Attention still grows with length:** the new query must still be compared with every cached key, so each step does a little more work than the one before. This is much smaller than the work the cache saves.
 
 This is why longer conversations cost more to serve, and why model designers try to shrink the cache. Chapter 4 describes the two main ways: storing it in fewer bytes ([quantization](04-quantization.md)) and sharing keys and values between heads (grouped-query attention).
+
+## Choosing the next token
+
+Every decode step ends with a probability for every token in the vocabulary. A **decoding rule** (also called a decoding strategy or sampling method) turns those probabilities into one chosen token. The rule does not change the model at all, yet it decides whether answers are repetitive or varied, safe or creative.
+
+All the rules below use the same example from [Chapter 1](01-transformers.md#from-the-last-vector-back-to-a-word). After the prompt `YOUR CAT IS A LOVELY`, the model's last position gives these logits (raw scores) and, after softmax, these probabilities. For simplicity, the vocabulary is just these four tokens.
+
+| Token | Logit | Probability |
+| --- | --- | --- |
+| CAT | 6.2 | 0.772 |
+| DOG | 4.9 | 0.211 |
+| IS | 2.1 | 0.013 |
+| LOVELY | 1.0 | 0.004 |
+
+### Greedy decoding
+
+**Greedy decoding** always picks the token with the highest probability. Here it picks `CAT` (0.772), every time.
+
+- **Deterministic:** the same prompt always gives the same answer, because the forward pass is deterministic and so is the choice.
+- **Short-sighted:** it picks the best token for this one step, without checking whether that choice leads to a good sentence overall.
+- **Prone to repetition:** in long answers it can fall into loops, repeating the same phrase, because once a phrase is likely, repeating it often stays the most likely choice.
+
+### Beam search
+
+**Beam search** looks a few steps ahead by keeping several partial answers at once instead of one. Each partial answer is called a **beam**, and the **beam width** (here 2) is how many are kept after each step. A beam's score is the probability of the whole sequence: the product of the probabilities of its tokens.
+
+**Worked example, beam width 2.** The step-1 probabilities are the ones above. The step-2 probabilities are made up for illustration: after `CAT` the model is unsure how to continue, while after `DOG` it is confident the sentence should end.
+
+**Step 1.** Keep the 2 most likely tokens: `CAT` (0.772) and `DOG` (0.211).
+
+**Step 2.** Extend each beam with its 2 most likely next tokens, and score each extended sequence:
+
+| Beam after step 1 | Next token | Its probability | Sequence score |
+| --- | --- | --- | --- |
+| CAT (0.772) | `<EOS>` | 0.20 | 0.772 × 0.20 = 0.154 |
+| CAT (0.772) | AND | 0.18 | 0.772 × 0.18 = 0.139 |
+| DOG (0.211) | `<EOS>` | 0.95 | 0.211 × 0.95 ≈ **0.200** |
+| DOG (0.211) | AND | 0.02 | 0.211 × 0.02 = 0.004 |
+
+Keep the 2 best: `DOG <EOS>` (0.200) and `CAT <EOS>` (0.154). Both have ended, so the search stops and returns the best one, `YOUR CAT IS A LOVELY DOG`.
+
+**Greedy decoding on the same example** picks `CAT` at step 1 and `<EOS>` at step 2, for a sequence score of 0.154. Beam search found a sequence with a higher total probability, 0.200, because it kept `DOG` alive even though `DOG` lost the first step.
+
+Three practical details:
+
+- **Logarithms instead of products.** Multiplying many probabilities gives numbers too small for a computer to store accurately, so implementations add the logarithms instead: ln 0.211 + ln 0.95 = −1.607 is higher than ln 0.772 + ln 0.20 = −1.868, giving the same ranking.
+- **Length penalty.** Every extra token multiplies the score by a number below 1, so plain beam search favours short answers. Implementations divide the score by a function of the length to correct this. The original Transformer used a beam width of 4 for translation, with a length penalty.
+- **Where it is used.** Beam search suits tasks with one best answer, such as translation and speech recognition. Chat models rarely use it: it is slower (several beams per step), and its answers tend to be bland and repetitive. They use sampling instead, described next.
