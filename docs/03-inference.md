@@ -110,6 +110,20 @@ The same loop also explains [Chapter 1's logits example](01-transformers.md#from
 
 In a chat, "the prompt" is the whole conversation so far: earlier messages, the new question, and some special tokens that mark who is speaking. The model generates until it produces its end-of-answer token.
 
+**What a chat looks like as tokens.** Each model family has a fixed **chat template**: special tokens, added to the vocabulary for this purpose, that mark where each message starts and ends and who wrote it. Llama 3's template, for the translation request above, gives this sequence:
+
+| Piece | Tokens | Meaning |
+| --- | --- | --- |
+| Start of text | <code>&lt;&#124;begin_of_text&#124;&gt;</code> | The conversation begins (the model's `<SOS>`) |
+| User header | <code>&lt;&#124;start_header_id&#124;&gt;</code> user <code>&lt;&#124;end_header_id&#124;&gt;</code>, then a blank line | The next message is from the user |
+| User message | Translate to Italian: I love you very much | The user's words, as ordinary tokens |
+| End of turn | <code>&lt;&#124;eot_id&#124;&gt;</code> | The user's message is finished |
+| Assistant header | <code>&lt;&#124;start_header_id&#124;&gt;</code> assistant <code>&lt;&#124;end_header_id&#124;&gt;</code>, then a blank line | The next message is from the assistant |
+
+The prompt ends right after the assistant header, so the most likely continuation is the assistant's answer. The model generates `Ti`, `amo`, `molto`, and then its own `<|eot_id|>`, the end-of-turn token at which generation stops (see [Stopping](#stopping)). A **system message** (instructions from the application, such as "You are a translation assistant") is added the same way, with the role `system`, before the first user message. A longer conversation simply repeats header, message and end-of-turn for every turn.
+
+The model learns this format during supervised fine-tuning ([Chapter 2](02-training.md#stage-2-supervised-fine-tuning-sft)), where only the assistant's messages count in the loss. The template must be reproduced exactly at inference: a model given a different format sees an unfamiliar sequence and answers worse.
+
 ### Encoder–decoder vs decoder-only at inference
 
 | | Encoder–decoder (translation model) | Decoder-only (chat model) |
