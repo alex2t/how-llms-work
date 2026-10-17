@@ -110,3 +110,4 @@ Add one line per implemented section, newest at the bottom: `YYYY-MM-DD — Chap
 - 2026-10-17 — Chapter 3 — Top-k sampling — k = 2 worked (0.785 / 0.215); table for k = 1, 2, 3; why a fixed k fails on confident vs unsure prompts.
 - 2026-10-17 — Chapter 3 — Top-p (nucleus) sampling — p = 0.9 worked with running totals; table for p = 0.7, 0.9, 0.99; nucleus of 1 vs 6 tokens on the confident vs unsure prompts.
 - 2026-10-17 — Chapter 3 — How the rules combine + typical settings — pipeline diagram; T = 2, k = 3, p = 0.9 worked (CAT 0.657, DOG 0.343) vs T = 1 (0.785 / 0.215); settings table by task.
+- 2026-10-17 — Chapter 3 — Stopping — end token, max tokens and stop sequences with examples; stop_reason; context window (8,192 − 7,000 = 1,192); decoding IDs back to text and streaming.

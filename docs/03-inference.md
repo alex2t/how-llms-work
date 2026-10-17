@@ -457,3 +457,31 @@ Compare the two results. Raising the temperature from 1 to 2 made `DOG` more lik
 | Brainstorming, fiction | 0.9 to 1 | 0.95 | More variety; top-p still blocks nonsense |
 
 These are starting points, not rules; each model and provider documents its own defaults. Many API guides recommend changing **either** temperature **or** top-p, not both at once, because both control the same thing (how far the choice strays from the top token) and their effects are hard to predict together. For the [fraud example](05-evaluation.md) in Chapter 5, where a model labels transactions, a temperature of 0 is the natural choice: the same transaction should always get the same label.
+
+## Stopping
+
+The generation loop has no natural end: after every token, the model can always predict another one. Something must decide when the answer is finished. Three conditions do this, and every generation stops at whichever comes first.
+
+### The three stop conditions
+
+| Condition | Who decides | What happens |
+| --- | --- | --- |
+| **End token** (`<EOS>`, or an end-of-turn token in chat models) | The model | The model chooses the end token as its next token, just as it learned in training ([Chapter 2](02-training.md#the-special-tokens)). This is the normal, clean ending. |
+| **Maximum tokens** (max tokens) | The user or application | Generation stops after a fixed number of output tokens, even in the middle of a sentence. |
+| **Stop sequence** | The user or application | Generation stops as soon as the output contains a chosen piece of text, such as a blank line or a tag. |
+
+**End token.** In the translation, step 4 chose `<EOS>` after "molto", and the loop ended there. The end token is a choice like any other: it is picked by the decoding rule from the probabilities. With sampling at a high temperature, the model can occasionally skip a likely `<EOS>` and keep writing, which is one more reason to set the other two limits.
+
+**Maximum tokens.** With max tokens = 2, the translation would stop after "Ti amo", before "molto", and the answer would be cut off. The limit protects against answers that run on, and it caps the cost and waiting time: with the 7 ms per token of the earlier 7B example, a limit of 1,000 tokens means at most 1,000 × 7 ms = 7 seconds of decoding.
+
+**Stop sequence.** Suppose an application asks a model to label a transaction and expects one line such as `Label: FRAUD`. Setting the stop sequence to a line break ends generation as soon as that line is complete, even if the model would have gone on to explain its answer. The stop sequence itself is usually not included in the returned text.
+
+APIs report which condition ended the answer. Anthropic's API, for example, returns a `stop_reason` of `end_turn`, `max_tokens` or `stop_sequence`. An application should check it: `max_tokens` means the answer is probably incomplete.
+
+### The context window: a hard limit
+
+The **context window** is the maximum number of tokens the model can handle at once, prompt and answer together. It is fixed when the model is built and trained. If a model has a context window of 8,192 tokens and the prompt uses 7,000, at most 8,192 − 7,000 = 1,192 tokens are left for the answer, whatever max tokens is set to. Every one of those tokens also adds to the KV cache, as shown earlier in this chapter.
+
+### After the loop: from IDs back to text
+
+Generation produces token IDs, not text. The last step is **decoding** in the tokenizer's sense ([Chapter 1](01-transformers.md#encoding-new-text)): each ID is turned back into its text piece and the pieces are joined. The end token is dropped. In chat interfaces this happens continuously: each token is decoded and shown as soon as it is chosen, which is the **streaming** effect of words appearing one by one.
