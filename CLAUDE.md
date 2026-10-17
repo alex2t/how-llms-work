@@ -26,11 +26,13 @@ A plain-English book that explains how large language models work, written as fi
 ├── CLAUDE.md                  # this file: rules for Claude Code + progress log
 ├── plan.md                    # task list: what is done, what is left
 ├── fix.md                     # proposed changes to existing content, waiting for approval
+├── AGENTS.md                  # instructions for Antigravity (Gemini), written by Antigravity; committed
 ├── README.md                  # public project page, written like a book's back cover
 ├── mkdocs.yml                 # site config, theme and navigation bar
 ├── requirements.txt           # Python packages for the build
 ├── .github/workflows/deploy.yml   # builds and publishes to GitHub Pages
 ├── sources/                   # CME295 lecture summaries (Gemini notebook); git-ignored, never commit
+├── gemini/                    # chapter rewrites by Gemini (*_agy.md) and Claude's reviews (*_rw_claude.md); git-ignored, never commit
 └── docs/
     ├── index.md               # Home page
     ├── 00-introduction.md     # Foundations and history
@@ -108,6 +110,32 @@ The book is being checked against Stanford's [CME295: Transformers & Large Langu
 - Callouts with Material admonitions: `!!! note`, `!!! tip "Key idea"`, `!!! warning`.
 - Diagrams: prefer Mermaid (```` ```mermaid ````) for flows; otherwise put an SVG in `docs/images/` and reference it with a relative path.
 - Sources from the attached slides by Umar Jamil are CC BY-NC 4.0: paraphrase and credit them; do not copy slide images.
+
+## Gemini rewrite and Claude review
+
+After the user has reviewed a chapter (rule 8), Gemini (Antigravity) is asked to rewrite it, following its own instructions in `AGENTS.md` (committed, not git-ignored). Claude then compares the rewrite with the original and gives an opinion. The user decides what happens next.
+
+**File names** (all in `gemini/`, which is git-ignored and must never be committed or published):
+
+| Chapter | Original | Gemini's rewrite | Claude's review |
+| --- | --- | --- | --- |
+| Introduction | `docs/00-introduction.md` | `gemini/introduction_agy.md` | `gemini/introduction_rw_claude.md` |
+| 1 | `docs/01-transformers.md` | `gemini/transformers_agy.md` | `gemini/transformers_rw_claude.md` |
+| 2 | `docs/02-training.md` | `gemini/training_agy.md` | `gemini/training_rw_claude.md` |
+| 3 | `docs/03-inference.md` | `gemini/inference_agy.md` | `gemini/inference_rw_claude.md` |
+| 4 | `docs/04-quantization.md` | `gemini/quantization_agy.md` | `gemini/quantization_rw_claude.md` |
+| 5 | `docs/05-evaluation.md` | `gemini/evaluation_agy.md` | `gemini/evaluation_rw_claude.md` |
+| 6 | `docs/06-prompting.md` | `gemini/prompting_agy.md` | `gemini/prompting_rw_claude.md` |
+
+**When asked to review `gemini/<chapter>_agy.md`,** read it and the original in full, then write `gemini/<chapter>_rw_claude.md` with:
+
+1. **Verdict:** one of *replace the chapter*, *keep the original and merge some parts*, or *keep the original*, with the main reasons in two or three sentences.
+2. **Section by section:** a table with each section, which version is better (original, Gemini or equal) and why.
+3. **What Gemini did better:** the specific passages worth taking, with the target section in the original.
+4. **Problems in the rewrite:** factual errors, wrong or unchecked numbers (recompute every number with a script, rule 5), content dropped from the original, broken links or anchors, and departures from the Writing style and Markdown conventions.
+5. **Recommended next step:** the exact changes to make if the user agrees.
+
+Do not change anything in `docs/` while reviewing. The user then decides: replace the chapter with Gemini's version (after fixing the problems found), merge the parts listed, or keep the original. Applying that decision follows rule 8 (one commit, push and deploy at the end).
 
 ## README
 
