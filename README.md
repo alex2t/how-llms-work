@@ -63,6 +63,7 @@ One line per implemented section, newest at the bottom.
 - 2026-10-17 — Chapter 5 — MSE: a regression loss, and why it does not fit next-token prediction.
 - 2026-10-17 — Chapter 5 — Classification metrics: confusion matrix, accuracy, precision, recall, F1, ROC and AUC on the fraud sample.
 - 2026-10-17 — Chapter 5 — Evaluating generative LLMs: benchmarks, human evaluation and LLM-as-judge.
+- 2026-10-17 — Chapter 5 — Business outcomes: KPIs, cost and ROI, customer satisfaction, baselines and the threshold trade-off.
 
 ## Credits
 

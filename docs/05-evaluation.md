@@ -323,3 +323,100 @@ Known weaknesses of LLM judges, and the usual fixes:
 | LLM-as-judge | Free-text quality at scale | Low | Biases; must be checked against humans |
 
 In practice they are combined: benchmarks to shortlist models, a private labelled set for the measurable part of the task, an LLM judge for free text at scale, and a regular human sample to keep the judge honest.
+
+## Business outcomes
+
+Model metrics say how well the model does its task; business outcome metrics say whether using it is worth it. This is the level that decides whether a project goes live and stays live. This section turns the fraud model's metrics into money, hours and customer experience, and shows that the "best" threshold is a business decision, not a technical one.
+
+The numbers below use real traffic: 100,000 transactions a month, 2% (2,000) fraud and 98,000 genuine. Further made-up assumptions, stated once:
+
+- An analyst reviews each flagged transaction in **10 minutes**, at a cost of **€5** per review.
+- A missed fraud costs the bank **€400** on average.
+- Running the model costs **€0.002 per transaction**, so €200 a month ([Chapter 4](04-quantization.md#fewer-bytes-also-means-faster-generation) explains what drives this cost).
+- About **5%** of genuine customers whose transaction is wrongly flagged complain.
+
+### KPIs tied to a business objective
+
+A **KPI** (key performance indicator) is a number the business tracks to see whether it is meeting an objective. Each KPI should be linked to the model metric that drives it, so that a change in the model can be translated into a change the business cares about:
+
+| Business objective | KPI | Driven by the model metric | Target (example) |
+| --- | --- | --- | --- |
+| Reduce fraud losses | Fraud lost per month (€) | Recall | Below €200,000 |
+| Keep reviews affordable | Analyst hours per month | Number of flagged transactions, i.e. precision | Below 1,500 hours |
+| Keep customers happy | Complaints per month; customer satisfaction score | False positive rate | Below 400 complaints |
+| Keep running costs low | Model cost per month | Model size and number format | Below €1,000 |
+
+### From the sample to real traffic: precision falls
+
+Recall and the false positive rate carry over from the sample to real traffic: the model still catches 80% of frauds and still flags 6.7% of genuine transactions. Precision does **not** carry over, because it depends on how common fraud is:
+
+| | Evaluation sample (10% fraud) | Real traffic (2% fraud) |
+| --- | --- | --- |
+| Frauds caught (recall 0.80) | 8 of 10 | 1,600 of 2,000 |
+| Genuine transactions flagged (FPR 0.067) | 6 of 90 | 6,533 of 98,000 |
+| Precision = caught ÷ all flagged | 8 ÷ 14 = **0.571** | 1,600 ÷ 8,133 = **0.197** |
+
+In real traffic only about 1 alert in 5 is real fraud, not 4 in 7. Genuine transactions are so much more common that even a small false positive rate produces many false alarms. Any business estimate must use the real proportion of fraud, never the proportion in a test sample.
+
+### Time, cost and resources: the model against the current process
+
+The bank's current process is a **rules engine** (hand-written rules such as "flag any purchase over €2,000 abroad") that flags 10,000 transactions a month and catches 1,200 frauds. The comparison, per month:
+
+| | Rules engine (baseline) | LLM at threshold 0.5 |
+| --- | --- | --- |
+| Transactions flagged for review | 10,000 | 8,133 |
+| Frauds caught (recall) | 1,200 (60%) | 1,600 (80%) |
+| Analyst hours (flagged × 10 min) | 1,667 | 1,356 |
+| Review cost (flagged × €5) | €50,000 | €40,667 |
+| Fraud lost (missed × €400) | 800 × €400 = €320,000 | 400 × €400 = €160,000 |
+| Model running cost | — | €200 |
+| **Total monthly cost** | **€370,000** | **€200,867** |
+
+The LLM saves about **€169,000 a month** and **311 analyst hours** a month, while catching 400 more frauds.
+
+**Return on investment (ROI)** compares the benefit with the cost of the project. Suppose building, testing and integrating the model cost €300,000 once:
+
+- Benefit in the first year: 12 × €169,133 = €2,029,596.
+- ROI in the first year = (benefit − cost) ÷ cost = (2,029,596 − 300,000) ÷ 300,000 ≈ **5.8**, that is, every euro spent returns about €5.80 on top of itself.
+- **Payback period:** €300,000 ÷ €169,133 per month ≈ **1.8 months**.
+
+### Customer satisfaction
+
+Every false positive is a genuine customer whose payment is blocked or delayed: a moment of friction, sometimes in a shop queue or abroad. This is why precision and the false positive rate matter to customers, not just to analysts.
+
+- **CSAT** (customer satisfaction score): customers rate an interaction, for example from 1 to 5; CSAT is usually the share giving 4 or 5.
+- **NPS** (net promoter score): customers answer "how likely are you to recommend us?" from 0 to 10; NPS is the percentage giving 9–10 minus the percentage giving 0–6.
+- **Complaint rate:** complaints per month, or per 1,000 flagged customers.
+
+With 5% of wrongly flagged customers complaining: the rules engine wrongly flags 10,000 − 1,200 = 8,800 genuine transactions and causes about 440 complaints; the LLM wrongly flags 6,533 and causes about 327. The LLM is better for customers as well as for costs.
+
+### Comparing against a baseline
+
+A model's results mean little on their own: "80% recall" is only good or bad compared with something. Always compare against a **baseline**, the best alternative available:
+
+- **The current process:** manual review or a rules engine, as above.
+- **The previous model**, when replacing one.
+- **A simple model**, such as "always OK" or a small classical model: if the LLM cannot clearly beat it, its extra cost is not justified.
+
+The comparison should be made on the same data. Two common designs:
+
+- **A/B test:** for a period, a random half of the traffic goes through the old process (A) and half through the new model (B), and the KPIs of the two halves are compared. Because the split is random, a difference in results can be credited to the model rather than to, say, a seasonal change in fraud.
+- **Before/after comparison:** KPIs before go-live are compared with KPIs after. It is simpler but weaker, since anything else that changed at the same time also affects the result.
+
+### The trade-off: choosing the threshold
+
+The threshold from the ROC section is where model metrics and business outcomes meet. The same model, per month, at each threshold:
+
+| Threshold | Recall | Precision | False alarms (customer friction) | Complaints | Analyst hours | Fraud lost | Total cost (reviews + fraud + €200) |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 0.9 | 0.40 | 0.424 | 1,089 | 54 | 315 | €480,000 | €489,644 |
+| 0.7 | 0.60 | 0.269 | 3,267 | 163 | 744 | €320,000 | €342,533 |
+| **0.5** | **0.80** | **0.197** | **6,533** | **327** | **1,356** | **€160,000** | **€200,867** |
+| 0.3 | 0.90 | 0.099 | 16,333 | 817 | 3,022 | €80,000 | €170,867 |
+| 0.1 | 1.00 | 0.044 | 43,556 | 2,178 | 7,593 | €0 | €227,978 |
+
+- **Money alone** points to 0.3: it is the cheapest, at €170,867.
+- **The KPI targets** rule 0.3 out: it needs 3,022 analyst hours (target below 1,500) and causes 817 complaints (target below 400).
+- **Threshold 0.5** meets all four targets: fraud lost €160,000, 1,356 hours, 327 complaints, €200 running cost. It is the right choice for this bank.
+
+A different bank, with more analysts or customers more tolerant of checks, could rightly choose 0.3. The model is the same; the best threshold depends on the business.

@@ -98,12 +98,12 @@ Goal: give the reader the background needed before Chapter 1, and the story of w
   - [x] Precision, recall, F1 from the same matrix; when to favour each.
   - [x] ROC curve and AUC: moving the threshold, TPR vs FPR, AUC = 0.5 vs 1.0; small threshold table.
 - [x] Evaluating generative LLMs: benchmarks (limits, contamination), human evaluation, LLM-as-judge.
-- [ ] Business-centric (outcome) metrics, same fraud example:
-  - [ ] KPIs tied to a business objective: objective → KPI → model metric chain table.
-  - [ ] Time, cost and resource improvement: analyst hours saved, cost per case vs model running cost (link Chapter 4); worked ROI example.
-  - [ ] Customer satisfaction: false positives as friction, CSAT/NPS, complaint rate; why precision matters to customers.
-  - [ ] Benchmark comparison against a baseline (manual process, rules engine, previous model); A/B tests, before/after.
-  - [ ] Trade-off table: threshold vs recall, precision, analyst workload, customer friction.
+- [x] Business-centric (outcome) metrics, same fraud example:
+  - [x] KPIs tied to a business objective: objective → KPI → model metric chain table.
+  - [x] Time, cost and resource improvement: analyst hours saved, cost per case vs model running cost (link Chapter 4); worked ROI example.
+  - [x] Customer satisfaction: false positives as friction, CSAT/NPS, complaint rate; why precision matters to customers.
+  - [x] Benchmark comparison against a baseline (manual process, rules engine, previous model); A/B tests, before/after.
+  - [x] Trade-off table: threshold vs recall, precision, analyst workload, customer friction.
 - [ ] Choosing metrics for a project: checklist (objective → KPI → model metric → baseline → target → post-go-live measurement and drift monitoring).
 - [ ] Cheat sheet + Sources.
 
