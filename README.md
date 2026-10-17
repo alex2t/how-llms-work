@@ -8,7 +8,7 @@ A plain-English book on how large language models work, with worked numeric exam
 
 | # | Chapter | Status |
 | --- | --- | --- |
-| 0 | Introduction: foundations and history | Planned |
+| 0 | Introduction: foundations and history | In progress |
 | 1 | How Transformers Work: BPE, Attention and Q/K/V | Written |
 | 2 | Training: how the model learns | Written (draft) |
 | 3 | Inference and decoding | Written (draft) |
@@ -67,6 +67,7 @@ One line per implemented section, newest at the bottom.
 - 2026-10-17 — Chapter 5 — Choosing metrics for a project: an 8-step checklist, including drift monitoring.
 - 2026-10-17 — Chapter 5 — Cheat sheet and sources: chapter complete.
 - 2026-10-17 — Chapters 2–4 — Links to Chapter 5 now open the exact section.
+- 2026-10-17 — Introduction — What you need to know first: vectors, dot product, matrix multiplication, transpose, neurons, loss and embeddings.
 
 ## Credits
 

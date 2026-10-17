@@ -22,9 +22,9 @@ Legend: `[ ]` to do · `[x]` done · `[~]` in progress
 
 Goal: give the reader the background needed before Chapter 1, and the story of why Transformers replaced earlier approaches.
 
-- [ ] **What you need to know first** (prerequisites), each with a tiny worked example:
-  - [ ] Linear algebra: vectors, matrices, shapes, matrix multiplication (2×3 times 3×2 by hand), dot product as similarity, transpose.
-  - [ ] Basic machine learning: what a neural network is (weights, layers, activation), what a loss function is, training as "adjust weights to reduce the loss", what an embedding is (a learned vector per item). Point forward to Chapters 1 and 2 for detail.
+- [x] **What you need to know first** (prerequisites), each with a tiny worked example:
+  - [x] Linear algebra: vectors, matrices, shapes, matrix multiplication (2×3 times 3×2 by hand), dot product as similarity, transpose.
+  - [x] Basic machine learning: what a neural network is (weights, layers, activation), what a loss function is, training as "adjust weights to reduce the loss", what an embedding is (a learned vector per item). Point forward to Chapters 1 and 2 for detail.
 - [ ] **Historical evolution of text modeling** (timeline table + short text):
   - [ ] Task-specific era (2010s): a separate specialised RNN model per task (sentiment analysis, translation, named-entity recognition); no sharing between tasks.
   - [ ] The Transformer turning point (2017): "Attention Is All You Need"; one architecture that scales with compute, data and parameters. Link to Chapter 1.

@@ -1,4 +1,104 @@
 # Introduction: Foundations and History
 
-!!! note "Coming soon"
-    This chapter is being written. See plan.md, Phase 1.
+## The big picture
+
+This book explains how large language models work, with real arithmetic at every step. Before [Chapter 1](01-transformers.md) opens up the Transformer, this introduction does two things:
+
+1. **Foundations.** It explains the small amount of maths and machine learning the rest of the book relies on: vectors, matrices, the dot product, and what a neural network, a loss and an embedding are.
+2. **History.** It tells the story of how computers learned to model text, from one-hot vectors to Word2Vec to recurrent networks, and why each approach hit a wall that the Transformer removed.
+
+Readers who already know linear algebra and basic machine learning can skip to the history sections, or go straight to [Chapter 1](01-transformers.md).
+
+## What you need to know first
+
+Everything a language model does is arithmetic on lists and tables of numbers. This section explains those lists and tables, and the few operations the book uses on them, each with a tiny example you can check by hand.
+
+### Vectors
+
+A **vector** is an ordered list of numbers. In language models, each token is represented by a vector. In Chapter 1's example, the token CAT is represented (in shortened form) by the vector \[0.81, 0.10, −0.52\]: 3 numbers, so its **length** or **dimension** is 3. In the real base model each token's vector has 512 numbers, the value called **d\_model**.
+
+### The dot product: a measure of similarity
+
+The **dot product** of two vectors of the same length multiplies them number by number and adds the results. It produces a single number that is large when the two vectors point in a similar direction, near 0 when they are unrelated, and negative when they point in opposite directions.
+
+**Worked example** with three token vectors from [Chapter 1's embedding table](01-transformers.md#token-embeddings) (made-up numbers):
+
+| Pair | Number-by-number products | Dot product |
+| --- | --- | --- |
+| CAT \[0.81, 0.10, −0.52\] · DOG \[0.77, 0.15, −0.48\] | 0.6237 + 0.0150 + 0.2496 | **0.888** |
+| CAT \[0.81, 0.10, −0.52\] · A \[−0.05, 0.08, 0.91\] | −0.0405 + 0.0080 − 0.4732 | **−0.506** |
+
+CAT and DOG, words used in similar ways, have a large positive dot product; CAT and the article A have a negative one. Attention in Chapter 1 is built on exactly this operation: it uses dot products to decide how much each token should look at each other token.
+
+### Matrices and their shapes
+
+A **matrix** is a table of numbers with rows and columns. Its **shape** is written rows × columns. Stacking the vectors of a 6-token sentence, each with 512 numbers, gives a 6 × 512 matrix: one row per token.
+
+### Matrix multiplication
+
+To multiply matrix A by matrix B, take the dot product of **each row of A** with **each column of B**. The result has as many rows as A and as many columns as B. The rule for shapes:
+
+$$
+(m \times n) \cdot (n \times p) = (m \times p)
+$$
+
+The inner numbers (n) must match, because each dot product pairs a row of n numbers with a column of n numbers. **m**, **n** and **p** are just the sizes of the matrices.
+
+**Worked example: a 2 × 3 matrix times a 3 × 2 matrix.**
+
+$$
+A = \begin{bmatrix} 1 & 2 & 3 \\ 4 & 5 & 6 \end{bmatrix} \qquad B = \begin{bmatrix} 1 & 0 \\ 0 & 1 \\ 2 & 1 \end{bmatrix}
+$$
+
+| Result cell | Row of A · column of B | Value |
+| --- | --- | --- |
+| Row 1, column 1 | \[1, 2, 3\] · \[1, 0, 2\] = 1 + 0 + 6 | 7 |
+| Row 1, column 2 | \[1, 2, 3\] · \[0, 1, 1\] = 0 + 2 + 3 | 5 |
+| Row 2, column 1 | \[4, 5, 6\] · \[1, 0, 2\] = 4 + 0 + 12 | 16 |
+| Row 2, column 2 | \[4, 5, 6\] · \[0, 1, 1\] = 0 + 5 + 6 | 11 |
+
+$$
+A \cdot B = \begin{bmatrix} 7 & 5 \\ 16 & 11 \end{bmatrix} \qquad (2 \times 3) \cdot (3 \times 2) = (2 \times 2)
+$$
+
+In Chapter 1 the same rule turns a sentence's 6 × 512 matrix into its queries: (6 × 512) · (512 × 64) = 6 × 64, one 64-number query per token ([Where Q, K and V come from](01-transformers.md#where-q-k-and-v-come-from)).
+
+### The transpose
+
+The **transpose** of a matrix, written with a superscript T, swaps its rows and columns: row 1 becomes column 1, and so on. A 2 × 3 matrix becomes 3 × 2:
+
+$$
+A^T = \begin{bmatrix} 1 & 4 \\ 2 & 5 \\ 3 & 6 \end{bmatrix}
+$$
+
+The attention formula in Chapter 1 uses QKᵀ: transposing K turns its rows (one per token) into columns, so that multiplying Q by Kᵀ computes the dot product of every query with every key in one matrix multiplication.
+
+### What a neural network is
+
+A **neural network** is a function built from many simple steps, each with adjustable numbers called **weights**. The basic step, one **neuron**, does three things:
+
+1. Multiply each input by a weight and add the results (a dot product).
+2. Add one more number, the **bias**.
+3. Apply an **activation function**, a simple non-linear rule. A common one is **ReLU**: keep the value if it is positive, otherwise output 0.
+
+**Worked example:** inputs \[2, 3\], weights \[0.5, −1\], bias 1:
+
+- Weighted sum: 2 × 0.5 + 3 × (−1) = 1 − 3 = −2. Add the bias: −2 + 1 = −1.
+- ReLU(−1) = 0. The neuron outputs 0.
+
+With weights \[0.5, 1\] instead, the sum is 1 + 3 + 1 = 5 and the output is 5. Changing the weights changes what the neuron computes; that is all "learning" will mean.
+
+A **layer** is many neurons working side by side on the same inputs, which is a matrix multiplication followed by the activation. A network stacks layers, each feeding the next. The Transformer's feed-forward network ([Chapter 1](01-transformers.md#the-feed-forward-network-in-detail)) is exactly two such layers.
+
+Without the activation, stacking layers would be pointless: several matrix multiplications in a row equal one matrix multiplication, which can only describe straight-line relationships. The non-linear activation is what lets a deep network learn complicated patterns.
+
+### Loss and training
+
+- **Loss:** one number that measures how wrong the network's outputs are on some examples. Lower is better.
+- **Training:** repeatedly adjusting every weight by a tiny amount in the direction that lowers the loss, over many examples.
+
+[Chapter 2](02-training.md) explains both in detail with real numbers: the loss used for language (cross-entropy), how the direction to move each weight is found (gradients and backpropagation), and how each step is taken.
+
+### Embeddings
+
+An **embedding** is a learned vector that represents an item, such as a word or a token. A model keeps a table with one row per item; to represent an item, it reads that item's row. The numbers in the table start random and are adjusted by training, so items used in similar ways end up with similar vectors, as CAT and DOG did in the dot-product example. The rest of this introduction tells the story of how such vectors were invented, and [Chapter 1](01-transformers.md#token-embeddings) shows how a Transformer uses them.

@@ -9,7 +9,7 @@ A plain-English book that explains how large language models work, written as fi
 | # | Chapter | File | Status |
 | --- | --- | --- | --- |
 | — | Home page (about the book, how to read it) | `docs/index.md` | Written (draft) |
-| 0 | Introduction: foundations and history | `docs/00-introduction.md` | Placeholder |
+| 0 | Introduction: foundations and history | `docs/00-introduction.md` | In progress |
 | 1 | How Transformers Work: BPE, Attention and Q/K/V | `docs/01-transformers.md` | Written, imported and live |
 | 2 | Training: how the model learns | `docs/02-training.md` | Written (draft); fixes listed in `fix.md` |
 | 3 | Inference and decoding | `docs/03-inference.md` | Written (draft) |
@@ -131,3 +131,4 @@ Add one line per implemented section, newest at the bottom: `YYYY-MM-DD — Chap
 - 2026-10-17 — Chapter 5 — Choosing metrics for a project — 8-step checklist (objective to drift monitoring) filled in for the fraud example; data vs concept drift; re-evaluate after quantization or decoding changes.
 - 2026-10-17 — Chapter 5 — Cheat sheet + Sources — 22-row cheat sheet and 9 sources; chapter complete (draft).
 - 2026-10-17 — Chapters 2–4 — Links to Chapter 5 (F9) — three page links pointed to exact sections.
+- 2026-10-17 — Introduction — Big picture + What you need to know first — vectors, dot product (CAT·DOG 0.888, CAT·A −0.506), shapes, 2×3 times 3×2 by hand, transpose; neuron with ReLU; loss, training, embeddings.
