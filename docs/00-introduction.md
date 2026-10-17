@@ -102,3 +102,54 @@ Without the activation, stacking layers would be pointless: several matrix multi
 ### Embeddings
 
 An **embedding** is a learned vector that represents an item, such as a word or a token. A model keeps a table with one row per item; to represent an item, it reads that item's row. The numbers in the table start random and are adjusted by training, so items used in similar ways end up with similar vectors, as CAT and DOG did in the dot-product example. The rest of this introduction tells the story of how such vectors were invented, and [Chapter 1](01-transformers.md#token-embeddings) shows how a Transformer uses them.
+
+## Historical evolution of text modelling
+
+Today's chat assistants are the result of about a decade of steps, each fixing a limit of the one before. Knowing the order of those steps explains why the Transformer was such a turning point, and why the rest of this introduction looks at older methods at all.
+
+### Timeline
+
+| Year | Step | What changed |
+| --- | --- | --- |
+| 1997 | LSTM | A recurrent network that can remember information over longer stretches of text (explained later in this introduction) |
+| 2013 | Word2Vec | Words get learned vectors in which similar words are close together |
+| 2014 | Sequence-to-sequence with attention | Recurrent encoder–decoder networks translate whole sentences; attention lets the decoder look back at the source words |
+| 2017 | The Transformer, "Attention Is All You Need" | Recurrence is removed entirely; attention alone, computed in parallel ([Chapter 1](01-transformers.md#attention-is-all-you-need-2017)) |
+| 2018 | BERT and GPT | One large model is pre-trained on plain text, then adapted to many tasks |
+| 2019 | GPT-2 | 1.5 billion weights; it writes surprisingly fluent paragraphs |
+| 2020 | GPT-3 | 175 billion weights; it can do new tasks from a few examples in the prompt, without retraining |
+| 2022 | ChatGPT | Fine-tuning and preference training ([Chapter 2](02-training.md#stages-of-an-llms-life-pre-training-fine-tuning-and-preference-training)) turn a text predictor into an assistant |
+| 2023–2026 | Modern assistants and agents | Chat models such as Claude handle long documents and images, use tools, and act as coding agents that write, run and fix code over many steps |
+
+### The task-specific era (the 2010s)
+
+Before the Transformer, natural language processing meant building **a separate model for each task**:
+
+- one model for **sentiment analysis** (is this review positive or negative?),
+- another for **translation** (English to German),
+- another for **named-entity recognition** (find the people, places and companies in a text).
+
+Each was usually a recurrent neural network (RNN) trained from scratch on its own labelled data, often a few hundred thousand examples. Nothing learned by the sentiment model helped the translation model. Labelled data was expensive, so each model saw only a small slice of language, and every new task meant starting again.
+
+### The turning point (2017)
+
+The Transformer replaced recurrence with attention ([Chapter 1](01-transformers.md)). The important consequence was not only better translation: because every position is processed **in parallel** during training ([Chapter 2](02-training.md#why-training-happens-in-one-time-step)), Transformers could be trained on far more data with far more weights than recurrent networks, using the same hardware. One architecture now **scaled**: more data, more weights and more compute reliably gave a better model.
+
+### Scaling to modern LLMs (2018–2026)
+
+From 2018, the approach changed from "one model per task" to "**one model for all tasks**":
+
+1. **Pre-train** one large model on huge amounts of unlabelled text, with the simple goal of predicting the next token. No human labels are needed ([Chapter 2](02-training.md#three-ideas-weights-prediction-error)).
+2. **Adapt** it to each use: by fine-tuning on a small labelled set, by giving examples in the prompt, or simply by asking in plain language.
+
+Model sizes grew very fast:
+
+| Model | Year | Weights | Compared with the 2017 base model |
+| --- | --- | --- | --- |
+| Transformer (base) | 2017 | 65 million | 1× |
+| GPT-2 | 2019 | 1.5 billion | about 23× |
+| GPT-3 | 2020 | 175 billion | about 2,700× |
+
+Larger models trained on more text kept getting better, and new abilities appeared along the way: following instructions, writing code, explaining their reasoning. After preference training made them helpful assistants (2022), the next steps were longer contexts, tool use and **agents**: models that plan, call tools, read the results and continue over many steps, such as coding agents that work inside a software project.
+
+The sections below go back to the beginning of this story, to see the problems these steps solved: how words were first turned into vectors, and why the recurrent networks of the task-specific era could not scale.

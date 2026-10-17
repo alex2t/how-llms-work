@@ -68,6 +68,7 @@ One line per implemented section, newest at the bottom.
 - 2026-10-17 — Chapter 5 — Cheat sheet and sources: chapter complete.
 - 2026-10-17 — Chapters 2–4 — Links to Chapter 5 now open the exact section.
 - 2026-10-17 — Introduction — What you need to know first: vectors, dot product, matrix multiplication, transpose, neurons, loss and embeddings.
+- 2026-10-17 — Introduction — Historical evolution: from one model per task to one model for all tasks.
 
 ## Credits
 

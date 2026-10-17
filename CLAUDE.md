@@ -132,3 +132,4 @@ Add one line per implemented section, newest at the bottom: `YYYY-MM-DD — Chap
 - 2026-10-17 — Chapter 5 — Cheat sheet + Sources — 22-row cheat sheet and 9 sources; chapter complete (draft).
 - 2026-10-17 — Chapters 2–4 — Links to Chapter 5 (F9) — three page links pointed to exact sections.
 - 2026-10-17 — Introduction — Big picture + What you need to know first — vectors, dot product (CAT·DOG 0.888, CAT·A −0.506), shapes, 2×3 times 3×2 by hand, transpose; neuron with ReLU; loss, training, embeddings.
+- 2026-10-17 — Introduction — Historical evolution of text modelling — timeline 1997–2026; task-specific RNN era; 2017 turning point; scaling table (65M → 1.5B → 175B, about 2,700×); agents.
