@@ -230,3 +230,81 @@ Word2Vec vectors are **static**: each word has exactly one vector, fixed after t
 - **No word order.** The vectors of "dog bites man" and "man bites dog" are the same three vectors. Word vectors alone say what words mean in general, not what a particular sentence says.
 
 The Transformer keeps the idea of a learned vector per token, its embedding table ([Chapter 1](01-transformers.md#token-embeddings)), but then lets attention change each token's vector according to the other tokens in the sentence. The starting vector of "bank" is still fixed, as [Chapter 1 notes](01-transformers.md#what-is-learned-and-what-changes-after-training); attention is what turns it into "river bank" or "money bank". Word order is added through positional encoding. Before that, the first attempt to read sentences in order was the recurrent network, described next.
+
+## Sequence architectures: RNNs and LSTMs
+
+Word vectors say what words mean in general; to understand a sentence, a model must also read the words in order and combine them. Recurrent networks were the standard way to do that for most of the 2010s. Seeing how they work, and where they fail, explains exactly what the Transformer changed.
+
+### The recurrent neural network (RNN)
+
+A **recurrent neural network (RNN)** reads a sequence one token at a time. It keeps a **hidden state**: a vector that acts as its memory of everything read so far. At each step it combines the new token with the previous hidden state to make the next hidden state:
+
+$$
+h_t = \tanh\left(W_x\, x_t + W_h\, h_{t-1} + b\right)
+$$
+
+- **x\_t** is the vector of the token at step t.
+- **$h_{t-1}$** is the hidden state from the previous step (all zeros before the first step), and **h\_t** the new one.
+- **W\_x** and **W\_h** are weight matrices, and **b** a bias. The **same** weights are used at every step: that reuse is what "recurrent" means.
+- **tanh** is an activation function that squeezes any number into the range −1 to 1.
+
+At each step the RNN can also produce an output y\_t from h\_t, for example a prediction of the next word.
+
+```mermaid
+flowchart LR
+  x1[x1] --> R1[RNN step 1] --> y1[y1]
+  x2[x2] --> R2[RNN step 2] --> y2[y2]
+  x3[x3] --> R3[RNN step 3] --> y3[y3]
+  R1 -- "hidden state h1" --> R2
+  R2 -- "hidden state h2" --> R3
+```
+
+### Worked example: three steps
+
+To keep the arithmetic readable, each token and the hidden state are single numbers instead of vectors (made-up values): W\_x = 0.5, W\_h = 0.8, b = 0, and the start state h₀ = 0. The three tokens of `YOUR CAT IS` are represented by the numbers 1.0, 0.5 and −0.5.
+
+| Step | Token value x\_t | 0.5 × x\_t | 0.8 × $h_{t-1}$ | Sum | h\_t = tanh(sum) |
+| --- | --- | --- | --- | --- | --- |
+| 1 (YOUR) | 1.0 | 0.50 | 0.8 × 0 = 0.000 | 0.500 | 0.462 |
+| 2 (CAT) | 0.5 | 0.25 | 0.8 × 0.462 = 0.370 | 0.620 | 0.551 |
+| 3 (IS) | −0.5 | −0.25 | 0.8 × 0.551 = 0.441 | 0.191 | 0.189 |
+
+The final state 0.189 is the network's whole memory of the three words. Each step had to wait for the previous one, because step 2 needs h₁ and step 3 needs h₂.
+
+### The LSTM
+
+The **LSTM** (long short-term memory, Hochreiter and Schmidhuber, 1997) is an RNN designed to remember for longer. Besides the hidden state, it keeps a **cell state**, a second memory vector, and three **gates**. Each gate is a set of numbers between 0 and 1, computed from the current token and the previous hidden state, that controls how much information flows:
+
+- **Forget gate:** how much of the old cell state to keep. A value of 1 keeps everything; 0 erases it.
+- **Input gate:** how much of the new token's information to write into the cell state.
+- **Output gate:** how much of the cell state to reveal in the hidden state at this step.
+
+The key is that the cell state is updated mostly by multiplying by the forget gate and adding new information, rather than being squeezed through tanh at every step. If the forget gate stays near 1, information survives for many steps: with a forget gate of 0.99, about 0.99⁵⁰ ≈ 0.61 of a stored value is still there after 50 steps. LSTMs powered most translation and speech systems from about 2014 to 2017.
+
+### Why RNNs hit a wall
+
+**1. Vanishing and exploding gradients.** Training needs gradients ([Chapter 2](02-training.md#the-gradient-which-way-to-move-each-weight)) that tell each weight how it affected the loss. In an RNN, the effect of an early word on a late prediction passes back through every step in between, and is multiplied by W\_h (times the slope of tanh, which is at most 1) at each step:
+
+| Steps between the word and the prediction | Factor with W\_h = 0.8 (vanishing) | Factor with W\_h = 1.2 (exploding) |
+| --- | --- | --- |
+| 10 | 0.8¹⁰ = 0.107 | 1.2¹⁰ = 6.2 |
+| 20 | 0.8²⁰ = 0.012 | 1.2²⁰ = 38.3 |
+| 50 | 0.8⁵⁰ = 0.000014 | 1.2⁵⁰ ≈ 9,100 |
+
+With a factor below 1, the signal from 50 words back almost disappears, so the network cannot learn from it (**vanishing gradient**). With a factor above 1, it grows so large that training becomes unstable (**exploding gradient**). LSTMs reduce the problem but do not remove it.
+
+**2. Long-range dependencies are hard.** In "The keys that the man left on the kitchen table **are** missing", the verb "are" must agree with "keys", eight words earlier. Everything the network knows about "keys" must survive eight updates of one fixed-size hidden state, shared with everything else it is trying to remember. The longer the gap, the more likely it is lost.
+
+**3. Sequential processing blocks parallel training.** Step t cannot start until step t − 1 has finished. A 1,000-token text needs 1,000 steps one after another, even on a GPU that could do thousands of calculations at once. This makes RNNs slow to train on large datasets, which kept them small.
+
+### The bridge to Chapter 1
+
+The Transformer removes all three problems by dropping recurrence and using **attention**: every token looks directly at every other token ([Chapter 1](01-transformers.md#the-problem-it-solved)).
+
+| RNN problem | How attention removes it |
+| --- | --- |
+| Vanishing and exploding gradients across many steps | Any two tokens are one attention step apart, so the gradient between them does not pass through a long chain of multiplications |
+| Long-range dependencies squeezed into one hidden state | "are" can attend to "keys" directly, however far back it is |
+| Sequential processing | All positions are computed at once in training ([Chapter 2](02-training.md#why-training-happens-in-one-time-step)), so GPUs are fully used |
+
+That last point is what made today's models possible: once training could use parallel hardware fully, models and datasets could grow by thousands of times, as the timeline above shows. [Chapter 1](01-transformers.md) explains how the Transformer works, step by step.

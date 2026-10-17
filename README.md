@@ -70,6 +70,7 @@ One line per implemented section, newest at the bottom.
 - 2026-10-17 — Introduction — What you need to know first: vectors, dot product, matrix multiplication, transpose, neurons, loss and embeddings.
 - 2026-10-17 — Introduction — Historical evolution: from one model per task to one model for all tasks.
 - 2026-10-17 — Introduction — Vector embeddings: one-hot vectors, Word2Vec and their limits.
+- 2026-10-17 — Introduction — RNNs and LSTMs: how they read text in order, and the three problems attention removed.
 
 ## Credits
 
