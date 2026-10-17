@@ -67,7 +67,7 @@ Goal: give the reader the background needed before Chapter 1, and the story of w
   - [x] Top-p (nucleus): keep the smallest set summing to p, renormalise.
   - [x] How they combine; typical settings for factual vs creative output.
 - [x] Stopping: `<EOS>`, max tokens, stop sequences.
-- [ ] Cheat sheet + Sources.
+- [x] Cheat sheet + Sources.
 
 ## Phase 4 — Chapter 4: Quantization, efficiency and the modern Transformer (`docs/04-quantization.md`)
 

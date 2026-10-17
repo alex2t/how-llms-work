@@ -485,3 +485,38 @@ The **context window** is the maximum number of tokens the model can handle at o
 ### After the loop: from IDs back to text
 
 Generation produces token IDs, not text. The last step is **decoding** in the tokenizer's sense ([Chapter 1](01-transformers.md#encoding-new-text)): each ID is turned back into its text piece and the pieces are joined. The end token is dropped. In chat interfaces this happens continuously: each token is decoded and shown as soon as it is chosen, which is the **streaming** effect of words appearing one by one.
+
+## Cheat sheet
+
+| Concept | One-line meaning |
+| --- | --- |
+| Inference | Using a trained model: frozen weights, no loss, no backpropagation, dropout off |
+| Generation loop | Score every token, choose one, append it, repeat until a stop condition |
+| Deterministic forward pass | Same prompt, same probabilities; variety comes only from the decoding rule |
+| Encoder–decoder generation | Encoder runs once; decoder runs once per output token, reading the encoder through cross-attention |
+| Decoder-only generation | The answer is appended to the prompt in one sequence |
+| Prefill | First pass: the whole prompt at once, in parallel; compute-bound |
+| Decode | One pass per new token; memory-bound, because every weight is read for one token |
+| Time to first token | Mostly prefill time; grows with prompt length |
+| KV cache | Stored keys and values of earlier tokens, so each step computes only the new token |
+| KV cache size | 2 × layers × d\_model × bytes per number, per token |
+| Greedy decoding | Always pick the most likely token |
+| Beam search | Keep the best few partial answers; return the sequence with the highest total probability |
+| Sampling | Pick at random, each token with its probability |
+| Temperature T | Divide logits by T before softmax: T < 1 sharper, T > 1 flatter, T = 0 greedy |
+| Top-k | Keep the k most likely tokens, renormalise, sample |
+| Top-p (nucleus) | Keep the smallest top group summing to at least p, renormalise, sample |
+| Typical order | Temperature → softmax → top-k → top-p → sample |
+| Stop conditions | End token, max tokens or stop sequence, whichever comes first |
+| Context window | Maximum tokens for prompt and answer together |
+
+## Sources
+
+- [Attention Is All You Need (Vaswani et al., 2017)](https://arxiv.org/abs/1706.03762): beam search with beam size 4 and a length penalty
+- [Transformer from scratch, slides by Umar Jamil (CC BY-NC 4.0)](https://github.com/hkproj/transformer-from-scratch-notes): inference one time step at a time, greedy decoding and beam search
+- [Hierarchical Neural Story Generation (Fan et al., 2018)](https://arxiv.org/abs/1805.04833): top-k sampling
+- [The Curious Case of Neural Text Degeneration (Holtzman et al., 2019)](https://arxiv.org/abs/1904.09751): nucleus (top-p) sampling and the weaknesses of a fixed k
+- [Efficiently Scaling Transformer Inference (Pope et al., 2022)](https://arxiv.org/abs/2211.05102): prefill and decode costs, KV cache memory
+- [Llama 2: Open Foundation and Fine-Tuned Chat Models (Touvron et al., 2023)](https://arxiv.org/abs/2307.09288): settings of the 7-billion-weight example
+- [Generation strategies, Hugging Face Transformers documentation](https://huggingface.co/docs/transformers/generation_strategies): decoding settings and the order they are applied in
+- [Stop reasons, Claude Platform documentation](https://platform.claude.com/docs/en/build-with-claude/handling-stop-reasons): `stop_reason` values
