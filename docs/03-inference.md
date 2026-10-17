@@ -519,6 +519,34 @@ APIs report which condition ended the answer. Anthropic's API, for example, retu
 
 The **context window** is the maximum number of tokens the model can handle at once, prompt and answer together. It is fixed when the model is built and trained. If a model has a context window of 8,192 tokens and the prompt uses 7,000, at most 8,192 − 7,000 = 1,192 tokens are left for the answer, whatever max tokens is set to. Every one of those tokens also adds to the KV cache, as shown earlier in this chapter.
 
+### How big is a context window?
+
+Context windows are given in tokens, which are hard to picture. Using [Chapter 1's rule](01-transformers.md#practical-consequences) of about 0.75 English words per token, and about 500 words per printed page:
+
+| Context window | Words (× 0.75) | Pages (÷ 500) | About as long as |
+| --- | --- | --- | --- |
+| 1,000 tokens | 750 | 1.5 | A long email |
+| 8,192 tokens | 6,144 | 12 | A detailed report |
+| 128,000 tokens | 96,000 | 192 | A novel |
+| 1,000,000 tokens | 750,000 | 1,500 | Several thick books |
+
+These are rough figures for English prose; code and most other languages need more tokens for the same text, so the same window holds less.
+
+### A bigger window is not a perfect memory
+
+Fitting a document into the window does not mean the model uses all of it equally well. Two kinds of test show this:
+
+- **Needle in a haystack:** hide one sentence (the "needle", for example a made-up fact) at different depths of a long document (the "haystack") and ask the model for it. Repeating this for many depths and document lengths shows where retrieval starts to fail.
+- **Lost in the middle:** when the information needed to answer sits in the **middle** of a long prompt, models answer less accurately than when it sits near the **start** or the **end**. Plotted against position, accuracy forms a U shape.
+
+Harder long-context benchmarks, which ask the model to combine several facts rather than find one, have found that many models work reliably on only part of their advertised window. [Chapter 5](05-evaluation.md#evaluating-generative-llms) explains how such benchmarks fit into evaluation.
+
+**What this means for writing prompts:**
+
+1. Put the instructions and the most important facts at the **start** or the **end** of a long prompt, not buried in the middle.
+2. Include only the material the task needs; every extra page costs prefill time and KV-cache memory, and can distract the model.
+3. For very long tasks, split the work into steps, or select the relevant passages first and give the model only those.
+
 ### After the loop: from IDs back to text
 
 Generation produces token IDs, not text. The last step is **decoding** in the tokenizer's sense ([Chapter 1](01-transformers.md#encoding-new-text)): each ID is turned back into its text piece and the pieces are joined. The end token is dropped. In chat interfaces this happens continuously: each token is decoded and shown as soon as it is chosen, which is the **streaming** effect of words appearing one by one.
@@ -546,6 +574,9 @@ Generation produces token IDs, not text. The last step is **decoding** in the to
 | Typical order | Temperature → softmax → top-k → top-p → sample |
 | Stop conditions | End token, max tokens or stop sequence, whichever comes first |
 | Context window | Maximum tokens for prompt and answer together |
+| Chat template | Special tokens marking each message's role, start and end; must match training exactly |
+| Constrained decoding | Mask tokens that would break the required format, renormalise, then decode |
+| Lost in the middle | Facts in the middle of a long prompt are used less reliably than at the start or end |
 
 ## Sources
 
@@ -557,3 +588,8 @@ Generation produces token IDs, not text. The last step is **decoding** in the to
 - [Llama 2: Open Foundation and Fine-Tuned Chat Models (Touvron et al., 2023)](https://arxiv.org/abs/2307.09288): settings of the 7-billion-weight example
 - [Generation strategies, Hugging Face Transformers documentation](https://huggingface.co/docs/transformers/generation_strategies): decoding settings and the order they are applied in
 - [Stop reasons, Claude Platform documentation](https://platform.claude.com/docs/en/build-with-claude/handling-stop-reasons): `stop_reason` values
+- [Llama 3 tokenizer and chat format (Meta, source code)](https://github.com/meta-llama/llama3/blob/main/llama/tokenizer.py): the chat template tokens
+- [Lost in the Middle: How Language Models Use Long Contexts (Liu et al., 2023)](https://arxiv.org/abs/2307.03172)
+- [Needle in a haystack test (Kamradt, 2023)](https://github.com/gkamradt/LLMTest_NeedleInAHaystack)
+- [RULER: What's the Real Context Size of Your Long-Context Language Models? (Hsieh et al., 2024)](https://arxiv.org/abs/2404.06654)
+- [CME295: Transformers & Large Language Models, Lectures 1 and 2 (Stanford University, Afshine and Shervine Amidi)](https://cme295.stanford.edu/syllabus/): chat tokens, constrained decoding and long-context topics

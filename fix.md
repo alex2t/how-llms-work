@@ -140,13 +140,13 @@ Reviewed 2026-10-17. Normalisation (RMSNorm, pre-norm), RoPE, attention's quadra
 
 **Decision:** Approved (user, 2026-10-17). Written 2026-10-17.
 
-#### L2-7. Tokens to words to pages `[ ]`
+#### L2-7. Tokens to words to pages `[x]`
 
 - **Missing:** Chapter 1 gives the rule "about 0.75 English words per token". The lecture adds a scale that makes context sizes concrete: 1,000 tokens ≈ 750 words ≈ 1.5 pages; 100,000 tokens ≈ a novel.
 - **Recommendation:** existing chapter. **Chapter 3 → "The context window: a hard limit"**: a 4-row table converting common window sizes (8,192, 128,000, 1,000,000 tokens) into words and pages, computed rather than copied.
 - **Priority:** Low.
 
-**Decision:** Approved (user, 2026-10-17). Not written yet.
+**Decision:** Approved (user, 2026-10-17). Written 2026-10-17.
 
 ### Lecture 3 — Pre-training data, SFT, LoRA, RLHF vs DPO, GRPO, distillation
 
