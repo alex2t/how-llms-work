@@ -350,3 +350,33 @@ Two points that are easy to miss:
 - **T = 0 means greedy.** Dividing by 0 is not possible, but as T gets closer to 0 the top token's probability gets closer to 1. APIs therefore treat a temperature of 0 as "always pick the top token", which is greedy decoding.
 
 Low temperatures (around 0 to 0.3) suit tasks with one right answer, such as extracting data or writing code. Higher ones (around 0.7 to 1) suit open-ended writing. Very high values make the text drift into nonsense, because unlikely tokens keep getting picked.
+
+### Top-k sampling
+
+Even at a sensible temperature, sampling can occasionally pick a token that makes no sense, simply because a real vocabulary has tens of thousands of tokens and each unlikely one keeps a tiny chance. **Top-k sampling** removes that risk: keep only the k most likely tokens, set every other token's probability to 0, and **renormalise** (divide the kept probabilities by their sum so they add up to 1 again). Then sample from what is left.
+
+**Worked example, k = 2.**
+
+1. Keep the 2 most likely tokens: CAT 0.772 and DOG 0.211. Drop IS and LOVELY.
+2. Add the kept probabilities: 0.772 + 0.211 = 0.983.
+3. Divide each by 0.983: CAT 0.772 / 0.983 = 0.785, DOG 0.211 / 0.983 = 0.215.
+
+| Token | Original probability | k = 1 | k = 2 | k = 3 |
+| --- | --- | --- | --- | --- |
+| CAT | 0.772 | 1 | 0.785 | 0.775 |
+| DOG | 0.211 | 0 | 0.215 | 0.212 |
+| IS | 0.013 | 0 | 0 | 0.013 |
+| LOVELY | 0.004 | 0 | 0 | 0 |
+
+- **k = 1** keeps only the top token: it is greedy decoding.
+- **k = 2** makes `IS` and `LOVELY` impossible; `CAT` and `DOG` share their probability in the same ratio as before.
+- **Larger k** lets in more tokens. With a real vocabulary, values such as k = 40 or k = 50 are common.
+
+**The weakness: k is fixed, but the model's confidence is not.** Two prompts, with made-up probabilities:
+
+| Prompt | What the model's probabilities look like | What k = 2 does | What k = 50 does |
+| --- | --- | --- | --- |
+| "The capital of France is" | Paris 0.97; the remaining 0.03 spread over thousands of tokens | Keeps Paris and one unlikely token | Keeps Paris and 49 unlikely tokens |
+| "My favourite colour is" | blue 0.20, green 0.18, red 0.17, purple 0.15, yellow 0.12, black 0.10; the remaining 0.08 spread over other tokens | Keeps only blue (0.526) and green (0.474), dropping red although it is almost as likely as green | Keeps all the good colours, plus some unlikely tokens |
+
+No single k suits both prompts: when the model is confident, even a small k lets in tokens that should be excluded, and when it is unsure, a small k cuts out good options. Top-p sampling, next, fixes this by letting the number of kept tokens change with the model's confidence.
