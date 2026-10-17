@@ -1,0 +1,68 @@
+site_name: How LLMs Work
+site_description: A plain-English book on how large language models work, with worked numeric examples.
+site_author: Alexandre Dutier
+site_url: https://alex2t.github.io/how-llms-work/
+repo_url: https://github.com/alex2t/how-llms-work
+repo_name: alex2t/how-llms-work
+edit_uri: edit/main/docs/
+
+theme:
+  name: material
+  language: en
+  features:
+    - navigation.tabs          # chapter navigation bar at the top
+    - navigation.tabs.sticky   # keep the bar visible while scrolling
+    - navigation.footer        # "Previous / Next" chapter buttons at the bottom
+    - navigation.top           # back-to-top button
+    - navigation.indexes
+    - toc.follow               # right-hand table of contents follows the reader
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+
+nav:
+  - Home: index.md
+  - "0 · Introduction": 00-introduction.md
+  - "1 · Transformers": 01-transformers.md
+  - "2 · Training": 02-training.md
+  - "3 · Inference": 03-inference.md
+  - "4 · Quantization": 04-quantization.md
+  - "5 · Evaluation": 05-evaluation.md
+
+markdown_extensions:
+  - toc:
+      permalink: true
+  - tables
+  - admonition
+  - attr_list
+  - md_in_html
+  - footnotes
+  - pymdownx.details
+  - pymdownx.arithmatex:
+      generic: true
+  - pymdownx.highlight
+  - pymdownx.inlinehilite
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+
+extra_javascript:
+  - javascripts/mathjax.js
+  - https://unpkg.com/mathjax@3/es5/tex-mml-chtml.js

@@ -1,0 +1,573 @@
+# Training: How the Model Learns
+
+## The big picture
+
+Chapter 1 described a model that is already trained: its embedding table E, its W\_Q, W\_K, W\_V, W\_O and feed-forward weights are fixed numbers. This chapter explains where those numbers come from. In short, the model starts with random weights and plays a guessing game billions of times: guess the next token, see how wrong the guess was, and adjust every weight a tiny amount so the next guess is a little better.
+
+One round of that game is called a **training step**. Each step does the following:
+
+1. **Take a batch.** Pick a group of text examples from the training data and turn them into token IDs with the tokenizer from Chapter 1.
+2. **Prepare inputs and targets.** Make every sequence the same length with padding, and shift the text by one position so that each position has a "correct next token" to predict.
+3. **Forward pass.** Run the whole batch through the model, exactly as in Chapter 1, to get a probability for every vocabulary token at every position.
+4. **Measure the error.** Compare the probabilities with the correct next tokens and compute one number, the **loss**. A low loss means good guesses.
+5. **Backward pass.** Compute, for every weight, which direction to move it to lower the loss.
+6. **Update.** The optimiser moves every weight a small step in that direction.
+
+Then the next batch is taken and the loop repeats. The original Transformer did this 100,000 times for its base model. The rest of the chapter walks through each step, with most detail on the parts that confuse newcomers: padding, the shifted-right decoder input, and why all positions are trained at once.
+
+## What training is
+
+Training is the process that turns a model full of random numbers into a model that predicts text well. It matters because nothing in a Transformer is designed by hand: every useful behaviour described in Chapter 1 is the result of this process.
+
+### Three ideas: weights, prediction, error
+
+- **Weight (parameter):** one trainable number inside the model. Every entry of E, W\_Q, W\_K, W\_V, W\_O, W₁, W₂ and the layer-normalisation γ and β is a weight. The base model of the original paper has about 65 million of them.
+- **Prediction:** at each position, the model outputs a probability for every token in the vocabulary, as shown in Chapter 1's section "From the last vector back to a word".
+- **Error:** how far that prediction is from the token that really came next in the text. Training only ever tries to make this error smaller.
+
+The training data needs no human labels. The text itself provides the answers: in `YOUR CAT IS A LOVELY CAT`, after `YOUR CAT IS A LOVELY` the correct next token is `CAT`, simply because that is what the text says. This is why models can be trained on huge amounts of ordinary text. This style of learning is called **self-supervised**: the labels come from the data itself.
+
+### What training changes, and what it does not
+
+Chapter 1's section "What is learned, and what changes after training?" listed every component. Training touches only the ones with trainable weights:
+
+| Component | Changed by training? | Why |
+| --- | --- | --- |
+| BPE tokenizer and token IDs | No | Built before model training and frozen |
+| Embedding matrix E | Yes | Starts random, learned |
+| Sinusoidal positional encoding | No | Computed from a formula, has no weights |
+| W\_Q, W\_K, W\_V, W\_O in every layer and head | Yes | Start random, learned |
+| Feed-forward W₁, b₁, W₂, b₂ | Yes | Start random, learned |
+| Layer-norm γ and β | Yes | Start at 1 and 0, learned |
+| Output matrix W\_out | Yes | Learned (or shared with E through weight tying) |
+
+### A first look at "adjusting a weight"
+
+Take Chapter 1's example: after `YOUR CAT IS A LOVELY` the model gives `CAT` a probability of 0.772. The correct answer is `CAT`, so the guess is good but not perfect. Training computes how each weight should move so that 0.772 becomes a little larger next time, then moves all 65 million weights at once by a tiny amount. Later in this chapter, the section on backpropagation shows with real numbers that one such step raises the probability from 0.772 to about 0.808.
+
+No single step makes the model smart. The knowledge builds up over many steps and many batches, which is why training a large model takes weeks on thousands of GPUs, while using it afterwards takes seconds.
+
+## Training data and batches
+
+The model does not learn from one sentence at a time; it learns from groups of sentences processed together. This section defines those groups and explains why they force every sentence in a group to have the same length, which leads directly to padding in the next section.
+
+### Training data
+
+The **training data (corpus)** is the collection of text the model learns from: books, web pages, code, or, for a translation model, pairs of sentences in two languages. The original paper used about 4.5 million English–German sentence pairs. Before training, all of it is converted to token IDs with the frozen tokenizer.
+
+### What a batch is
+
+A **batch** is a small group of training examples that go through the model together in one training step. The model computes the loss for every example in the batch, averages the results, and makes one weight update from that average.
+
+- **Batch size (B):** the number of sequences in one batch.
+- **Sequence length (n):** the number of tokens in each sequence of the batch.
+- **Step:** one batch in, one weight update out.
+- **Epoch:** one full pass over the whole training data.
+
+Why not one sentence at a time? A GPU can process many sequences in parallel almost as fast as one, so batches use the hardware well. Averaging over many examples also gives a steadier direction for the update: one odd sentence cannot pull the weights too far. The paper built its batches by token count, about 25,000 source tokens and 25,000 target tokens per batch, rather than by a fixed number of sentences.
+
+### Tensors and shapes
+
+A **tensor** is a block of numbers with several dimensions: a vector has 1 dimension, a matrix 2, and a batch of matrices 3. The model processes a whole batch as tensors. Take a batch of B = 2 sentences, each n = 6 tokens long, with Chapter 1's settings:
+
+| Stage | Shape | Numbers in it |
+| --- | --- | --- |
+| Token IDs | 2 × 6 | 12 |
+| After embedding + position (X) | 2 × 6 × 512 | 6,144 |
+| Q, K or V for one head | 2 × 6 × 64 | 768 |
+| Attention scores QKᵀ for one head | 2 × 6 × 6 | 72 |
+| Attention scores, all 8 heads | 2 × 8 × 6 × 6 | 576 |
+| Logits (with a 50,000-token vocabulary) | 2 × 6 × 50,000 | 600,000 |
+
+Every formula from Chapter 1 stays the same; there is simply one extra dimension at the front for the batch.
+
+### Why every sequence in a batch must have the same length
+
+A tensor must be a perfect rectangle (or box): every row has the same number of entries. Real sentences have different lengths. Take these two sentences:
+
+| Sentence | Token IDs | Length |
+| --- | --- | --- |
+| `YOUR CAT IS A LOVELY CAT` | \[105, 6587, 5475, 3578, 65, 6587\] | 6 |
+| `YOUR CAT IS LOVELY` | \[105, 6587, 5475, 65\] | 4 |
+
+The second row is 2 entries short, so the two rows cannot be stacked into a 2 × 6 tensor, and the GPU cannot run a single matrix multiplication over them. The fix is to fill the short sentence up to the length of the longest one with a special filler token. That is padding, described next.
+
+## Padding and the padding mask
+
+Padding makes a batch rectangular by filling short sentences with a filler token; the padding mask then makes the model ignore that filler. Both are needed: without padding the batch cannot be built, and without the mask the filler would change the model's results.
+
+### Step 1: pad the short sentences
+
+**Padding** means appending a special token, written `<pad>`, to every sentence shorter than the longest one in the batch. `<pad>` is an ordinary entry in the vocabulary with its own ID. Here it is given ID 0 (a made-up value; each tokenizer chooses its own).
+
+| Position | 0 | 1 | 2 | 3 | 4 | 5 |
+| --- | --- | --- | --- | --- | --- | --- |
+| Sentence A | YOUR (105) | CAT (6587) | IS (5475) | A (3578) | LOVELY (65) | CAT (6587) |
+| Sentence B | YOUR (105) | CAT (6587) | IS (5475) | LOVELY (65) | `<pad>` (0) | `<pad>` (0) |
+
+The batch is now a clean 2 × 6 tensor of IDs: \[\[105, 6587, 5475, 3578, 65, 6587\], \[105, 6587, 5475, 65, 0, 0\]\].
+
+### Step 2: build the padding mask
+
+The `<pad>` tokens are meaningless, but the model does not know that. They have an embedding row in E, so they would produce keys and values, and real words would attend to them. Sentence B's result would then depend on how many pads happened to be added, which depends on what other sentence shared its batch. That would be a bug.
+
+The **padding mask** is a list of 1s and 0s, one per position: 1 for a real token, 0 for `<pad>`.
+
+| Position | 0 | 1 | 2 | 3 | 4 | 5 |
+| --- | --- | --- | --- | --- | --- | --- |
+| Sentence A mask | 1 | 1 | 1 | 1 | 1 | 1 |
+| Sentence B mask | 1 | 1 | 1 | 1 | 0 | 0 |
+
+### Step 3: apply it inside attention
+
+The mask is applied exactly like the causal mask in Chapter 1's section "What the mask looks like": every attention score whose **column** (the token being looked at) is a `<pad>` is set to −∞ before softmax, so its weight becomes exactly 0. For sentence B in the encoder, which uses no causal mask, the table becomes:
+
+| looks at → | YOUR | CAT | IS | LOVELY | `<pad>` | `<pad>` |
+| --- | --- | --- | --- | --- | --- | --- |
+| **YOUR** | ✓ | ✓ | ✓ | ✓ | 0 | 0 |
+| **CAT** | ✓ | ✓ | ✓ | ✓ | 0 | 0 |
+| **IS** | ✓ | ✓ | ✓ | ✓ | 0 | 0 |
+| **LOVELY** | ✓ | ✓ | ✓ | ✓ | 0 | 0 |
+| **`<pad>`** | ✓ | ✓ | ✓ | ✓ | 0 | 0 |
+| **`<pad>`** | ✓ | ✓ | ✓ | ✓ | 0 | 0 |
+
+Only the columns are blocked. The `<pad>` rows still produce an output, but nobody uses it: no real token looks at it, and the loss ignores it (Step 4). The rows are not blocked completely because a row of only −∞ would make softmax divide 0 by 0.
+
+**Example: the row for LOVELY in sentence B.** Suppose that without a mask the weights were as below (illustrative numbers):
+
+|  | YOUR | CAT | IS | LOVELY | `<pad>` | `<pad>` | Sum |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Without mask | 0.200 | 0.300 | 0.100 | 0.200 | 0.100 | 0.100 | 1.000 |
+| With padding mask | 0.250 | 0.375 | 0.125 | 0.250 | 0 | 0 | 1.000 |
+
+The real tokens kept 0.800 of the weight, and each is divided by 0.800: for example 0.300 / 0.800 = 0.375. Setting the scores to −∞ before softmax gives exactly this result, because softmax then shares the total only among the remaining tokens.
+
+### Padding mask + causal mask in the decoder
+
+The decoder needs both masks at once. A cell is allowed only if **both** masks allow it: the column must not be in the future (causal mask) **and** must not be `<pad>` (padding mask). For sentence B:
+
+| looks at → | YOUR | CAT | IS | LOVELY | `<pad>` | `<pad>` |
+| --- | --- | --- | --- | --- | --- | --- |
+| **YOUR** | ✓ | 0 | 0 | 0 | 0 | 0 |
+| **CAT** | ✓ | ✓ | 0 | 0 | 0 | 0 |
+| **IS** | ✓ | ✓ | ✓ | 0 | 0 | 0 |
+| **LOVELY** | ✓ | ✓ | ✓ | ✓ | 0 | 0 |
+| **`<pad>`** | ✓ | ✓ | ✓ | ✓ | 0 | 0 |
+| **`<pad>`** | ✓ | ✓ | ✓ | ✓ | 0 | 0 |
+
+The top-left part is Chapter 1's triangle; the two pad columns are blocked on every row.
+
+### Step 4: ignore padding in the loss
+
+The loss (explained later in this chapter) is computed per position and then averaged. Positions whose correct answer is `<pad>` are left out of that average, so the model is never rewarded or punished for predicting filler. In the batch above, 10 positions hold real tokens and 2 hold `<pad>`, so the loss is the sum over the 10 real positions divided by 10, not by 12.
+
+### Padding mask vs causal mask
+
+|  | Causal mask (Chapter 1) | Padding mask |
+| --- | --- | --- |
+| What it blocks | Tokens **after** the current position | `<pad>` tokens |
+| Depends on | Position only | The content of each sentence |
+| Shape | The same triangle for every sentence of length n | Different for each sentence in the batch |
+| Used in | Decoder self-attention only | Encoder, decoder and cross-attention, and the loss |
+| Why | Stop the model from seeing the answer | Stop filler from changing the results |
+| Needed at inference? | Yes, in every decoder layer | Only when several prompts are batched together |
+
+## The decoder input "shifted right": `<SOS>` and `<EOS>`
+
+To train a decoder, each position needs an input to read and a correct token to predict. The trick is to feed the decoder the target sentence moved one place to the right, so that at every position the correct answer is simply the next word. Two special tokens make this work.
+
+### The special tokens
+
+- **`<SOS>` (start of sentence):** a token that means "the sentence begins here". It gives the decoder something to read at the very first position, before any real word exists.
+- **`<EOS>` (end of sentence):** a token that means "the sentence is finished". The model learns to predict it after the last word, which is how, during generation, it signals that it wants to stop.
+
+Like `<pad>`, both are ordinary vocabulary entries with their own IDs and embedding rows, learned like any other token.
+
+### The translation example
+
+The task is to translate "I love you very much" into "Ti amo molto". To keep the tables short, each word is treated as one token (a simplification; a real BPE tokenizer may split some words). Three sequences are built from the sentence pair:
+
+| Sequence | Tokens | Length | Goes to |
+| --- | --- | --- | --- |
+| Encoder input | `<SOS>` I love you very much `<EOS>` | 7 | The encoder |
+| Decoder input | `<SOS>` Ti amo molto | 4 | The decoder |
+| Target (label) | Ti amo molto `<EOS>` | 4 | The loss only, never into the model |
+
+The decoder input and the target are the same Italian sentence, offset by one position. The decoder input starts with `<SOS>` and drops `<EOS>`; the target drops `<SOS>` and ends with `<EOS>`. Writing the target with `<SOS>` in front pushes every word one slot to the right, hence the name **shifted right**.
+
+### Input and target, position by position
+
+| Position | Decoder input at this position | What the position can see (causal mask) | Target: what it must predict |
+| --- | --- | --- | --- |
+| 0 | `<SOS>` | `<SOS>` | Ti |
+| 1 | Ti | `<SOS>` Ti | amo |
+| 2 | amo | `<SOS>` Ti amo | molto |
+| 3 | molto | `<SOS>` Ti amo molto | `<EOS>` |
+
+Read each row as a small exam question: "Given the English sentence (from the encoder) and the Italian words so far, what is the next Italian word?" The causal mask from Chapter 1 guarantees that position 1, for example, sees `<SOS>` and Ti but not amo, the word it must predict.
+
+Every position also looks at the full English sentence through cross-attention (Chapter 1, "Self-attention vs cross-attention"). The encoder needs no causal mask: the English sentence is given, not predicted.
+
+### With padding
+
+Implementations usually fix one sequence length for all batches, for example 8 tokens, and pad up to it with the mask from the previous section:
+
+| Position | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Encoder input | `<SOS>` | I | love | you | very | much | `<EOS>` | `<pad>` |
+| Decoder input | `<SOS>` | Ti | amo | molto | `<pad>` | `<pad>` | `<pad>` | `<pad>` |
+| Target | Ti | amo | molto | `<EOS>` | `<pad>` | `<pad>` | `<pad>` | `<pad>` |
+
+Only positions 0 to 3 count in the loss.
+
+### The same idea in decoder-only models
+
+GPT-style models and Claude have no encoder, but they use exactly the same shift. The input is the text without its last token, and the target is the text without its first token. For `YOUR CAT IS A LOVELY CAT`:
+
+| Position | 0 | 1 | 2 | 3 | 4 |
+| --- | --- | --- | --- | --- | --- |
+| Input | YOUR | CAT | IS | A | LOVELY |
+| Target | CAT | IS | A | LOVELY | CAT |
+
+Six tokens give five training examples, one per position. Position 4 is the case from Chapter 1's logits example: after `YOUR CAT IS A LOVELY`, the target is `CAT`.
+
+## Teacher forcing: why training happens in one time step
+
+During training the decoder always reads the correct previous words, never its own guesses, and all positions are computed in a single pass. This is the main reason Transformers train so much faster than the older recurrent networks described in Chapter 1's section "The problem it solved".
+
+### What teacher forcing means
+
+**Teacher forcing** means that, during training, the input at each position is the **true** previous token from the training data, not the token the model predicted. The name comes from a teacher who corrects a student after every word, so one mistake cannot lead to a chain of mistakes.
+
+**Example.** Suppose that early in training, at position 1, the model's top guess after `<SOS>` Ti is "adoro" instead of the correct "amo" (made-up numbers for illustration):
+
+| Position | Decoder input (from the data) | Model's top guess | Target | Effect |
+| --- | --- | --- | --- | --- |
+| 0 | `<SOS>` | Ti | Ti | Correct, low loss |
+| 1 | Ti | adoro | amo | Wrong, high loss |
+| 2 | amo | molto | molto | Correct: it read "amo", not "adoro" |
+| 3 | molto | `<EOS>` | `<EOS>` | Correct, low loss |
+
+The wrong guess at position 1 is punished by the loss at position 1, but it does not reach position 2. Position 2 still reads the correct word "amo", so it gets a fair chance to learn "molto".
+
+### Why training happens in one time step
+
+Because all inputs come from the data, nothing has to wait for the model's own output. The whole decoder input is known before the pass starts. So the complete sequence `<SOS>` Ti amo molto goes through the decoder **at once**, as one 4 × 512 matrix (Chapter 1, "Which X? All tokens, layer by layer"), and the output gives logits for all four positions together:
+
+```latex
+\underbrace{[\langle SOS\rangle,\ \text{Ti},\ \text{amo},\ \text{molto}]}_{\text{decoder input, } 4 \times 512} \xrightarrow{\ \text{one forward pass}\ } \underbrace{[P_0,\ P_1,\ P_2,\ P_3]}_{4 \times |V| \text{ probabilities}} \xrightarrow{\ \text{compare with}\ } [\text{Ti},\ \text{amo},\ \text{molto},\ \langle EOS\rangle]
+```
+
+Here P\_i is the probability list at position i, and |V| is the vocabulary size.
+
+What stops position 1 from simply copying the answer "amo", which sits at position 2 of the same input? The causal mask. Position 1 can attend only to positions 0 and 1, so the answer is in the input matrix but invisible to it. The mask is what makes it safe to give the model the whole sentence at once.
+
+### Training vs generation for the same sentence
+
+Chapter 3 covers generation in detail. The table shows why the two are so different in speed:
+
+|  | Training (teacher forcing) | Generation (Chapter 3) |
+| --- | --- | --- |
+| Decoder input comes from | The training data | The model's own previous outputs |
+| Known before starting? | Yes, the whole sentence | No, one word at a time |
+| Forward passes for "Ti amo molto `<EOS>`" | 1 | 4 (Ti → amo → molto → `<EOS>`) |
+| Predictions used per pass | All 4 positions | Only the last position |
+| A mistake at one position | Does not affect the next input | Is fed back in and can spread |
+
+The same holds at scale: one batch of 25,000 target tokens in the paper gives about 25,000 predictions, all scored in one forward pass. An RNN would have to step through each sentence one token at a time.
+
+### The trade-off: exposure bias
+
+Teacher forcing has one known weakness, called **exposure bias**: during training the model only ever sees correct previous words, but during generation it sees its own words, including its own mistakes. It was never trained to recover from a bad word. In practice the speed benefit is so large that all large language models use teacher forcing, and the effect is reduced by training on huge amounts of data and by the later training stages described at the end of this chapter.
+
+## The loss: cross-entropy
+
+The loss is the single number that says how wrong the model's predictions were. Training has only one goal, making this number smaller, so it is worth knowing exactly how it is computed.
+
+### Definitions
+
+- **Loss:** one number that measures the error of the predictions. 0 means perfect; larger means worse.
+- **Target distribution:** what the model *should* have predicted. For next-token prediction it is **one-hot**: probability 1 for the correct token and 0 for every other token.
+- **Cross-entropy:** a standard way to measure how far the predicted probabilities are from the target distribution.
+
+```latex
+L = -\sum_{k=1}^{|V|} y_k \ln p_k \qquad \text{with a one-hot target:} \qquad L = -\ln p_{\text{correct}}
+```
+
+- **L** is the loss for one position.
+- **|V|** is the vocabulary size, and **k** runs over every token in it.
+- **y\_k** is the target probability of token k: 1 for the correct token, 0 for the others.
+- **p\_k** is the model's predicted probability for token k (after softmax).
+- **ln** is the natural logarithm.
+
+Because every y\_k is 0 except the correct one, the sum collapses to one term: the loss is minus the logarithm of the probability the model gave to the correct token. Only that one probability matters directly.
+
+### Worked example: Chapter 1's probabilities
+
+After `YOUR CAT IS A LOVELY`, Chapter 1's model predicted CAT 0.772, DOG 0.211, IS 0.013, LOVELY 0.004. The table shows the loss for each possible correct answer:
+
+| If the correct next token were | Probability the model gave it | Loss = −ln(p) |
+| --- | --- | --- |
+| CAT | 0.772 | 0.259 |
+| DOG | 0.211 | 1.556 |
+| IS | 0.013 | 4.343 |
+| LOVELY | 0.004 | 5.521 |
+
+In the real text the next token is `CAT`, so this position's loss is **0.259**. Three things to notice:
+
+- **Perfect costs nothing:** a probability of 1 gives −ln(1) = 0.
+- **Confident and wrong is punished hard:** a probability of 0.004 costs about 21 times more than 0.772 (5.521 / 0.259 ≈ 21.3).
+- **Only the correct token's probability enters the formula,** but because all probabilities share a sum of 1, raising the correct one automatically lowers the others.
+
+### From one position to a whole batch
+
+The loss of a batch is the **average** of the per-position losses over all real (non-`<pad>`) positions. Take the translation example from the previous sections, with made-up probabilities for the correct token at each position:
+
+| Position | Target | Probability given to the target | Loss = −ln(p) |
+| --- | --- | --- | --- |
+| 0 | Ti | 0.60 | 0.511 |
+| 1 | amo | 0.80 | 0.223 |
+| 2 | molto | 0.50 | 0.693 |
+| 3 | `<EOS>` | 0.90 | 0.105 |
+|  |  | **Sum** | 1.532 |
+|  |  | **Average (÷ 4)** | **0.383** |
+
+The value 0.383 is the number training tries to reduce. All four positions came from the single forward pass described in the teacher-forcing section.
+
+### Perplexity: the same number in friendlier units
+
+**Perplexity** is e raised to the average loss. It can be read as "how many tokens the model is hesitating between, on average". Here e^0.383 ≈ 1.47: the model is about as uncertain as if it were choosing between 1.5 equally likely tokens. A perfect model has perplexity 1. Model papers often report perplexity instead of the raw loss.
+
+## Backpropagation, gradient descent and the optimiser
+
+Once the loss is known, the model must decide how to change each of its millions of weights to make the loss smaller. This section explains the three tools that do it (backpropagation, gradient descent and the Adam optimiser) and two techniques the paper used to stop the model from simply memorising its training data (dropout and label smoothing).
+
+### The gradient: which way to move each weight
+
+A **gradient** is, for one weight, the answer to: "if I increase this weight by a tiny amount, does the loss go up or down, and how fast?" It is a single number per weight.
+
+- **Positive gradient:** increasing the weight increases the loss, so the weight should go **down**.
+- **Negative gradient:** increasing the weight decreases the loss, so the weight should go **up**.
+- **Large gradient (positive or negative):** the loss is very sensitive to this weight.
+
+### Backpropagation: computing every gradient at once
+
+**Backpropagation** is the method that computes the gradient of every weight in one backward pass through the model, from the loss back to the embeddings. It uses the **chain rule** from calculus: the effect of a weight on the loss equals its effect on the next layer, times that layer's effect on the layer after, and so on up to the loss. Deep-learning libraries (PyTorch, JAX) do this automatically; nobody writes the derivatives by hand.
+
+The first link of the chain has a very simple form for softmax followed by cross-entropy. The gradient with respect to each logit is the predicted probability minus the target:
+
+```latex
+\frac{\partial L}{\partial z_k} = p_k - y_k
+```
+
+Here z\_k is the logit of token k (the raw score before softmax), p\_k its probability and y\_k its target (1 or 0). With Chapter 1's numbers, where the correct token is CAT:
+
+| Token | p\_k | y\_k | Gradient p\_k − y\_k | Meaning |
+| --- | --- | --- | --- | --- |
+| CAT | 0.772 | 1 | −0.228 | Push the CAT logit up |
+| DOG | 0.211 | 0 | +0.211 | Push the DOG logit down |
+| IS | 0.013 | 0 | +0.013 | Push down slightly |
+| LOVELY | 0.004 | 0 | +0.004 | Push down very slightly |
+
+The gradients sum to 0. The wrong token that received the most probability (DOG) gets the strongest push down. Backpropagation then carries these four numbers backwards through W\_out, the feed-forward networks, W\_O, W\_Q, W\_K, W\_V and finally E, giving every weight its own gradient.
+
+### Gradient descent: taking the step
+
+**Gradient descent** moves each weight a small step against its gradient:
+
+```latex
+w_{\text{new}} = w_{\text{old}} - \eta \cdot g
+```
+
+- **w** is one weight.
+- **g** is that weight's gradient.
+- **η (eta)** is the **learning rate**: how big a step to take. Too large and training jumps around and diverges; too small and it takes forever.
+
+**Worked example.** To see the effect without following 65 million weights, pretend for a moment that the four logits themselves were the weights, and use η = 0.5 (a toy simplification; in the real model, the logits change because the weights that produce them change):
+
+| Token | Old logit | Gradient | New logit = old − 0.5 × gradient | New probability |
+| --- | --- | --- | --- | --- |
+| CAT | 6.2 | −0.228 | 6.314 | **0.807** |
+| DOG | 4.9 | +0.211 | 4.794 | 0.177 |
+| IS | 2.1 | +0.013 | 2.094 | 0.012 |
+| LOVELY | 1.0 | +0.004 | 0.998 | 0.004 |
+
+The probability of the correct token rises from 0.772 to 0.807, and the loss falls from 0.259 to −ln(0.807) = 0.214. One training step is exactly this, applied to every weight at once, with the gradient averaged over all positions in the batch.
+
+### Adam: a smarter step
+
+Plain gradient descent uses the same learning rate for every weight. The paper used **Adam** (adaptive moment estimation), an **optimiser** (the rule that turns gradients into weight changes) that adapts the step for each weight. It keeps two running averages per weight:
+
+- **m (momentum):** the recent average of the gradient. It smooths out noise from one batch to the next, like a ball rolling downhill that keeps its speed.
+- **v:** the recent average of the **squared** gradient. It measures how large the gradients for this weight usually are.
+
+```latex
+m_t = \beta_1 m_{t-1} + (1-\beta_1)\, g_t \qquad v_t = \beta_2 v_{t-1} + (1-\beta_2)\, g_t^2
+```
+
+```latex
+\hat m_t = \frac{m_t}{1-\beta_1^{\,t}} \qquad \hat v_t = \frac{v_t}{1-\beta_2^{\,t}} \qquad w_t = w_{t-1} - \eta\, \frac{\hat m_t}{\sqrt{\hat v_t} + \epsilon}
+```
+
+- **t** is the step number and **g\_t** the gradient at step t.
+- **β₁, β₂** control how long the averages remember: the paper used β₁ = 0.9 and β₂ = 0.98.
+- **m̂, v̂** are the averages corrected for starting at 0 (the "bias correction").
+- **ε** is a tiny number (10⁻⁹ in the paper) to avoid dividing by 0.
+
+**Worked example: the first step (t = 1), m and v start at 0.**
+
+| Quantity | Weight A: g = 0.2 | Weight B: g = 0.002 |
+| --- | --- | --- |
+| m₁ = 0.1 × g | 0.02 | 0.0002 |
+| v₁ = 0.02 × g² | 0.0008 | 0.00000008 |
+| m̂₁ = m₁ / (1 − 0.9) | 0.2 | 0.002 |
+| v̂₁ = v₁ / (1 − 0.98) | 0.04 | 0.000004 |
+| √v̂₁ | 0.2 | 0.002 |
+| Step = η × m̂₁ / √v̂₁ | η × 1 = η | η × 1 = η |
+
+The two gradients differ by a factor of 100, yet both weights move by the same amount η. Adam divides each gradient by its own typical size, so weights with tiny gradients still learn and weights with large gradients do not jump too far. This is why Adam, and its variant AdamW, is used to train almost every large language model.
+
+### The learning rate and the warm-up schedule
+
+The paper did not keep the learning rate fixed. It used a **schedule**: a formula giving the learning rate at each step.
+
+```latex
+\eta(\text{step}) = d_{model}^{-0.5} \cdot \min\left(\text{step}^{-0.5},\ \text{step} \cdot \text{warmup}^{-1.5}\right)
+```
+
+- **d\_model** = 512, so d\_model^−0.5 = 1 / √512 ≈ 0.0442.
+- **step** is the training step number, starting at 1.
+- **warmup** = 4,000 steps.
+
+For the first 4,000 steps the second term is smaller, so the learning rate **rises in a straight line** (the **warm-up**). After that the first term is smaller, so it **decays** in proportion to 1 / √step.
+
+| Step | Phase | Learning rate | Compared with the peak |
+| --- | --- | --- | --- |
+| 1 | Warm-up | 0.000000175 | 1 / 4,000 |
+| 1,000 | Warm-up | 0.000175 | 1 / 4 |
+| 4,000 | Peak | 0.000699 | 1 |
+| 16,000 | Decay | 0.000349 | 1 / 2 |
+| 100,000 (end of base training) | Decay | 0.000140 | 1 / 5 |
+
+**Why warm up?** At the start the weights are random, so gradients are large and point in unreliable directions, and Adam's averages m and v have seen almost no data. Big steps at that moment can throw the model into a bad region it never recovers from. Starting small and increasing gives the averages time to settle. **Why decay?** Late in training the model is close to a good solution, and smaller steps let it settle in instead of bouncing around it. Modern models use the same idea, usually with a warm-up followed by a cosine-shaped decay.
+
+### Dropout: forcing the model not to rely on any single number
+
+**Overfitting** means the model memorises its training examples instead of learning patterns that also work on new text. **Dropout** fights it: during training, each number in a vector is set to 0 with probability p, chosen at random again at every step, and the surviving numbers are multiplied by 1 / (1 − p) so the average size of the vector stays the same.
+
+The paper used p = 0.1, applied to the output of every sublayer (before it is added to the residual) and to the sum of embeddings and positional encodings. **Example** with a 4-number vector and p = 0.25 (a larger toy value so that one number drops):
+
+|  | Value 1 | Value 2 | Value 3 | Value 4 |
+| --- | --- | --- | --- | --- |
+| Before dropout | 0.8 | −0.4 | 1.2 | 0.6 |
+| Random keep (1) or drop (0) | 1 | 1 | 0 | 1 |
+| After dropout, kept values × 1 / (1 − 0.25) = × 1.333 | 1.067 | −0.533 | 0 | 0.800 |
+
+Because any number can disappear, the model cannot depend on one specific path and has to spread useful information across many. **Dropout is switched off at inference**: every number is kept and nothing is rescaled, so results are repeatable.
+
+### Label smoothing: do not aim for 100% certainty
+
+With a one-hot target, the loss only reaches 0 when the model gives the correct token probability 1, which pushes the logits towards extreme values and makes the model overconfident. **Label smoothing** softens the target: the correct token gets 1 − ε, and the remaining ε is shared equally among all tokens. The paper used ε = 0.1.
+
+```latex
+y_k = (1-\varepsilon)\cdot[\,k = \text{correct}\,] + \frac{\varepsilon}{|V|}
+```
+
+Here \[k = correct\] is 1 for the correct token and 0 otherwise, and |V| is the vocabulary size. With Chapter 1's four-token toy vocabulary, ε/|V| = 0.1 / 4 = 0.025:
+
+| Token | One-hot target | Smoothed target | Model's p | y × (−ln p) with smoothing |
+| --- | --- | --- | --- | --- |
+| CAT | 1 | 0.925 | 0.772 | 0.925 × 0.259 = 0.239 |
+| DOG | 0 | 0.025 | 0.211 | 0.025 × 1.556 = 0.039 |
+| IS | 0 | 0.025 | 0.013 | 0.025 × 4.343 = 0.109 |
+| LOVELY | 0 | 0.025 | 0.004 | 0.025 × 5.521 = 0.138 |
+| **Loss** | 0.259 |  |  | **0.525** |
+
+The smoothed loss is higher (0.525 instead of 0.259) because tokens with very small probabilities now also cost something. The model can no longer win by pushing the wrong tokens to almost 0, so it stays less overconfident. The paper reports that label smoothing made perplexity slightly worse but improved accuracy and the BLEU translation score.
+
+## Stages of an LLM's life: pre-training, fine-tuning and preference training
+
+A chat model like Claude is not trained once but in several stages, each with different data and a different goal. The architecture and the tokenizer stay the same through all of them; only the weights keep changing, as Chapter 1's note "Fine-tuning is just more training" said.
+
+### Stage 1: pre-training
+
+**Pre-training** is the long first stage described in this whole chapter: next-token prediction with cross-entropy on a huge amount of ordinary text (web pages, books, code), often trillions of tokens. All weights start random. The result is a **base model**: it knows grammar, facts and patterns, but it only continues text. Ask it "What is the capital of France?" and it may answer, or it may continue with three more quiz questions, because both are plausible continuations. This stage uses by far the most compute, typically weeks to months on thousands of GPUs.
+
+### Stage 2: supervised fine-tuning (SFT)
+
+**Fine-tuning** means continuing training from the pre-trained weights on a smaller, specially chosen dataset. In **supervised fine-tuning**, the data is examples of good conversations: a user prompt and a high-quality answer, often written or checked by people. The loss is still cross-entropy on the next token, but only the **answer** tokens count: the prompt tokens are excluded from the loss, exactly as `<pad>` tokens are ("Step 4: ignore padding in the loss"). The model learns the *format* of a helpful assistant: answer the question, follow instructions, stop when done.
+
+**Example** (illustrative):
+
+| Part | Text | Counts in the loss? |
+| --- | --- | --- |
+| Prompt | Translate to Italian: I love you very much | No |
+| Answer | Ti amo molto `<EOS>` | Yes |
+
+### Stage 3: preference training
+
+Some qualities are easier to judge than to write down: which of two answers is clearer, more honest or safer. **Preference training** learns from such comparisons instead of from single correct answers.
+
+- **RLHF (reinforcement learning from human feedback):** people see two answers to the same prompt and pick the better one. A separate **reward model** is trained to predict those choices and give any answer a score. The language model then generates answers and is adjusted, with a reinforcement-learning method such as PPO, to get higher scores while staying close to its SFT version. This was the method behind InstructGPT and early ChatGPT.
+- **DPO (direct preference optimisation):** a simpler alternative that skips the separate reward model. It uses the pairs of preferred and rejected answers directly in a loss that raises the probability of the preferred answer relative to the rejected one.
+- **AI feedback:** some of the comparisons can be made by an AI model following a written set of principles. Anthropic's Constitutional AI is an example.
+
+In all of these, the loss is no longer "predict the text in the data" but "make preferred answers more likely than rejected ones". The weights change; nothing else does.
+
+### What changes in each stage
+
+|  | Pre-training | Supervised fine-tuning | Preference training |
+| --- | --- | --- | --- |
+| Starts from | Random weights | Base model | SFT model |
+| Data | Huge amounts of raw text | Prompt + good-answer examples | Pairs of answers ranked better/worse |
+| Size of data | Trillions of tokens | Thousands to millions of examples | Thousands to millions of comparisons |
+| What the loss rewards | Predicting the next token of any text | Predicting the answer tokens | Preferred answers over rejected ones |
+| Weights changed | All | All, or a small add-on (LoRA) | All, or a small add-on |
+| Tokenizer and architecture | Fixed | Fixed | Fixed |
+| Result | Base model: continues text | Follows instructions | Helpful, honest, safer answers |
+| Compute | By far the largest | Small in comparison | Small to medium |
+
+**LoRA (low-rank adaptation)** is a cheap way to fine-tune: the original weights are frozen and small extra matrices are trained and added to them. For example, instead of changing a 512 × 512 matrix (262,144 numbers), LoRA with rank 8 trains a 512 × 8 and an 8 × 512 matrix (8,192 numbers in total), about 3% as many.
+
+After the last stage, all weights are frozen again and the model is ready for inference, which is the subject of Chapter 3.
+
+## Cheat sheet
+
+| Concept | One-line meaning |
+| --- | --- |
+| Training step | One batch in: forward pass, loss, backward pass, weight update |
+| Weight (parameter) | One trainable number; about 65 million in the base model |
+| Self-supervised | The text supplies its own answers: the next token |
+| Batch | Sequences processed together, with one averaged update |
+| Tensor | A block of numbers with several dimensions, e.g. 2 × 6 × 512 |
+| `<pad>` | Filler token that makes short sequences as long as the longest |
+| Padding mask | Blocks attention to `<pad>` columns and drops them from the loss |
+| Causal mask | Blocks attention to future positions (decoder only) |
+| `<SOS>` / `<EOS>` | Start and end of a sentence |
+| Shifted right | Decoder input = `<SOS>` + target without its last token |
+| Teacher forcing | Feed the true previous tokens, not the model's guesses |
+| One time step | All positions trained in one pass, made safe by the causal mask |
+| Cross-entropy | Loss = −ln(probability given to the correct token) |
+| Perplexity | e^(average loss): roughly how many tokens the model hesitates between |
+| Gradient | How the loss changes when one weight increases slightly |
+| Backpropagation | Computes every gradient in one backward pass (chain rule) |
+| Gradient descent | w\_new = w\_old − η × gradient |
+| Learning rate η | Step size; warm-up for 4,000 steps, then decay |
+| Adam | Optimiser that scales each weight's step by its typical gradient size |
+| Dropout | Randomly zero 10% of numbers in training; off at inference |
+| Label smoothing | Correct token's target is 1 − ε plus a share of ε (ε = 0.1), not exactly 1 |
+| Pre-training | Next-token prediction on huge raw text: gives the base model |
+| Supervised fine-tuning | Train on prompt + good answer; loss on answer tokens only |
+| Preference training (RLHF, DPO) | Make preferred answers more likely than rejected ones |
+
+## Sources
+
+- [Attention Is All You Need (Vaswani et al., 2017)](https://arxiv.org/abs/1706.03762): training setup, Adam settings, warm-up schedule, dropout 0.1, label smoothing 0.1
+- [Transformer from scratch, slides by Umar Jamil (CC BY-NC 4.0)](https://github.com/hkproj/transformer-from-scratch-notes): `<SOS>`/`<EOS>` shifted-right inputs and training in one time step
+- [Adam: A Method for Stochastic Optimization (Kingma and Ba, 2014)](https://arxiv.org/abs/1412.6980)
+- [Dropout: A Simple Way to Prevent Neural Networks from Overfitting (Srivastava et al., 2014)](https://jmlr.org/papers/v15/srivastava14a.html)
+- [Rethinking the Inception Architecture for Computer Vision (Szegedy et al., 2016)](https://arxiv.org/abs/1512.00567): origin of label smoothing
+- [Training language models to follow instructions with human feedback (Ouyang et al., 2022)](https://arxiv.org/abs/2203.02155): InstructGPT, SFT and RLHF
+- [Direct Preference Optimization (Rafailov et al., 2023)](https://arxiv.org/abs/2305.18290)
+- [Constitutional AI: Harmlessness from AI Feedback (Bai et al., 2022)](https://arxiv.org/abs/2212.08073)
+- [LoRA: Low-Rank Adaptation of Large Language Models (Hu et al., 2021)](https://arxiv.org/abs/2106.09685)
