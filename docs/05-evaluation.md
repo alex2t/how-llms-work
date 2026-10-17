@@ -26,6 +26,12 @@ A model can be measured at three levels, and each level answers a different ques
 | 2. Model metrics | Does it do the task well? | Accuracy, precision, recall, F1, AUC; benchmarks; human ratings | Data scientists, ML engineers | 8 of the 10 fraud cases in the sample are caught |
 | 3. Business outcomes | Is it worth it? | Money saved, hours saved, customer complaints, return on investment | Managers, the business owner | Fraud losses fall by half; analysts spend 311 fewer hours a month on reviews |
 
+```mermaid
+flowchart LR
+  L1["Level 1: Training loss<br/>Cross-entropy, perplexity<br/>(Is the model learning?)"] --> L2["Level 2: Model metrics<br/>Recall, precision, F1, AUC, benchmarks<br/>(Does it do the task well?)"]
+  L2 --> L3["Level 3: Business outcomes<br/>€ saved, analyst hours, complaints, ROI<br/>(Is it worth it?)"]
+```
+
 The levels are connected but not interchangeable:
 
 - **A lower loss usually means better metrics, but not always.** The loss rewards predicting every token well; a metric only checks the final answer.
@@ -56,6 +62,12 @@ Four transactions in the sample are fraud. The model answers `FRAUD` when its fr
 
 - **The loss sees every difference.** Transaction 1 (0.95) and transaction 2 (0.60) are both correct, but the loss is ten times lower for the confident one. Raising transaction 4 from 0.45 to 0.46 lowers its loss a little, so training gets a useful signal.
 - **The accuracy metric sees only right or wrong.** Transactions 1 to 3 count the same. Moving transaction 4 from 0.45 to 0.46 changes nothing; moving it from 0.49 to 0.51 suddenly flips it to correct. Such a jumpy number has no useful gradient, so it cannot be trained on directly.
+
+```mermaid
+flowchart LR
+  N["Tiny weight update nudges<br/>Transaction 4 score: 0.45 → 0.46"] --> LOSS["Cross-entropy loss: −ln(score)<br/>Drops smoothly: 0.799 → 0.777<br/>(Non-zero gradient guides training)"]
+  N --> MET["Accuracy metric (threshold 0.5)<br/>Answer stays OK (3 of 4 correct = 75%)<br/>(Zero change, no gradient)"]
+```
 
 ### Loss and metric side by side
 
@@ -98,6 +110,12 @@ It can be read as **"how many tokens the model is choosing between, on average"*
 
 The third row shows why the reading works: when every one of k choices has probability 1/k, the perplexity is exactly k.
 
+!!! note "Refresher: why e^(−ln p) equals 1 / p"
+    The exponential function e^x and the natural logarithm ln(x) are inverses: e^(ln x) = x, and with a minus sign in the exponent, e^(−ln p) = 1 / p.
+
+    - At a single position where the model gives the correct token probability p, the loss is L = −ln p, so e^L = 1 / p.
+    - If the model guesses evenly among k = 4 tokens, each gets probability p = 1 / 4 = 0.25, and 1 / p = 4. Across N positions, averaging −ln p\_i before taking e^(L̄) computes the geometric average of 1 / p\_i across the text.
+
 ### What a good value is
 
 There is no universal good value: perplexity depends on the model, the text and the tokenizer. A model will have a low perplexity on simple, predictable text and a higher one on technical or unusual text. Perplexity is therefore useful for **comparisons on the same text**: two checkpoints during training, a model before and after fine-tuning, or a quantized model against the original. A lower value on the same text means the model predicts that text better.
@@ -113,7 +131,7 @@ Perplexity is an average **per token**, so it depends on how the text was cut in
 
 Model B looks better, but both models assign the text exactly the same probability: B only spreads the same loss over more, smaller tokens. Perplexities can be compared only between models that share a tokenizer. This is always true for a quantized model and its original, because quantization never changes the tokenizer.
 
-**The fix: bits per byte.** To compare models with different tokenizers, divide the total loss by something every tokenizer agrees on: the length of the text in **bytes** (one byte per character for plain English). Converting from natural logarithms to base-2 logarithms (dividing by ln 2 ≈ 0.693) expresses the result in **bits**, the unit of information:
+**The fix: bits per byte.** To compare models with different tokenizers, divide the total loss by something every tokenizer agrees on: the length of the text in **bytes** (one byte per character for plain English). Converting from natural logarithms to base-2 logarithms (dividing by ln 2 ≈ 0.693, since log₂ x = ln x ÷ ln 2) expresses the result in **bits**, the unit of information:
 
 $$
 \text{BPB} = \frac{\text{total loss}}{\ln 2 \times \text{number of bytes}}
@@ -205,6 +223,18 @@ A **confusion matrix** counts the four possible outcomes of a yes/no prediction.
 
 The model caught 8 of the 10 frauds, missed 2, and raised 6 false alarms among the 90 genuine transactions. Every metric below is computed from these four numbers.
 
+```mermaid
+flowchart TD
+  ALL["100 evaluated transactions"] --> RF["10 really fraud"]
+  ALL --> RG["90 really genuine"]
+  RF --> TP["TP = 8<br/>(Model says FRAUD: caught)"]
+  RF --> FN["FN = 2<br/>(Model says OK: missed)"]
+  RG --> FP["FP = 6<br/>(Model says FRAUD: false alarm)"]
+  RG --> TN["TN = 84<br/>(Model says OK: cleared)"]
+  TP & FN -.-> REC["Recall = 8 ÷ (8 + 2) = 0.80<br/>(Share of real frauds caught)"]
+  TP & FP -.-> PREC["Precision = 8 ÷ (8 + 6) = 0.571<br/>(Share of FRAUD alerts that are real)"]
+```
+
 ### Accuracy, and why it misleads
 
 **Accuracy** is the share of all answers that are correct:
@@ -243,6 +273,11 @@ $$
 
 The second form, written with the counts, gives the same value and avoids rounding: with the rounded 0.571 the first form gives 0.666.
 
+!!! note "Refresher: why F1 uses the harmonic mean instead of the ordinary average"
+    The ordinary (arithmetic) average of two numbers a and b is (a + b) ÷ 2, whereas the **harmonic mean** is 2 × a × b ÷ (a + b).
+
+    To see why the difference matters, consider a trivial model that answers `FRAUD` to every transaction in the sample: it catches all 10 frauds (recall = 1.00), while only 10 of its 100 alerts are real (precision = 0.10). An ordinary average would give (1.00 + 0.10) ÷ 2 = 0.55, which looks respectable. The harmonic mean gives 2 × 1.00 × 0.10 ÷ (1.00 + 0.10) = 0.182, staying close to the smaller number so a model cannot hide a terrible precision behind a perfect recall (or vice versa).
+
 **When to favour each:**
 
 | Favour | When mistakes of this kind are expensive | Example |
@@ -278,7 +313,7 @@ The **AUC** (area under the ROC curve) summarises the whole curve in one number 
 - **AUC = 0.5:** no better than flipping a coin. The curve is the straight diagonal line from (0, 0) to (1, 1).
 - **A useful reading:** the AUC is the chance that a randomly chosen fraud gets a higher fraud score than a randomly chosen genuine transaction.
 
-Estimating the area from the seven points above, as a series of trapezoids, gives **AUC ≈ 0.94**: the model separates fraud from genuine transactions well. The AUC does not depend on any threshold, which makes it good for comparing models; but the business still has to choose one threshold to run the model, and that choice is about costs, as the business section below shows.
+Estimating the area from the seven points above, as a series of trapezoids, gives **AUC ≈ 0.94** (each slice between two adjacent points has area ΔFPR × (TPR\_left + TPR\_right) ÷ 2, giving 0.0022 + 0.0111 + 0.0233 + 0.0850 + 0.2639 + 0.5556 = 0.9411): the model separates fraud from genuine transactions well. The AUC does not depend on any threshold, which makes it good for comparing models; but the business still has to choose one threshold to run the model, and that choice is about costs, as the business section below shows.
 
 ## Evaluating generative LLMs
 
@@ -337,6 +372,17 @@ $$
 | 5 | (7 choose 5) ÷ (10 choose 5) = 21 ÷ 252 | 1 − 0.083 = **0.917** |
 
 pass@1 is simply the share of correct attempts; pass@5 is much higher because five tries give five chances. The benchmark score is the average over all tasks. When comparing models, check that they are reported with the same k.
+
+!!! note "Refresher: combinations (n choose k) and the 'at least one' trick"
+    The combination symbol (n choose k) counts how many different groups of size k can be chosen from n items when order does not matter:
+
+    $$
+    \binom{n}{k} = \frac{n!}{k!\,(n-k)!}
+    $$
+
+    For example, picking 5 items out of 10 gives (10 × 9 × 8 × 7 × 6) ÷ (5 × 4 × 3 × 2 × 1) = 252 groups, and picking 5 out of the 7 wrong attempts gives 7! ÷ (5! × 2!) = (7 × 6) ÷ (2 × 1) = 21 all-wrong groups (the 5 × 4 × 3 × 2 × 1 cancels out).
+
+    To find the probability of **at least one** correct attempt in k picks, counting directly is tedious because a group could contain 1, 2, or 3 correct attempts. Instead, probability calculations use the complement rule: every group either has *no* correct attempts or *at least one*, so the two probabilities add to 1. Subtracting the all-wrong fraction (21 ÷ 252 ≈ 0.083) from 1 gives the answer immediately (1 − 0.083 = 0.917).
 
 ### Human evaluation
 
@@ -401,6 +447,14 @@ Known weaknesses of LLM judges, and the usual fixes:
 
 In practice they are combined: benchmarks to shortlist models, a private labelled set for the measurable part of the task, an LLM judge for free text at scale, and a regular human sample to keep the judge honest.
 
+```mermaid
+flowchart LR
+  M1["1. Public benchmarks<br/>Shortlist candidate models"] --> M2["2. Private labelled task set<br/>Measure exact answers (recall, FPR)"]
+  M2 --> M3["3. LLM-as-judge with rubric<br/>Score free-text explanations at scale"]
+  M3 --> M4["4. Regular human sample<br/>Audit and calibrate the judge"]
+  M4 -.->|"Update rubric"| M3
+```
+
 ## Business outcomes
 
 Model metrics say how well the model does its task; business outcome metrics say whether using it is worth it. This is the level that decides whether a project goes live and stays live. This section turns the fraud model's metrics into money, hours and customer experience, and shows that the "best" threshold is a business decision, not a technical one.
@@ -434,6 +488,11 @@ Recall and the false positive rate carry over from the sample to real traffic: t
 | Precision = caught ÷ all flagged | 8 ÷ 14 = **0.571** | 1,600 ÷ 8,133 = **0.197** |
 
 In real traffic only about 1 alert in 5 is real fraud, not 4 in 7. Genuine transactions are so much more common that even a small false positive rate produces many false alarms. Any business estimate must use the real proportion of fraud, never the proportion in a test sample.
+
+!!! note "Refresher: the base-rate effect (and exact vs rounded table counts)"
+    In probability, the share of true positives among all alerts depends not only on how accurate the detector is (recall and false positive rate), but also on the **base rate**: how common the event is in the population. When fraud drops from 10% (1 in 10) in the test sample to 2% (1 in 50) in real traffic, there are 49 genuine transactions for every fraud instead of 9. Applying the same false positive rate (6 ÷ 90 ≈ 0.0667) to that much larger genuine pool produces 98,000 × (6 ÷ 90) = 6,533.33 false alarms against 1,600 caught frauds, pulling precision down from 0.571 to 1,600 ÷ 8,133.33 ≈ 0.197.
+
+    Note on rounding: the tables in this section use the unrounded sample false positive rate 6 ÷ 90 (so 8,133.33 total flagged transactions, giving 8,133.33 × 10 ÷ 60 ≈ 1,356 analyst hours and 8,133.33 × €5 ≈ €40,667 in review cost).
 
 ### Time, cost and resources: the model against the current process
 
@@ -512,6 +571,18 @@ The previous sections described many measures. A real project needs only a few, 
 6. **Targets.** Set the value each KPI must reach for go-live, agreed with the business before the results are known, so the bar is not moved to fit the results.
 7. **Go-live and measurement.** Launch carefully, ideally as an A/B test, and measure the KPIs on real traffic.
 8. **Monitoring for drift.** Keep measuring after go-live, and decide in advance what triggers a review.
+
+```mermaid
+flowchart LR
+  S1["1. Objective"] --> S2["2. KPIs"]
+  S2 --> S3["3. Model metrics"]
+  S3 --> S4["4. Evaluation data"]
+  S4 --> S5["5. Baseline"]
+  S5 --> S6["6. Pre-agreed targets"]
+  S6 --> S7["7. A/B test go-live"]
+  S7 --> S8["8. Drift monitoring"]
+  S8 -.->|"If drift triggers review"| S4
+```
 
 ### The checklist for the fraud example
 
