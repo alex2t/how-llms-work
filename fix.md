@@ -132,13 +132,13 @@ Reviewed 2026-10-17. Normalisation (RMSNorm, pre-norm), RoPE, attention's quadra
 
 **Decision:** Approved (user, 2026-10-17). Not written yet.
 
-#### L2-6. Extending the context of a trained model (RoPE scaling) `[ ]`
+#### L2-6. Extending the context of a trained model (RoPE scaling) `[x]`
 
 - **Missing:** the lecture notes that RoPE "enables context length extension". Chapter 4 explains RoPE but not how a model trained on, say, 8,192 tokens is stretched to much longer contexts (for example position interpolation, which slows the rotation so longer texts reuse the angles seen in training).
 - **Recommendation:** existing chapter. **Chapter 4 → "RoPE: rotary position embedding"**: one paragraph with a small example reusing that section's 0.1-radian rotation.
 - **Priority:** Low.
 
-**Decision:** Approved (user, 2026-10-17). Not written yet.
+**Decision:** Approved (user, 2026-10-17). Written 2026-10-17.
 
 #### L2-7. Tokens to words to pages `[ ]`
 

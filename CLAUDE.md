@@ -161,3 +161,4 @@ Add one line per implemented section, newest at the bottom: `YYYY-MM-DD — Chap
 - 2026-10-17 — Chapter 2 — LoRA in depth + instruction tuning (L3-5) — LoRA paragraph kept and expanded into a subsection: W = W₀ + B·A, 2×2 rank-1 example, 0.4% at 4,096², about 20 million adapters for a 7B model, full vs LoRA vs QLoRA memory, adapter swapping, PEFT family; "instruction tuning" named in Stage 2.
 - 2026-10-17 — Chapter 2 — Distillation (L3-8) — soft-target loss; students A and B (one-hot 0.357 vs 0.051, soft 0.628 vs 0.855; minimum 0.607); three distillation methods incl. on-policy; link from Chapter 4.
 - 2026-10-17 — Chapter 2 — Cheat sheet — 11 rows added for the CME295 topics (data pipeline to distillation).
+- 2026-10-17 — Chapter 4 — RoPE context extension (L2-6) — position interpolation with the 0.1-radian example (speed 0.05: position 30 → 1.5; cos 0.989 vs 0.955); YaRN.

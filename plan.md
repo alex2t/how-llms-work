@@ -131,7 +131,7 @@ Compare the book with each lecture of Stanford's CME295 (summaries in `sources/`
   - [ ] L2-3: Chapter 3 → new subsection "Constrained decoding" with the FRAUD / OK example.
   - [x] L2-4: Chapter 2 → new section "Another training objective: masked language modelling"; link from Chapter 1.
   - [ ] L2-5: Chapter 3 → long-context advice; Chapter 5 → needle-in-a-haystack benchmark.
-  - [ ] L2-6: Chapter 4 → RoPE: paragraph on context extension.
+  - [x] L2-6: Chapter 4 → RoPE: paragraph on context extension.
   - [ ] L2-7: Chapter 3 → tokens-to-words-to-pages table.
 - [x] Lecture 3 — Pre-training data, SFT, LoRA, RLHF vs DPO, GRPO, distillation. Gap analysis in `fix.md`; L3-1 to L3-9 approved.
   - [x] L3-1: Chapter 2 → section "Where pre-training data comes from" (pipeline diagram, filtering example).

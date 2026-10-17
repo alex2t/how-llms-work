@@ -351,6 +351,8 @@ The useful property is that the attention score between two tokens then depends 
 
 Both pairs are 3 positions apart, so they get the same score, wherever they are in the text. Because nothing is added to the embeddings, the [table in Chapter 1](01-transformers.md#what-is-learned-and-what-changes-after-training) lists RoPE as having no learned weights, like the sinusoidal encoding.
 
+**Stretching the context after training.** A model only learns to read the rotation angles it saw during training. Suppose, with the example's speed of 0.1 radian per position, a model was trained on texts of up to 16 tokens, so the largest angle it ever saw was 15 × 0.1 = 1.5. At position 30 the angle would be 3.0, a value it never learned to interpret, and quality drops. **Position interpolation** fixes this by slowing the rotation: with a speed of 0.05, position 30 gets 30 × 0.05 = 1.5, back inside the trained range, and the window is doubled. The cost is that nearby positions now look closer together: positions 2 and 5 get angles 0.1 and 0.25, so their score is cos(0.15) = 0.989 instead of cos(0.3) = 0.955. A short extra training stage on long documents lets the model adjust. Refinements such as YaRN slow the fast-rotating pairs less than the slow ones, which keeps nearby positions easier to tell apart. Methods of this kind are how many models reach context windows of 128,000 tokens and more.
+
 ### Grouped-query attention (GQA)
 
 In the original multi-head attention, each of the 8 heads has its own W\_Q, W\_K and W\_V, so every head stores its own keys and values in the KV cache. **Grouped-query attention** keeps a separate query for each head but lets a **group** of query heads share one key head and one value head. (The extreme case, all query heads sharing a single key/value head, is called multi-query attention.)
@@ -426,3 +428,5 @@ Because of the third matrix, models usually choose a smaller expansion to keep t
 - [GLU Variants Improve Transformer (Shazeer, 2020)](https://arxiv.org/abs/2002.05202): SwiGLU
 - [The Llama 3 Herd of Models (Llama Team, Meta, 2024)](https://arxiv.org/abs/2407.21783): settings of the modern model in the comparison table
 - [Attention Is All You Need (Vaswani et al., 2017)](https://arxiv.org/abs/1706.03762): the original settings, including the 37,000-token vocabulary
+- [Extending Context Window of Large Language Models via Positional Interpolation (Chen et al., 2023)](https://arxiv.org/abs/2306.15595)
+- [YaRN: Efficient Context Window Extension of Large Language Models (Peng et al., 2023)](https://arxiv.org/abs/2309.00071)
