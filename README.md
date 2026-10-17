@@ -61,6 +61,7 @@ One line per implemented section, newest at the bottom.
 - 2026-10-17 — Chapter 5 — Loss vs metric: why training uses cross-entropy but people judge with metrics.
 - 2026-10-17 — Chapter 5 — Perplexity: what it means and why it needs the same tokenizer.
 - 2026-10-17 — Chapter 5 — MSE: a regression loss, and why it does not fit next-token prediction.
+- 2026-10-17 — Chapter 5 — Classification metrics: confusion matrix, accuracy, precision, recall, F1, ROC and AUC on the fraud sample.
 
 ## Credits
 

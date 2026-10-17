@@ -163,3 +163,99 @@ So for next-token prediction, the model outputs a probability for every token an
 | Model outputs | A probability for every category | One number |
 | Measures | −ln of the probability of the correct category | Average squared distance from the true value |
 | Used for | Next-token prediction, classification | Regression: amounts, scores, forecasts |
+
+## Classification metrics: the fraud example
+
+When a model sorts items into categories, its answers can be checked one by one against the truth. This section builds every common classification metric from a single table of counts, using the 100-transaction evaluation sample: 10 fraud cases and 90 genuine ones. The model answers `FRAUD` when its fraud score is at least 0.5.
+
+### The confusion matrix
+
+A **confusion matrix** counts the four possible outcomes of a yes/no prediction. Here "positive" means "fraud", the thing being looked for.
+
+- **True positive (TP):** fraud, and the model said FRAUD. A catch.
+- **False negative (FN):** fraud, but the model said OK. A missed fraud.
+- **False positive (FP):** genuine, but the model said FRAUD. A false alarm.
+- **True negative (TN):** genuine, and the model said OK.
+
+| | Model says FRAUD | Model says OK | Total |
+| --- | --- | --- | --- |
+| **Really fraud** | TP = 8 | FN = 2 | 10 |
+| **Really genuine** | FP = 6 | TN = 84 | 90 |
+| **Total** | 14 | 86 | 100 |
+
+The model caught 8 of the 10 frauds, missed 2, and raised 6 false alarms among the 90 genuine transactions. Every metric below is computed from these four numbers.
+
+### Accuracy, and why it misleads
+
+**Accuracy** is the share of all answers that are correct:
+
+$$
+\text{accuracy} = \frac{TP + TN}{\text{all cases}} = \frac{8 + 84}{100} = 0.92
+$$
+
+92% sounds good. But consider a useless model that answers `OK` to every transaction:
+
+| Model | Frauds caught | Accuracy on the sample (10% fraud) | Accuracy on real traffic (2% fraud) |
+| --- | --- | --- | --- |
+| The LLM at threshold 0.5 | 8 of 10 | 92% | about 93% |
+| "Always OK" | 0 | 90% | **98%** |
+
+The model that never catches a single fraud scores 98% accuracy on real traffic, higher than the useful model. When one category is much rarer than the other, data is called **imbalanced**, and accuracy is dominated by the common category. Fraud, disease screening and defect detection are all imbalanced, so accuracy alone should never be used for them.
+
+### Precision, recall and F1
+
+Two metrics look only at the rare category, from two different sides:
+
+$$
+\text{precision} = \frac{TP}{TP + FP} = \frac{8}{8 + 6} = 0.571 \qquad \text{recall} = \frac{TP}{TP + FN} = \frac{8}{8 + 2} = 0.80
+$$
+
+- **Precision** answers: "when the model says FRAUD, how often is it right?" Here 57% of alerts are real fraud; 43% are false alarms.
+- **Recall** (also called **sensitivity** or **true positive rate**) answers: "of all real frauds, how many did the model catch?" Here 80%.
+
+The "always OK" model has a recall of 0: precision and recall expose it immediately, where accuracy did not.
+
+**F1** combines the two into one number, using the **harmonic mean**, which stays low if either of the two is low:
+
+$$
+F_1 = \frac{2 \times \text{precision} \times \text{recall}}{\text{precision} + \text{recall}} = \frac{2\,TP}{2\,TP + FP + FN} = \frac{16}{16 + 6 + 2} = 0.667
+$$
+
+The second form, written with the counts, gives the same value and avoids rounding: with the rounded 0.571 the first form gives 0.666.
+
+**When to favour each:**
+
+| Favour | When mistakes of this kind are expensive | Example |
+| --- | --- | --- |
+| Recall | Missing a positive costs a lot | Fraud losses, missed disease: catch as many as possible, accept more false alarms |
+| Precision | A false alarm costs a lot | Blocking a genuine customer's card, sending a case to a costly investigation |
+| F1 | Both matter and there is no clear cost difference | Comparing models with one number |
+
+### Moving the threshold: the ROC curve and AUC
+
+The threshold of 0.5 is a choice, not a law. Lowering it flags more transactions: more frauds are caught, but more genuine ones are flagged too. The **ROC curve** (receiver operating characteristic, a name from radar engineering) shows this trade-off for every threshold at once. It plots two rates:
+
+- **True positive rate (TPR)** = recall = TP ÷ 10 real frauds.
+- **False positive rate (FPR)** = FP ÷ 90 genuine transactions: the share of genuine customers wrongly flagged.
+
+The model's results on the sample at several thresholds (made-up but consistent with the matrix above):
+
+| Threshold (flag if fraud score ≥) | TP | FP | TPR (recall) | FPR | Precision |
+| --- | --- | --- | --- | --- | --- |
+| 1.0 (flag nothing) | 0 | 0 | 0.00 | 0.000 | — |
+| 0.9 | 4 | 1 | 0.40 | 0.011 | 0.800 |
+| 0.7 | 6 | 3 | 0.60 | 0.033 | 0.667 |
+| **0.5** | **8** | **6** | **0.80** | **0.067** | **0.571** |
+| 0.3 | 9 | 15 | 0.90 | 0.167 | 0.375 |
+| 0.1 | 10 | 40 | 1.00 | 0.444 | 0.200 |
+| 0.0 (flag everything) | 10 | 90 | 1.00 | 1.000 | 0.100 |
+
+Plotting TPR (up) against FPR (across) for each row gives the ROC curve. It always runs from (0, 0), flag nothing, to (1, 1), flag everything. A good model climbs steeply at first: it catches most frauds while still flagging few genuine customers.
+
+The **AUC** (area under the ROC curve) summarises the whole curve in one number between 0 and 1:
+
+- **AUC = 1.0:** a perfect model. Some threshold catches every fraud with no false alarms.
+- **AUC = 0.5:** no better than flipping a coin. The curve is the straight diagonal line from (0, 0) to (1, 1).
+- **A useful reading:** the AUC is the chance that a randomly chosen fraud gets a higher fraud score than a randomly chosen genuine transaction.
+
+Estimating the area from the seven points above, as a series of trapezoids, gives **AUC ≈ 0.94**: the model separates fraud from genuine transactions well. The AUC does not depend on any threshold, which makes it good for comparing models; but the business still has to choose one threshold to run the model, and that choice is about costs, as the business section below shows.

@@ -92,11 +92,11 @@ Goal: give the reader the background needed before Chapter 1, and the story of w
 - [x] Loss vs metric; link to cross-entropy in Chapter 2.
 - [x] Perplexity: e^cross-entropy, worked example from CAT/DOG/IS/LOVELY; what a good value means; only comparable with the same tokenizer.
 - [x] MSE loss: worked example on predicted vs true numbers; why it suits regression, not next-token prediction.
-- [ ] Classification metrics on the fraud example (100 transactions):
-  - [ ] Confusion matrix (TP, FP, TN, FN).
-  - [ ] Accuracy and why it misleads on imbalanced data (2% fraud).
-  - [ ] Precision, recall, F1 from the same matrix; when to favour each.
-  - [ ] ROC curve and AUC: moving the threshold, TPR vs FPR, AUC = 0.5 vs 1.0; small threshold table.
+- [x] Classification metrics on the fraud example (100 transactions):
+  - [x] Confusion matrix (TP, FP, TN, FN).
+  - [x] Accuracy and why it misleads on imbalanced data (2% fraud).
+  - [x] Precision, recall, F1 from the same matrix; when to favour each.
+  - [x] ROC curve and AUC: moving the threshold, TPR vs FPR, AUC = 0.5 vs 1.0; small threshold table.
 - [ ] Evaluating generative LLMs: benchmarks (limits, contamination), human evaluation, LLM-as-judge.
 - [ ] Business-centric (outcome) metrics, same fraud example:
   - [ ] KPIs tied to a business objective: objective → KPI → model metric chain table.
