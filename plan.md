@@ -97,7 +97,7 @@ Goal: give the reader the background needed before Chapter 1, and the story of w
   - [x] Accuracy and why it misleads on imbalanced data (2% fraud).
   - [x] Precision, recall, F1 from the same matrix; when to favour each.
   - [x] ROC curve and AUC: moving the threshold, TPR vs FPR, AUC = 0.5 vs 1.0; small threshold table.
-- [ ] Evaluating generative LLMs: benchmarks (limits, contamination), human evaluation, LLM-as-judge.
+- [x] Evaluating generative LLMs: benchmarks (limits, contamination), human evaluation, LLM-as-judge.
 - [ ] Business-centric (outcome) metrics, same fraud example:
   - [ ] KPIs tied to a business objective: objective → KPI → model metric chain table.
   - [ ] Time, cost and resource improvement: analyst hours saved, cost per case vs model running cost (link Chapter 4); worked ROI example.

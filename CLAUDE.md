@@ -126,3 +126,4 @@ Add one line per implemented section, newest at the bottom: `YYYY-MM-DD — Chap
 - 2026-10-17 — Chapter 5 — Perplexity — formula; CAT 1.30, translation 1.47, uniform-4 = 4.00, perfect = 1; same-tokenizer caveat (6 vs 10 tokens: 1.65 vs 1.35); limits.
 - 2026-10-17 — Chapter 5 — MSE — amount-at-risk example (MSE 1,031.25, RMSE 32.11, MAE 23.75); why token IDs have no distance; cross-entropy vs MSE table.
 - 2026-10-17 — Chapter 5 — Classification metrics — confusion matrix (TP 8, FN 2, FP 6, TN 84); accuracy trap ("always OK" = 98% on real traffic); precision 0.571, recall 0.80, F1 0.667; ROC threshold table and AUC ≈ 0.94.
+- 2026-10-17 — Chapter 5 — Evaluating generative LLMs — benchmarks (MMLU, HumanEval) and contamination; human evaluation; LLM-as-judge checked against an analyst (88% agreement); judge biases table; method comparison.

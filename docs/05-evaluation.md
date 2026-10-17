@@ -259,3 +259,67 @@ The **AUC** (area under the ROC curve) summarises the whole curve in one number 
 - **A useful reading:** the AUC is the chance that a randomly chosen fraud gets a higher fraud score than a randomly chosen genuine transaction.
 
 Estimating the area from the seven points above, as a series of trapezoids, gives **AUC ≈ 0.94**: the model separates fraud from genuine transactions well. The AUC does not depend on any threshold, which makes it good for comparing models; but the business still has to choose one threshold to run the model, and that choice is about costs, as the business section below shows.
+
+## Evaluating generative LLMs
+
+A fraud label is either right or wrong, so it can be counted. Most LLM output is free text: an explanation, a summary, an answer to a question. There are many good answers and no single correct string to compare against, so other methods are needed. This section covers the three main ones and what each can and cannot tell you.
+
+In the fraud example, the model also writes a short **explanation** for each flagged transaction, for example "Amount is 12 times this customer's average and the merchant is in a country the card has never been used in." Analysts read it before deciding. Its quality cannot be measured with a confusion matrix.
+
+### Benchmarks
+
+A **benchmark** is a fixed, public set of test questions with a scoring rule, used to compare models on the same tasks. Two well-known examples:
+
+- **MMLU** (Massive Multitask Language Understanding): about 16,000 multiple-choice questions across 57 subjects, from law to medicine. The score is plain accuracy.
+- **HumanEval:** 164 programming tasks. The model's code is run against unit tests; the score is the share of tasks it solves.
+
+Benchmarks make comparison cheap and repeatable, but have real limits:
+
+- **Contamination.** Benchmark questions are published on the internet, and models are trained on huge amounts of internet text ([Chapter 2](02-training.md#stage-1-pre-training)). If the test questions and answers were in the training data, the model may simply remember them. A high score then measures memory, not ability. This is called **data contamination**, and it is hard to rule out for any public benchmark.
+- **Saturation.** When the best models all score close to 100%, the benchmark can no longer tell them apart, and a newer, harder one is needed.
+- **Distance from the real task.** A model that is excellent at multiple-choice exam questions may still write poor fraud explanations. A benchmark only measures what is in it.
+
+The practical lesson: public benchmarks help to shortlist models, but the decision should rest on an evaluation set built from the real task, kept private so it cannot leak into training data.
+
+### Human evaluation
+
+People read the outputs and judge them. Two common forms:
+
+- **Rating:** a reviewer scores each answer against a **rubric** (a written list of criteria), for example 1 to 5 for correctness, clarity and usefulness.
+- **Pairwise comparison:** a reviewer sees two answers to the same prompt and picks the better one. People agree with each other more easily on "which is better" than on an absolute score. Public leaderboards such as Chatbot Arena rank models from many such votes.
+
+Human evaluation is the closest measure of real usefulness, but it is slow and expensive, and reviewers disagree. A common check is to have two reviewers rate the same sample and measure how often they agree.
+
+### LLM-as-judge
+
+An **LLM-as-judge** is a second model, given a rubric, that rates or compares outputs in place of a human. It is fast and cheap enough to run on every output.
+
+**Worked example.** The bank uses a judge model to score fraud explanations as acceptable or not, with the rubric "states at least one concrete, checkable reason; contains no claim that contradicts the transaction data". To check the judge before trusting it, an analyst rates 50 explanations by hand (made-up numbers):
+
+| | Analyst: acceptable | Analyst: not acceptable | Total |
+| --- | --- | --- | --- |
+| **Judge: acceptable** | 38 | 4 | 42 |
+| **Judge: not acceptable** | 2 | 6 | 8 |
+| **Total** | 40 | 10 | 50 |
+
+The judge agrees with the analyst on 38 + 6 = 44 of 50 explanations, 88%. That is the same confusion matrix as before, used to evaluate the evaluator. Most disagreements are the 4 explanations the judge accepted but the analyst rejected, so the judge is a little too lenient, which is worth knowing before relying on its scores.
+
+Known weaknesses of LLM judges, and the usual fixes:
+
+| Weakness | What happens | Usual fix |
+| --- | --- | --- |
+| Position bias | In pairwise comparisons, the judge prefers the answer shown first (or second) | Judge each pair twice with the order swapped; keep only consistent verdicts |
+| Length bias | Longer answers get higher scores even when they are not better | Rubric that rewards concision; compare answers of similar length |
+| Self-preference | A judge rates answers from its own model family higher | Use a judge from a different model family |
+| Drift from human judgement | The judge's idea of "good" differs from the users' | Regularly check the judge against a human-rated sample, as above |
+
+### Choosing a method
+
+| Method | Measures | Cost | Main risk |
+| --- | --- | --- | --- |
+| Public benchmark | General ability on standard tasks | Low | Contamination; far from the real task |
+| Private task set with exact answers | Correctness on the real task (e.g. fraud labels) | Low once built | Must be kept up to date |
+| Human evaluation | Real usefulness of free text | High | Slow; reviewers disagree |
+| LLM-as-judge | Free-text quality at scale | Low | Biases; must be checked against humans |
+
+In practice they are combined: benchmarks to shortlist models, a private labelled set for the measurable part of the task, an LLM judge for free text at scale, and a regular human sample to keep the judge honest.
