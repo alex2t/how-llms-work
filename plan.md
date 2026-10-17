@@ -133,7 +133,16 @@ Compare the book with each lecture of Stanford's CME295 (summaries in `sources/`
   - [ ] L2-5: Chapter 3 → long-context advice; Chapter 5 → needle-in-a-haystack benchmark.
   - [ ] L2-6: Chapter 4 → RoPE: paragraph on context extension.
   - [ ] L2-7: Chapter 3 → tokens-to-words-to-pages table.
-- [x] Lecture 3 — Pre-training data, SFT, LoRA, RLHF vs DPO, GRPO, distillation. Gap analysis in `fix.md` (L3-1 to L3-9); waiting for decisions.
+- [x] Lecture 3 — Pre-training data, SFT, LoRA, RLHF vs DPO, GRPO, distillation. Gap analysis in `fix.md`; L3-1 to L3-9 approved.
+  - [ ] L3-1: Chapter 2 → section "Where pre-training data comes from" (pipeline diagram, filtering example).
+  - [ ] L3-2: Chapter 2 → model collapse, inside L3-1's section.
+  - [ ] L3-3: Chapter 5 → bits per byte after the two-tokenizer example.
+  - [ ] L3-4: Chapter 2 → "Packing: the alternative to padding".
+  - [ ] L3-5: Chapter 2 → subsection "Cheap fine-tuning: LoRA"; "instruction tuning" in Stage 2.
+  - [ ] L3-6: Chapter 2 → Stage 3 expanded: reward model, KL penalty, DPO loss, 4 vs 2 models.
+  - [ ] L3-7: Chapter 6 → section "Reasoning models: thinking before answering" (test-time compute, RLVR, GRPO).
+  - [ ] L3-8: Chapter 2 → section "Distillation"; link from Chapter 4.
+  - [ ] L3-9: Chapter 5 → benchmark families, Elo and pass@k.
 - [ ] Lecture 4 (when published).
 - [ ] Lecture 5 (when published).
 - [ ] Lecture 6 (when published).

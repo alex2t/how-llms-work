@@ -158,7 +158,7 @@ Reviewed 2026-10-17. The next-token objective, teacher forcing, and supervised f
 - **Recommendation:** existing chapter. **Chapter 2 → "Training data and batches"**: expand "Training data" into a section "**Where pre-training data comes from**", with a pipeline diagram (Mermaid) and a worked example of how deduplication and filtering shrink a corpus (made-up numbers). Real corpus sizes to be checked against the papers.
 - **Priority:** Medium.
 
-**Decision:**
+**Decision:** Approved (user, 2026-10-17). Not written yet.
 
 #### L3-2. Model collapse: training on AI-generated text `[ ]`
 
@@ -166,7 +166,7 @@ Reviewed 2026-10-17. The next-token objective, teacher forcing, and supervised f
 - **Recommendation:** existing chapter. **Chapter 2 → "Where pre-training data comes from"** (L3-1): a short subsection with a small illustration of how rare tokens disappear when a model's own samples become the next training set.
 - **Priority:** Low.
 
-**Decision:**
+**Decision:** Approved (user, 2026-10-17). Not written yet.
 
 #### L3-3. Bits per byte: a loss that does not depend on the tokenizer `[ ]`
 
@@ -174,7 +174,7 @@ Reviewed 2026-10-17. The next-token objective, teacher forcing, and supervised f
 - **Recommendation:** existing chapter. **Chapter 5 → "Perplexity" → "Only comparable with the same tokenizer"**: add BPB right after the two-tokenizer example. Reusing that example (total loss 3.0 for the same sentence), both models get the same BPB: if the sentence is 30 bytes long, 3.0 ÷ ln 2 ÷ 30 ≈ 0.144 bits per byte, which shows exactly the fairness that perplexity lacked.
 - **Priority:** Medium.
 
-**Decision:**
+**Decision:** Approved (user, 2026-10-17). Not written yet.
 
 #### L3-4. Packing sequences instead of padding them `[ ]`
 
@@ -182,7 +182,7 @@ Reviewed 2026-10-17. The next-token objective, teacher forcing, and supervised f
 - **Recommendation:** existing chapter. **Chapter 2 → "Padding and the padding mask"**: a final subsection "**Packing: the alternative to padding**", reusing sentences A (6 tokens) and B (4 tokens): padded, the batch wastes 2 of 12 positions; packed into one sequence, it wastes none. Mention that attention must still be kept from crossing between packed examples.
 - **Priority:** Low.
 
-**Decision:**
+**Decision:** Approved (user, 2026-10-17). Not written yet.
 
 #### L3-5. LoRA in depth, and the term "instruction tuning" `[ ]`
 
@@ -190,7 +190,7 @@ Reviewed 2026-10-17. The next-token objective, teacher forcing, and supervised f
 - **Recommendation:** existing chapter. **Chapter 2 → "Stages of an LLM's life"**: turn the LoRA paragraph into a subsection "**Cheap fine-tuning: LoRA**" with a worked example (a 2 × 2 weight matrix plus B·A with rank 1). Add "instruction tuning" to the Stage 2 text.
 - **Priority:** Medium.
 
-**Decision:**
+**Decision:** Approved (user, 2026-10-17). Not written yet.
 
 #### L3-6. Preference training in detail: reward model, KL penalty, DPO `[ ]`
 
@@ -202,7 +202,7 @@ Reviewed 2026-10-17. The next-token objective, teacher forcing, and supervised f
 - **Recommendation:** existing chapter. **Chapter 2 → "Stage 3: preference training"**: expand with the worked reward-model example, the KL idea, the DPO loss with every letter explained, and a 4-models-vs-2 table.
 - **Priority:** Medium.
 
-**Decision:**
+**Decision:** Approved (user, 2026-10-17). Not written yet.
 
 #### L3-7. Reasoning models and how they are trained (test-time compute, GRPO) `[ ]`
 
@@ -214,7 +214,7 @@ Reviewed 2026-10-17. The next-token objective, teacher forcing, and supervised f
 - **Recommendation:** **new Chapter 6** (approved in L2-2), section "**Reasoning models: thinking before answering**", after chain-of-thought and self-consistency. Link from Chapter 2's Stage 3 and from Chapter 3 (thinking tokens make answers longer, so they cost decode time and KV-cache memory).
 - **Priority:** High.
 
-**Decision:**
+**Decision:** Approved (user, 2026-10-17). Not written yet.
 
 #### L3-8. Distillation: a small model learns from a large one `[ ]`
 
@@ -222,7 +222,7 @@ Reviewed 2026-10-17. The next-token objective, teacher forcing, and supervised f
 - **Recommendation:** existing chapter. **Chapter 2**, a new section "**Distillation**" after "Stages of an LLM's life". Worked example reusing Chapter 1's probabilities as the teacher's soft target (CAT 0.772, DOG 0.211, IS 0.013, LOVELY 0.004) and comparing the student's loss with the one-hot loss, which connects to label smoothing. Link from **Chapter 4** as another way to get a smaller, cheaper model.
 - **Priority:** Medium.
 
-**Decision:**
+**Decision:** Approved (user, 2026-10-17). Not written yet.
 
 #### L3-9. Benchmarks for maths, code and preferences; Elo and pass@k `[ ]`
 
@@ -230,7 +230,7 @@ Reviewed 2026-10-17. The next-token objective, teacher forcing, and supervised f
 - **Recommendation:** existing chapter. **Chapter 5 → "Evaluating generative LLMs" → "Benchmarks"**: a table of benchmark families (what each measures, how it is scored) and two short worked examples (Elo, pass@k). Benchmark sizes to be checked against their papers.
 - **Priority:** Medium.
 
-**Decision:**
+**Decision:** Approved (user, 2026-10-17). Not written yet.
 
 ---
 
