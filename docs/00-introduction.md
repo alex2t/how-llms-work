@@ -153,3 +153,80 @@ Model sizes grew very fast:
 Larger models trained on more text kept getting better, and new abilities appeared along the way: following instructions, writing code, explaining their reasoning. After preference training made them helpful assistants (2022), the next steps were longer contexts, tool use and **agents**: models that plan, call tools, read the results and continue over many steps, such as coding agents that work inside a software project.
 
 The sections below go back to the beginning of this story, to see the problems these steps solved: how words were first turned into vectors, and why the recurrent networks of the task-specific era could not scale.
+
+## Vector embeddings: static representations
+
+A model can only compute with numbers, so every word must first become a vector. How that vector is chosen decides what the model can know about the word. This section follows the two classic answers: one-hot vectors, which carry no meaning at all, and Word2Vec, the first widely used learned vectors, which carry meaning but still have serious limits.
+
+### One-hot encoding
+
+**One-hot encoding** gives each word in the vocabulary its own position. A word's vector has a 1 at its position and 0 everywhere else, so the vector is as long as the vocabulary.
+
+**Worked example** with a 5-word vocabulary: cat, dog, bank, river, money.
+
+| Word | One-hot vector |
+| --- | --- |
+| cat | \[1, 0, 0, 0, 0\] |
+| dog | \[0, 1, 0, 0, 0\] |
+| bank | \[0, 0, 1, 0, 0\] |
+| river | \[0, 0, 0, 1, 0\] |
+| money | \[0, 0, 0, 0, 1\] |
+
+Now measure similarity with the dot product from the foundations section:
+
+- cat · dog = 1×0 + 0×1 + 0×0 + 0×0 + 0×0 = **0**
+- cat · bank = **0**
+- The same holds for every pair of different words: the dot product is always 0, and the distance between any two words is always √2 ≈ 1.414.
+
+The vectors are **orthogonal** (at right angles to each other): "cat" is exactly as far from "dog" as from "bank". One-hot vectors identify words but say nothing about their meaning. They are also wasteful: with a 50,000-word vocabulary, every word needs 50,000 numbers, all but one of them 0.
+
+### Word2Vec: learning vectors from context
+
+**Word2Vec** (Mikolov and colleagues at Google, 2013) learns a short, dense vector for every word, typically 300 numbers, with the idea that **a word is known by the company it keeps**: words that appear in similar contexts should get similar vectors.
+
+It learns them with a **proxy task**: a simple prediction task nobody actually needs solved, set up only because solving it forces useful vectors to form. Take the sentence "the cat sat on the mat" and a **context window** of 2 words on each side of the word "sat":
+
+| Proxy task | Input | Prediction target |
+| --- | --- | --- |
+| **CBOW** (continuous bag of words) | The context: the, cat, on, the | The middle word: sat |
+| **Skip-gram** | The middle word: sat | Each context word: the, cat, on, the |
+
+Training slides this window over billions of words of text and adjusts the vectors to make these predictions better, just as training adjusts weights to lower a loss ([Chapter 2](02-training.md#what-training-is)). Because "cat" and "dog" appear among the same neighbours (the, sat, fed, pet), they end up with similar vectors. The prediction task is then thrown away; the vectors are the product.
+
+### Vector arithmetic: Paris − France + Germany ≈ Berlin
+
+The learned space has a striking property: **directions carry meaning**. The step from a country to its capital points in roughly the same direction for every country, so it can be computed with ordinary vector arithmetic.
+
+**Illustrative 2-D example** (made-up vectors; real Word2Vec vectors have about 300 numbers):
+
+| Word | Vector |
+| --- | --- |
+| France | (1, 1) |
+| Paris | (1, 3) |
+| Germany | (4, 1) |
+| Berlin | (4.1, 2.9) |
+| Italy | (7, 1) |
+| Rome | (7, 3.1) |
+
+1. Paris − France = (1 − 1, 3 − 1) = (0, 2): the "capital of" direction.
+2. Add Germany: (0, 2) + (4, 1) = **(4, 3)**.
+3. Find the word whose vector is closest to (4, 3):
+
+| Word | Distance from (4, 3) |
+| --- | --- |
+| **Berlin** | **0.14** |
+| Germany | 2.00 |
+| Paris | 3.00 |
+| Rome | 3.00 |
+| France, Italy | 3.61 |
+
+The nearest word is Berlin. Nobody told Word2Vec what a capital is: the relationship emerged because capitals and their countries appear in similar contexts across many texts.
+
+### The limits of Word2Vec
+
+Word2Vec vectors are **static**: each word has exactly one vector, fixed after training, used in every sentence. That causes two problems.
+
+- **No polysemy.** **Polysemy** means one word having several meanings. "Bank" in "the river bank" and in "the bank raised its rates" gets the same vector, a blurred average of both meanings. The model cannot tell which one a sentence means.
+- **No word order.** The vectors of "dog bites man" and "man bites dog" are the same three vectors. Word vectors alone say what words mean in general, not what a particular sentence says.
+
+The Transformer keeps the idea of a learned vector per token, its embedding table ([Chapter 1](01-transformers.md#token-embeddings)), but then lets attention change each token's vector according to the other tokens in the sentence. The starting vector of "bank" is still fixed, as [Chapter 1 notes](01-transformers.md#what-is-learned-and-what-changes-after-training); attention is what turns it into "river bank" or "money bank". Word order is added through positional encoding. Before that, the first attempt to read sentences in order was the recurrent network, described next.

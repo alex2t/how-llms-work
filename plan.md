@@ -29,10 +29,10 @@ Goal: give the reader the background needed before Chapter 1, and the story of w
   - [x] Task-specific era (2010s): a separate specialised RNN model per task (sentiment analysis, translation, named-entity recognition); no sharing between tasks.
   - [x] The Transformer turning point (2017): "Attention Is All You Need"; one architecture that scales with compute, data and parameters. Link to Chapter 1.
   - [x] Scaling to modern LLMs (2022–2026): growing parameter counts and datasets lead to chat assistants and autonomous coding agents.
-- [ ] **Vector embeddings: static representations**
-  - [ ] One-hot encoding: each token is an orthogonal vector; worked example with a 5-word vocabulary showing every dot product is 0, so "cat" is as far from "dog" as from "bank" (no semantic relationship).
-  - [ ] Word2Vec: proxy tasks CBOW (predict a word from its context) and Skip-gram (predict the context from a word); learned semantic space; vector arithmetic Paris − France + Germany ≈ Berlin, with a small 2-D illustrative example.
-  - [ ] Word2Vec limitations: one vector per word, so no polysemy (river "bank" vs money "bank"); ignores word order. Link to Chapter 1 "One fixed vector per token, different meaning in context".
+- [x] **Vector embeddings: static representations**
+  - [x] One-hot encoding: each token is an orthogonal vector; worked example with a 5-word vocabulary showing every dot product is 0, so "cat" is as far from "dog" as from "bank" (no semantic relationship).
+  - [x] Word2Vec: proxy tasks CBOW (predict a word from its context) and Skip-gram (predict the context from a word); learned semantic space; vector arithmetic Paris − France + Germany ≈ Berlin, with a small 2-D illustrative example.
+  - [x] Word2Vec limitations: one vector per word, so no polysemy (river "bank" vs money "bank"); ignores word order. Link to Chapter 1 "One fixed vector per token, different meaning in context".
 - [ ] **Sequence architectures: RNNs and LSTMs**
   - [ ] RNN: hidden state carried from step to step; small diagram (x1 → RNN → y1, state passed to the next step); worked 3-step example.
   - [ ] LSTM: adds a cell state and gates to keep information longer (high level only).
