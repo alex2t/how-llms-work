@@ -13,7 +13,19 @@ Legend: `[ ]` waiting · `[x]` approved and applied · `[-]` rejected
 
 ## Waiting for approval
 
-(Nothing waiting.)
+### F9. Point links to Chapter 5 at exact sections `[ ]`
+
+**Where:** three links written before Chapter 5 existed, which open only the top of the page.
+
+| File and line | Link text | Would open |
+| --- | --- | --- |
+| `docs/02-training.md`, line 339 | Chapter 5 (perplexity teaser) | `05-evaluation.md#perplexity` |
+| `docs/03-inference.md`, line 459 | fraud example (temperature 0) | `05-evaluation.md#the-big-picture` (where the fraud example is defined) |
+| `docs/04-quantization.md`, line 275 | Chapter 5 (fraud labels) | `05-evaluation.md#classification-metrics-the-fraud-example` |
+
+The wording stays the same; only the link targets change. The home page table keeps its page-level link on purpose.
+
+**Decision:**
 
 ---
 
