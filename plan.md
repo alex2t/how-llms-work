@@ -125,7 +125,14 @@ Compare the book with each lecture of Stanford's CME295 (summaries in `sources/`
   - [ ] L1-3: Chapter 1 special-tokens table; Chapter 3 worked chat example with role tokens.
   - [ ] L1-4: Chapter 1 → Practical consequences: short note on WordPiece and Unigram.
   - [ ] L1-5: Introduction → Word2Vec: the network and negative sampling.
-- [x] Lecture 2 — Model families, Mixture of Experts, normalisation, context, decoding, prompting. Gap analysis in `fix.md` (L2-1 to L2-7); waiting for decisions.
+- [x] Lecture 2 — Model families, Mixture of Experts, normalisation, context, decoding, prompting. Gap analysis in `fix.md`; L2-1 to L2-7 approved.
+  - [ ] L2-1: Chapter 4 → new section "Mixture of Experts: more weights, same compute" + row in the overview table.
+  - [ ] L2-2: new Chapter 6 "Prompting, reasoning and agents" (`docs/06-prompting.md`, added to nav): in-context learning, chain-of-thought, self-consistency.
+  - [ ] L2-3: Chapter 3 → new subsection "Constrained decoding" with the FRAUD / OK example.
+  - [ ] L2-4: Chapter 2 → new section "Another training objective: masked language modelling"; link from Chapter 1.
+  - [ ] L2-5: Chapter 3 → long-context advice; Chapter 5 → needle-in-a-haystack benchmark.
+  - [ ] L2-6: Chapter 4 → RoPE: paragraph on context extension.
+  - [ ] L2-7: Chapter 3 → tokens-to-words-to-pages table.
 - [ ] Lecture 3 — Pre-training data, SFT, LoRA, RLHF vs DPO, GRPO, distillation.
 - [ ] Lecture 4 (when published).
 - [ ] Lecture 5 (when published).

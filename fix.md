@@ -94,7 +94,7 @@ Reviewed 2026-10-17. Normalisation (RMSNorm, pre-norm), RoPE, attention's quadra
 - **Recommendation:** existing chapter. **Chapter 4**, a new section "**Mixture of Experts: more weights, same compute**" after "What changed since 2017", plus a row in that section's overview table. Worked example: one token, router scores for 8 experts, softmax, top-2 selection and the weighted sum; then total vs active weights for a real model (figures to be checked against its paper), and why every expert must still sit in memory, which links back to quantization.
 - **Priority:** High.
 
-**Decision:**
+**Decision:** Approved (user, 2026-10-17). Not written yet.
 
 #### L2-2. Prompting and reasoning: in-context learning, chain-of-thought, self-consistency `[ ]`
 
@@ -106,7 +106,7 @@ Reviewed 2026-10-17. Normalisation (RMSNorm, pre-norm), RoPE, attention's quadra
 - **Alternative:** a section in Chapter 3 now, moved to its own chapter later. Not recommended, since moving text needs approval again.
 - **Priority:** High.
 
-**Decision:** (also choose: new Chapter 6 after Chapter 5, or another position)
+**Decision:** Approved: new Chapter 6 after Chapter 5 (user, 2026-10-17). Not written yet.
 
 #### L2-3. Constrained (guided) decoding `[ ]`
 
@@ -114,7 +114,7 @@ Reviewed 2026-10-17. Normalisation (RMSNorm, pre-norm), RoPE, attention's quadra
 - **Recommendation:** existing chapter. **Chapter 3 → "Choosing the next token"**, a new subsection "**Constrained decoding**" after "How the rules combine". Worked example on the fraud prompt: only `FRAUD` and `OK` are allowed, every other token is masked, and the two probabilities are renormalised, the same arithmetic as top-k. Link from Chapter 5's fraud example, where a guaranteed valid label matters.
 - **Priority:** Medium.
 
-**Decision:**
+**Decision:** Approved (user, 2026-10-17). Not written yet.
 
 #### L2-4. Encoder-only models and masked language modelling (BERT) `[ ]`
 
@@ -122,7 +122,7 @@ Reviewed 2026-10-17. Normalisation (RMSNorm, pre-norm), RoPE, attention's quadra
 - **Recommendation:** existing chapters. **Chapter 2**, a new section "**Another training objective: masked language modelling**" before "Stages of an LLM's life", with a worked example that masks one token of `YOUR CAT IS A LOVELY CAT`. Link to it from **Chapter 1 → "Three ways the block is used today"**.
 - **Priority:** Medium.
 
-**Decision:**
+**Decision:** Approved (user, 2026-10-17). Not written yet.
 
 #### L2-5. Long context: a bigger window is not a perfect memory `[ ]`
 
@@ -130,7 +130,7 @@ Reviewed 2026-10-17. Normalisation (RMSNorm, pre-norm), RoPE, attention's quadra
 - **Recommendation:** existing chapters. **Chapter 3 → "The context window: a hard limit"**: a short subsection with the practical advice. **Chapter 5 → "Evaluating generative LLMs"**: needle-in-a-haystack as a long-context benchmark. Facts to be checked against the original papers (the summary's "10%–50%" region is not reliable).
 - **Priority:** Medium.
 
-**Decision:**
+**Decision:** Approved (user, 2026-10-17). Not written yet.
 
 #### L2-6. Extending the context of a trained model (RoPE scaling) `[ ]`
 
@@ -138,7 +138,7 @@ Reviewed 2026-10-17. Normalisation (RMSNorm, pre-norm), RoPE, attention's quadra
 - **Recommendation:** existing chapter. **Chapter 4 → "RoPE: rotary position embedding"**: one paragraph with a small example reusing that section's 0.1-radian rotation.
 - **Priority:** Low.
 
-**Decision:**
+**Decision:** Approved (user, 2026-10-17). Not written yet.
 
 #### L2-7. Tokens to words to pages `[ ]`
 
@@ -146,7 +146,7 @@ Reviewed 2026-10-17. Normalisation (RMSNorm, pre-norm), RoPE, attention's quadra
 - **Recommendation:** existing chapter. **Chapter 3 → "The context window: a hard limit"**: a 4-row table converting common window sizes (8,192, 128,000, 1,000,000 tokens) into words and pages, computed rather than copied.
 - **Priority:** Low.
 
-**Decision:**
+**Decision:** Approved (user, 2026-10-17). Not written yet.
 
 ---
 

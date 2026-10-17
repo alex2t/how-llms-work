@@ -14,6 +14,7 @@ A plain-English book on how large language models work, with worked numeric exam
 | 3 | Inference and decoding | Written (draft) |
 | 4 | Quantization, efficiency and the modern Transformer | Written (draft) |
 | 5 | Evaluation: how we measure a model | Written (draft) |
+| 6 | Prompting, reasoning and agents | Planned |
 
 The detailed task list is in [`plan.md`](plan.md). Proposed changes to written chapters, including topics found missing when comparing the book with Stanford's CME295 course (one lecture at a time), are in [`fix.md`](fix.md).
 

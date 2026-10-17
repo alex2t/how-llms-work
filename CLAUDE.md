@@ -15,6 +15,7 @@ A plain-English book that explains how large language models work, written as fi
 | 3 | Inference and decoding | `docs/03-inference.md` | Written (draft) |
 | 4 | Quantization, efficiency and the modern Transformer | `docs/04-quantization.md` | Written (draft) |
 | 5 | Evaluation: how we measure a model | `docs/05-evaluation.md` | Written (draft) |
+| 6 | Prompting, reasoning and agents | `docs/06-prompting.md` | Planned (approved in `fix.md`, L2-2) |
 
 `plan.md` is the single source of truth for what is done and what is left.
 
