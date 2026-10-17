@@ -168,13 +168,13 @@ Reviewed 2026-10-17. The next-token objective, teacher forcing, and supervised f
 
 **Decision:** Approved (user, 2026-10-17). Written 2026-10-17.
 
-#### L3-3. Bits per byte: a loss that does not depend on the tokenizer `[ ]`
+#### L3-3. Bits per byte: a loss that does not depend on the tokenizer `[x]`
 
 - **Missing:** Chapter 5 shows that perplexity can only be compared between models with the same tokenizer, but gives no fix. **Bits per byte (BPB)** divides the total loss by the number of bytes of text instead of the number of tokens (and converts it to bits), so models with different tokenizers can be compared fairly.
 - **Recommendation:** existing chapter. **Chapter 5 → "Perplexity" → "Only comparable with the same tokenizer"**: add BPB right after the two-tokenizer example. Reusing that example (total loss 3.0 for the same sentence), both models get the same BPB: if the sentence is 30 bytes long, 3.0 ÷ ln 2 ÷ 30 ≈ 0.144 bits per byte, which shows exactly the fairness that perplexity lacked.
 - **Priority:** Medium.
 
-**Decision:** Approved (user, 2026-10-17). Not written yet.
+**Decision:** Approved (user, 2026-10-17). Written 2026-10-17.
 
 #### L3-4. Packing sequences instead of padding them `[x]`
 

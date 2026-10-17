@@ -136,7 +136,7 @@ Compare the book with each lecture of Stanford's CME295 (summaries in `sources/`
 - [x] Lecture 3 — Pre-training data, SFT, LoRA, RLHF vs DPO, GRPO, distillation. Gap analysis in `fix.md`; L3-1 to L3-9 approved.
   - [x] L3-1: Chapter 2 → section "Where pre-training data comes from" (pipeline diagram, filtering example).
   - [x] L3-2: Chapter 2 → model collapse, inside L3-1's section.
-  - [ ] L3-3: Chapter 5 → bits per byte after the two-tokenizer example.
+  - [x] L3-3: Chapter 5 → bits per byte after the two-tokenizer example.
   - [x] L3-4: Chapter 2 → "Packing: the alternative to padding".
   - [x] L3-5: Chapter 2 → subsection "Cheap fine-tuning: LoRA"; "instruction tuning" in Stage 2.
   - [x] L3-6: Chapter 2 → Stage 3 expanded: reward model, KL penalty, DPO loss, 4 vs 2 models.

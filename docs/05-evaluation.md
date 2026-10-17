@@ -113,6 +113,24 @@ Perplexity is an average **per token**, so it depends on how the text was cut in
 
 Model B looks better, but both models assign the text exactly the same probability: B only spreads the same loss over more, smaller tokens. Perplexities can be compared only between models that share a tokenizer. This is always true for a quantized model and its original, because quantization never changes the tokenizer.
 
+**The fix: bits per byte.** To compare models with different tokenizers, divide the total loss by something every tokenizer agrees on: the length of the text in **bytes** (one byte per character for plain English). Converting from natural logarithms to base-2 logarithms (dividing by ln 2 ≈ 0.693) expresses the result in **bits**, the unit of information:
+
+$$
+\text{BPB} = \frac{\text{total loss}}{\ln 2 \times \text{number of bytes}}
+$$
+
+- **total loss** is the sum of −ln p over all the text's tokens (average loss × number of tokens).
+- **number of bytes** is the length of the same text in bytes, which does not depend on the tokenizer.
+
+Suppose the sentence above is 30 bytes long. Both models have the same total loss of 3.0, so:
+
+| Model | Tokens | Perplexity | Bits per byte |
+| --- | --- | --- | --- |
+| A | 6 | 1.65 | 3.0 ÷ (0.693 × 30) = 0.144 |
+| B | 10 | 1.35 | 3.0 ÷ (0.693 × 30) = 0.144 |
+
+Bits per byte gives both models the same score, correctly, since they assign the text the same probability. It can be read as "how many bits, on average, the model needs to encode each character", and lower is better. Bits per byte (or the closely related bits per character) is the measure to use when comparing models from different families on the same text.
+
 ### What perplexity does not tell you
 
 Perplexity measures how well a model predicts text, not whether its answers are correct, helpful or safe. A model can have a low perplexity and still answer `OK` to an obvious fraud. Task metrics, covered next, are needed for that.

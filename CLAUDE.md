@@ -166,3 +166,4 @@ Add one line per implemented section, newest at the bottom: `YYYY-MM-DD — Chap
 - 2026-10-17 — Chapter 3 — Chat template example (L1-3, Chapter 3 part) — Llama 3 template (verified in Meta's tokenizer code) for the translation request; end-of-turn token; system message; learned in SFT.
 - 2026-10-17 — Chapter 3 — Constrained decoding (L2-3) — FRAUD / OK masking (0.55 / 0.30 → 0.647 / 0.353); logits to −∞; grammars for JSON; cautions; link from Chapter 5 fraud box.
 - 2026-10-17 — Chapter 3 — Context window size and long-context limits (L2-7, L2-5 Chapter 3 part) — tokens → words → pages table (8,192 → 12 pages, 128,000 → 192); needle in a haystack; lost in the middle; prompt advice; 3 cheat-sheet rows and 5 sources.
+- 2026-10-17 — Chapter 5 — Bits per byte (L3-3) — formula; two-tokenizer example gives 0.144 for both models (perplexity 1.65 vs 1.35).
