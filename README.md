@@ -59,6 +59,7 @@ One line per implemented section, newest at the bottom.
 - 2026-10-17 — Chapter 3 — Links to Chapter 4 now open the exact section.
 - 2026-10-17 — Chapter 5 — Three levels of evaluation: training loss, model metrics and business outcomes, on the fraud example.
 - 2026-10-17 — Chapter 5 — Loss vs metric: why training uses cross-entropy but people judge with metrics.
+- 2026-10-17 — Chapter 5 — Perplexity: what it means and why it needs the same tokenizer.
 
 ## Credits
 

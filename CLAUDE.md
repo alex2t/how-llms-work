@@ -123,3 +123,4 @@ Add one line per implemented section, newest at the bottom: `YYYY-MM-DD — Chap
 - 2026-10-17 — Chapter 3 — Links to Chapter 4 (F8) — four page links pointed to exact sections; grouped-query attention linked.
 - 2026-10-17 — Chapter 5 — Big picture + Three levels of evaluation — fraud example defined (100-transaction sample with 10 fraud; real traffic 100,000/month at 2%); loss → model metrics → business outcomes table.
 - 2026-10-17 — Chapter 5 — Loss vs metric — four fraud cases: loss sees every probability change, accuracy only right/wrong; side-by-side table.
+- 2026-10-17 — Chapter 5 — Perplexity — formula; CAT 1.30, translation 1.47, uniform-4 = 4.00, perfect = 1; same-tokenizer caveat (6 vs 10 tokens: 1.65 vs 1.35); limits.

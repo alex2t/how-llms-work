@@ -66,3 +66,51 @@ Four transactions in the sample are fraud. The model answers `FRAUD` when its fr
 | Read by | The optimiser | People |
 
 The practical rule: watch the loss to check that training works, but decide whether a model is good with metrics measured on data the model never saw during training. The next section turns the loss into a friendlier number, perplexity; the sections after it cover the metrics.
+
+## Perplexity
+
+Perplexity is the standard way to report a language model's loss as a number people can picture. It is the main measure used during pre-training and when comparing quantized models with the original ([Chapter 4](04-quantization.md#how-to-check-a-quantized-model)), so it is worth knowing exactly what it means and when it can be compared.
+
+### Definition
+
+**Perplexity** is e raised to the average cross-entropy loss per token:
+
+$$
+\text{perplexity} = e^{\bar{L}} \qquad \bar{L} = \frac{1}{N}\sum_{i=1}^{N} -\ln p_i
+$$
+
+- **L̄** is the average loss over the N tokens of a text.
+- **p\_i** is the probability the model gave to the correct token at position i.
+- **e** is the base of the natural logarithm (about 2.718).
+
+It can be read as **"how many tokens the model is choosing between, on average"**. A perplexity of 4 means the model is as uncertain as if it were picking evenly among 4 tokens at every step. A perfect model, which always gives the correct token probability 1, has perplexity 1.
+
+### Worked examples with the running numbers
+
+| Case | Average loss | Perplexity | Reading |
+| --- | --- | --- | --- |
+| Chapter 1's example: CAT given 0.772 | −ln 0.772 = 0.259 | e^0.259 = 1.30 | Almost sure: about 1.3 choices |
+| [Chapter 2's translation](02-training.md#from-one-position-to-a-whole-batch): 4 positions | 0.383 | e^0.383 = 1.47 | About 1.5 choices |
+| A model guessing evenly among 4 tokens (each 0.25) | −ln 0.25 = 1.386 | e^1.386 = 4.00 | Exactly 4 choices |
+| A perfect model (every correct token gets 1) | 0 | e^0 = 1 | No hesitation |
+
+The third row shows why the reading works: when every one of k choices has probability 1/k, the perplexity is exactly k.
+
+### What a good value is
+
+There is no universal good value: perplexity depends on the model, the text and the tokenizer. A model will have a low perplexity on simple, predictable text and a higher one on technical or unusual text. Perplexity is therefore useful for **comparisons on the same text**: two checkpoints during training, a model before and after fine-tuning, or a quantized model against the original. A lower value on the same text means the model predicts that text better.
+
+### Only comparable with the same tokenizer
+
+Perplexity is an average **per token**, so it depends on how the text was cut into tokens ([Chapter 1](01-transformers.md#bpe-tokenizer-from-text-to-token-ids)). Suppose two models give a sentence exactly the same total probability, so the same total loss of 3.0 (made-up numbers), but their tokenizers split it differently:
+
+| Model | Tokens for the sentence | Average loss | Perplexity |
+| --- | --- | --- | --- |
+| A | 6 | 3.0 ÷ 6 = 0.5 | e^0.5 = 1.65 |
+| B | 10 | 3.0 ÷ 10 = 0.3 | e^0.3 = 1.35 |
+
+Model B looks better, but both models assign the text exactly the same probability: B only spreads the same loss over more, smaller tokens. Perplexities can be compared only between models that share a tokenizer. This is always true for a quantized model and its original, because quantization never changes the tokenizer.
+
+### What perplexity does not tell you
+
+Perplexity measures how well a model predicts text, not whether its answers are correct, helpful or safe. A model can have a low perplexity and still answer `OK` to an obvious fraud. Task metrics, covered next, are needed for that.
