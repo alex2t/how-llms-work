@@ -779,5 +779,4 @@ After the last stage, all weights are frozen again and the model is ready for in
 - [CME295: Transformers & Large Language Models, Lecture 3 (Stanford University, Afshine and Shervine Amidi)](https://cme295.stanford.edu/syllabus/): pre-training data, fine-tuning and preference training topics
 - [BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding (Devlin et al., 2018)](https://arxiv.org/abs/1810.04805): masked language modelling, next sentence prediction, `[CLS]` and `[SEP]`
 - [RoBERTa: A Robustly Optimized BERT Pretraining Approach (Liu et al., 2019)](https://arxiv.org/abs/1907.11692): training without next sentence prediction
-- [Training language models to follow instructions with human feedback (Ouyang et al., 2022)](https://arxiv.org/abs/2203.02155): reward model loss, KL penalty and PPO in RLHF
 - [Proximal Policy Optimization Algorithms (Schulman et al., 2017)](https://arxiv.org/abs/1707.06347): PPO
