@@ -14,6 +14,8 @@ The chapter uses one running example from start to finish:
 
     All numbers in this example are made up for illustration.
 
+    The answer can be guaranteed to be exactly `FRAUD` or `OK` with [constrained decoding](03-inference.md#constrained-decoding).
+
 ## Three levels of evaluation
 
 A model can be measured at three levels, and each level answers a different question for a different audience. Confusing them is the most common evaluation mistake: a model can improve at one level and get worse at another.

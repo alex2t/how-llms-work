@@ -472,6 +472,29 @@ Compare the two results. Raising the temperature from 1 to 2 made `DOG` more lik
 
 These are starting points, not rules; each model and provider documents its own defaults. Many API guides recommend changing **either** temperature **or** top-p, not both at once, because both control the same thing (how far the choice strays from the top token) and their effects are hard to predict together. For the [fraud example](05-evaluation.md#the-big-picture) in Chapter 5, where a model labels transactions, a temperature of 0 is the natural choice: the same transaction should always get the same label.
 
+### Constrained decoding
+
+The rules above choose among all tokens, so nothing stops a model from answering a classification question with a polite sentence, or from producing JSON with a missing bracket. When an application needs output in an exact format, **constrained decoding** (also called guided decoding or structured output) enforces it: at every step, any token that would break the format is **masked**, its probability set to 0, and the remaining probabilities are renormalised before the usual decoding rule picks one.
+
+**Worked example: the fraud label.** The application from [Chapter 5](05-evaluation.md#the-big-picture) asks the model to answer with exactly one label, `FRAUD` or `OK`. Suppose the model's probabilities for the first token are (made-up numbers):
+
+| Token | Probability | Allowed? | After masking and renormalising |
+| --- | --- | --- | --- |
+| FRAUD | 0.55 | Yes | 0.55 ÷ 0.85 = 0.647 |
+| OK | 0.30 | Yes | 0.30 ÷ 0.85 = 0.353 |
+| I (as in "I think…") | 0.08 | No | 0 |
+| The | 0.05 | No | 0 |
+| All other tokens | 0.02 | No | 0 |
+
+Masking is done on the logits, exactly like the causal mask in Chapter 1: the logits of forbidden tokens are set to −∞, so softmax gives them exactly 0 and shares the probability among the allowed tokens. The arithmetic is the same as for top-k: keep some tokens, divide by their total. The answer is now guaranteed to be a valid label; with greedy decoding it is `FRAUD`.
+
+**Longer formats.** For JSON, SQL or any format defined by a grammar, a small program follows the output as it is generated and knows, at each step, which tokens may come next. After `{"label": "` only the start of `FRAUD` or `OK` is allowed; after the label, only the closing `"`; and so on until the object is complete.
+
+Two cautions:
+
+- **A valid format is not a correct answer.** Constrained decoding guarantees that the output can be read by the program, not that the label is right; that is what the metrics in Chapter 5 measure.
+- **Measure what you deploy.** Renormalising changes the numbers: here the fraud score rises from 0.55 to 0.647. A threshold chosen on one kind of score (see [Moving the threshold](05-evaluation.md#moving-the-threshold-the-roc-curve-and-auc)) must be applied to the same kind of score in production.
+
 ## Stopping
 
 The generation loop has no natural end: after every token, the model can always predict another one. Something must decide when the answer is finished. Three conditions do this, and every generation stops at whichever comes first.

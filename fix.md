@@ -108,13 +108,13 @@ Reviewed 2026-10-17. Normalisation (RMSNorm, pre-norm), RoPE, attention's quadra
 
 **Decision:** Approved: new Chapter 6 after Chapter 5 (user, 2026-10-17). Not written yet.
 
-#### L2-3. Constrained (guided) decoding `[ ]`
+#### L2-3. Constrained (guided) decoding `[x]`
 
 - **Missing:** forcing the output to follow a format (valid JSON, a fixed list of labels, SQL syntax) by **masking** every token that would break the format at each step, then renormalising. The book's decoding rules (Chapter 3) only choose among all tokens.
 - **Recommendation:** existing chapter. **Chapter 3 → "Choosing the next token"**, a new subsection "**Constrained decoding**" after "How the rules combine". Worked example on the fraud prompt: only `FRAUD` and `OK` are allowed, every other token is masked, and the two probabilities are renormalised, the same arithmetic as top-k. Link from Chapter 5's fraud example, where a guaranteed valid label matters.
 - **Priority:** Medium.
 
-**Decision:** Approved (user, 2026-10-17). Not written yet.
+**Decision:** Approved (user, 2026-10-17). Written 2026-10-17.
 
 #### L2-4. Encoder-only models and masked language modelling (BERT) `[x]`
 

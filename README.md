@@ -85,6 +85,7 @@ One line per implemented section, newest at the bottom.
 - 2026-10-17 — Chapter 4 — Stretching the context of a trained model with RoPE scaling (CME295 L2-6).
 - 2026-10-17 — Chapter 4 — Mixture of Experts: more weights, same compute (CME295 L2-1).
 - 2026-10-17 — Chapter 3 — What a chat looks like as tokens: the Llama 3 chat template (CME295 L1-3).
+- 2026-10-17 — Chapter 3 — Constrained decoding: forcing a valid format, on the fraud label (CME295 L2-3).
 
 ## Credits
 
