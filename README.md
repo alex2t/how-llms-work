@@ -43,6 +43,8 @@ The notes grew out of several AI and LLM engineering courses. I took excerpts fr
 - **Claude** explained the excerpts I gave it, or went further into a topic when I asked.
 - **NotebookLM (Google Gemini)** summarised lecture videos, used to check which topics were missing.
 - **Claude Code** wrote and edited the pages. I read every chapter and pointed out the passages that were unclear or badly phrased, and Claude Code rewrote them until they were easy to follow. It also checked the arithmetic and built the site.
+- **Antigravity CLI (Gemini 4)** then rewrote each chapter to improve the wording and added diagrams and short refreshers on the maths.
+- **Claude Code** reviewed each Gemini rewrite against the original: it rechecked every number, tested the diagrams and links, fixed the errors it found, and replaced the chapter with the improved version.
 
 ## Credits
 
@@ -50,7 +52,7 @@ The notes grew out of several AI and LLM engineering courses. I took excerpts fr
 - Google NotebookLM (Gemini) summaries of the CME295 lectures, used as a topic checklist. They are kept locally and not published.
 - Vaswani et al., [Attention Is All You Need](https://arxiv.org/abs/1706.03762) (2017).
 - Umar Jamil, [Transformer from scratch](https://github.com/hkproj/transformer-from-scratch-notes) slides (CC BY-NC 4.0), used as a reference for explanations.
-- Written with the help of [Claude](https://claude.ai) and [Claude Code](https://claude.com/claude-code) (Anthropic).
+- Written with the help of [Claude](https://claude.ai) and [Claude Code](https://claude.com/claude-code) (Anthropic), and Antigravity CLI (Google Gemini).
 - Built with [MkDocs](https://www.mkdocs.org/) and [Material for MkDocs](https://squidfunk.github.io/mkdocs-material/).
 
 Each chapter ends with its own list of sources.
