@@ -56,6 +56,7 @@ One line per implemented section, newest at the bottom.
 - 2026-10-17 — Chapter 4 — Quality vs speed: the trade-off by bit count and how to check a quantized model.
 - 2026-10-17 — Chapter 4 — What changed since 2017: the modern Transformer compared with the original, with a worked example for each change.
 - 2026-10-17 — Chapter 4 — Cheat sheet and sources: chapter complete.
+- 2026-10-17 — Chapter 3 — Links to Chapter 4 now open the exact section.
 
 ## Credits
 

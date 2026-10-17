@@ -68,6 +68,7 @@ Goal: give the reader the background needed before Chapter 1, and the story of w
   - [x] How they combine; typical settings for factual vs creative output.
 - [x] Stopping: `<EOS>`, max tokens, stop sequences.
 - [x] Cheat sheet + Sources.
+- [x] Point the Chapter 4 links to exact sections once Chapter 4 exists (`fix.md`, F8).
 
 ## Phase 4 — Chapter 4: Quantization, efficiency and the modern Transformer (`docs/04-quantization.md`)
 

@@ -44,7 +44,7 @@ The most important row is "Correct answer known?". During training, after `YOUR 
 
 Training must keep more than the weights in memory. For every weight it also stores a **gradient** and Adam's two running averages **m** and **v** ([Chapter 2](02-training.md#adam-a-smarter-step)). That is four numbers per weight instead of one.
 
-**Worked example** with the base model's 65 million weights, each stored as a 32-bit number of 4 bytes ([Chapter 4](04-quantization.md) explains number formats):
+**Worked example** with the base model's 65 million weights, each stored as a 32-bit number of 4 bytes ([Chapter 4](04-quantization.md#number-formats) explains number formats):
 
 | What is stored | Numbers per weight | Memory |
 | --- | --- | --- |
@@ -154,7 +154,7 @@ In prefill, each weight is read once and used for 1,000 tokens, so the GPU is bu
 
 ### Worked example: a 7-billion-weight model
 
-The effect is easier to feel on a model the size of today's small open models. Assume a model with 7 billion weights stored in 16-bit format, 2 bytes each ([Chapter 4](04-quantization.md) covers number formats), and a GPU that can read 2,000 GB of memory per second and compute 500 trillion FLOPs per second. These are round illustrative figures; real GPUs vary.
+The effect is easier to feel on a model the size of today's small open models. Assume a model with 7 billion weights stored in 16-bit format, 2 bytes each ([Chapter 4](04-quantization.md#number-formats) covers number formats), and a GPU that can read 2,000 GB of memory per second and compute 500 trillion FLOPs per second. These are round illustrative figures; real GPUs vary.
 
 - Weights in memory: 7,000,000,000 × 2 bytes = **14 GB**.
 
@@ -175,7 +175,7 @@ Prefill handled 1,000 tokens in 28 ms; decode would need 1,000 × 7 ms = 7 secon
 ### What this means in practice
 
 - **Long prompts delay the first token.** Prefill time grows with the prompt length, so a 10,000-token document takes about ten times longer to process than a 1,000-token prompt before any answer appears.
-- **Streaming speed depends on memory speed and model size.** Each decode step reads every weight, so a smaller model, or the same model stored in fewer bytes per weight, generates faster. This is a main reason for quantization ([Chapter 4](04-quantization.md)).
+- **Streaming speed depends on memory speed and model size.** Each decode step reads every weight, so a smaller model, or the same model stored in fewer bytes per weight, generates faster. This is a main reason for quantization ([Chapter 4](04-quantization.md#fewer-bytes-also-means-faster-generation)).
 - **Serving many users at once is efficient.** When several users' decode steps are grouped into one batch, the weights are read once and used for all of them. The memory cost is shared, which is why providers batch requests together.
 
 ## The KV cache
@@ -257,7 +257,7 @@ The weights of this model take 14 GB (previous section). With 32 users the cache
 - **Memory spent:** the cache grows by a fixed amount with every token, for every user. On a busy server it, not the weights, often decides how many conversations fit on one GPU.
 - **Attention still grows with length:** the new query must still be compared with every cached key, so each step does a little more work than the one before. This is much smaller than the work the cache saves.
 
-This is why longer conversations cost more to serve, and why model designers try to shrink the cache. Chapter 4 describes the two main ways: storing it in fewer bytes ([quantization](04-quantization.md)) and sharing keys and values between heads (grouped-query attention).
+This is why longer conversations cost more to serve, and why model designers try to shrink the cache. Chapter 4 describes the two main ways: storing it in fewer bytes ([quantization](04-quantization.md#what-weights-activations-or-the-kv-cache)) and sharing keys and values between heads ([grouped-query attention](04-quantization.md#grouped-query-attention-gqa)).
 
 ## Choosing the next token
 

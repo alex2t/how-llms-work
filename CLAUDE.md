@@ -120,3 +120,4 @@ Add one line per implemented section, newest at the bottom: `YYYY-MM-DD — Chap
 - 2026-10-17 — Chapter 4 — Quality vs speed — 7B trade-off table (16 to 2.5 bits; 14.0 to 2.2 GB; 143 to 914 tokens/s); when quality drops; larger model at 4 bits vs smaller at 16; how to check a quantized model.
 - 2026-10-17 — Chapter 4 — What changed since 2017 — overview table linking each change to its Chapter 1 section; 2017 base model vs Llama 3 8B; pre-norm, RMSNorm ([2,4,6,8] example), RoPE (distance-only score), GQA (KV cache 0.52 → 0.13 MB/token), SwiGLU, context and vocabulary.
 - 2026-10-17 — Chapter 4 — Cheat sheet + Sources — 22-row cheat sheet and 13 sources; chapter complete (draft).
+- 2026-10-17 — Chapter 3 — Links to Chapter 4 (F8) — four page links pointed to exact sections; grouped-query attention linked.
