@@ -13,6 +13,16 @@ One round of that game is called a **training step**. Each step does the followi
 5. **Backward pass.** Compute, for every weight, which direction to move it to lower the loss.
 6. **Update.** The optimiser moves every weight a small step in that direction.
 
+```mermaid
+flowchart LR
+  S1["1. Take a batch<br/>Text → token IDs"] --> S2["2. Prepare inputs<br/>Pad + shift right"]
+  S2 --> S3["3. Forward pass<br/>Compute probabilities"]
+  S3 --> S4["4. Measure error<br/>Cross-entropy loss L"]
+  S4 --> S5["5. Backward pass<br/>Gradients ∂L/∂w"]
+  S5 --> S6["6. Update weights<br/>Optimiser step"]
+  S6 -->|Next batch| S1
+```
+
 Then the next batch is taken and the loop repeats. The original Transformer did this 100,000 times for its base model. The rest of the chapter walks through each step, with most detail on the parts that confuse newcomers: padding, the shifted-right decoder input, and why all positions are trained at once.
 
 ## What training is
@@ -103,6 +113,9 @@ The main cause is that **rare things get lost**. A model only reproduces what ap
 - So in about 37% of cases, the next model never sees the word at all, and gives it no probability. Once lost, it cannot come back in later generations.
 - A common word with probability 0.01 is almost never lost: 0.99¹⁰⁰⁰ ≈ 0.00004.
 
+!!! note "Refresher: why independent probabilities multiply as (1 − p)ⁿ"
+    If a word has probability p of appearing at one position, the chance that it does **not** appear at that position is 1 − p. When n tokens are sampled independently, the chance that the word misses every single position is (1 − p) multiplied by itself n times, or (1 − p)ⁿ. Even when a word is expected to appear once on average (p = 1 / n), the chance of missing it completely in n draws is (1 − 1 / n)ⁿ, which for large n settles right around 1 / e ≈ 0.368 (36.8%).
+
 Repeated over generations, the rare cases (the "tails" of the distribution) disappear first, and the text becomes more uniform and less varied. This is one more reason why data pipelines filter carefully and value original, human-written text.
 
 ### What a batch is
@@ -130,6 +143,12 @@ A **tensor** is a block of numbers with several dimensions: a vector has 1 dimen
 | Logits (with a 50,000-token vocabulary) | 2 × 6 × 50,000 | 600,000 |
 
 Every formula from [Chapter 1](01-transformers.md) stays the same; there is simply one extra dimension at the front for the batch.
+
+!!! note "Refresher: thinking about 3D and 4D tensors in code"
+    In programming terms, a tensor is a multi-dimensional array stored as one flat block of memory, where the shape tells you how each index is addressed:
+
+    - A **3D tensor** of shape `2 × 6 × 512` (like `X`) is indexed as `X[batch][position][feature]`. Multiplying the dimensions gives the total count of numbers (`2 × 6 × 512 = 6,144`).
+    - A **4D tensor** of shape `2 × 8 × 6 × 6` (the attention scores across all heads) is indexed as `scores[batch][head][query_pos][key_pos]`. The GPU computes all `2 × 8 = 16` attention tables of size `6 × 6` in parallel.
 
 ### Why every sequence in a batch must have the same length
 
@@ -235,6 +254,19 @@ Padding wastes work: every `<pad>` position goes through the whole model and is 
 | Padded | A (6) and B (4 + 2 `<pad>`) | 2 × 6 = 12 | 10 | 2 `<pad>` |
 | Packed | A, `<EOS>`, B in one row | 11 | 10 | 0 (1 separator) |
 
+```mermaid
+flowchart TD
+  subgraph Padded["Padded batch (2 rows × 6 positions = 12 positions)"]
+    direction LR
+    R1["Row 1: YOUR | CAT | IS | A | LOVELY | CAT"]
+    R2["Row 2: YOUR | CAT | IS | LOVELY | &lt;pad&gt; | &lt;pad&gt;"]
+  end
+  subgraph Packed["Packed sequence (1 row × 11 positions, 0 padding)"]
+    direction LR
+    R3["Row 1: YOUR | CAT | IS | A | LOVELY | CAT | &lt;EOS&gt; | YOUR | CAT | IS | LOVELY"]
+  end
+```
+
 With 1,000-token examples and a fixed length of 4,096, about four examples fit in each packed row instead of one.
 
 **Keeping packed examples apart.** In a packed row, the first token of B should not attend to the tokens of A: they come from unrelated texts. Many pipelines therefore combine the causal mask with a **document mask** that blocks attention across the separator. For a tiny packed row `X Y <EOS> P Q` (two examples, X Y and P Q):
@@ -269,6 +301,15 @@ The task is to translate "I love you very much" into "Ti amo molto". To keep the
 | Encoder input | `<SOS>` I love you very much `<EOS>` | 7 | The encoder |
 | Decoder input | `<SOS>` Ti amo molto | 4 | The decoder |
 | Target (label) | Ti amo molto `<EOS>` | 4 | The loss only, never into the model |
+
+```mermaid
+flowchart TD
+  EI["Encoder input<br/>&lt;SOS&gt; I love you very much &lt;EOS&gt;"] --> ENC["Encoder"]
+  DI["Decoder input (shifted right)<br/>&lt;SOS&gt; Ti amo molto"] --> DEC["Decoder"]
+  ENC -->|"Cross-attention (K, V)"| DEC
+  DEC -->|"Predicted probabilities (4 positions)"| LOSS["Cross-entropy loss"]
+  TGT["Target (label)<br/>Ti amo molto &lt;EOS&gt;"] --> LOSS
+```
 
 The decoder input and the target are the same Italian sentence, offset by one position. The decoder input starts with `<SOS>` and drops `<EOS>`; the target drops `<SOS>` and ends with `<EOS>`. Writing the target with `<SOS>` in front pushes every word one slot to the right, hence the name **shifted right**.
 
@@ -351,6 +392,18 @@ What stops position 1 from simply copying the answer "amo", which sits at positi
 | Predictions used per pass | All 4 positions | Only the last position |
 | A mistake at one position | Does not affect the next input | Is fed back in and can spread |
 
+```mermaid
+flowchart LR
+  subgraph Train["Training: 1 parallel forward pass"]
+    direction TB
+    TI["Input all at once:<br/>[&lt;SOS&gt;, Ti, amo, molto]"] --> TM["Decoder<br/>(with causal mask)"] --> TO["All 4 predictions at once:<br/>[Ti, amo, molto, &lt;EOS&gt;]"]
+  end
+  subgraph Gen["Generation: 4 sequential passes"]
+    direction TB
+    G1["Pass 1: [&lt;SOS&gt;] → Ti"] --> G2["Pass 2: [&lt;SOS&gt;, Ti] → amo"] --> G3["Pass 3: [&lt;SOS&gt;, Ti, amo] → molto"] --> G4["Pass 4: [&lt;SOS&gt;, Ti, amo, molto] → &lt;EOS&gt;"]
+  end
+```
+
 The same holds at scale: one batch of 25,000 target tokens in the paper gives about 25,000 predictions, all scored in one forward pass. An RNN would have to step through each sentence one token at a time.
 
 ### The trade-off: exposure bias
@@ -378,6 +431,13 @@ $$
 - **ln** is the natural logarithm.
 
 Because every y\_k is 0 except the correct one, the sum collapses to one term: the loss is minus the logarithm of the probability the model gave to the correct token. Only that one probability matters directly.
+
+!!! note "Refresher: why −ln(p) is used to score probabilities"
+    The natural logarithm ln(p) asks what power of e ≈ 2.718 gives p. Because a probability p always lies between 0 and 1:
+
+    - When p = 1 (a 100% confident, correct prediction), ln(1) = 0, so the loss −ln(1) = 0.
+    - When 0 < p < 1, ln(p) is negative, so the minus sign in −ln(p) turns it into a positive penalty. As p gets closer to 0, −ln(p) shoots up steeply toward infinity, heavily punishing confident wrong guesses.
+    - Adding −ln(p) across positions is also mathematically equivalent to multiplying the probabilities across the sentence: making the sum of −ln(p\_i) as small as possible makes the product p₁ × p₂ × … × p\_n of the true text as large as possible.
 
 ### Worked example: Chapter 1's probabilities
 
@@ -431,6 +491,17 @@ A **gradient** is, for one weight, the answer to: "if I increase this weight by 
 
 **Backpropagation** is the method that computes the gradient of every weight in one backward pass through the model, from the loss back to the embeddings. It uses the **chain rule** from calculus: the effect of a weight on the loss equals its effect on the next layer, times that layer's effect on the layer after, and so on up to the loss. Deep-learning libraries (PyTorch, JAX) do this automatically; nobody writes the derivatives by hand.
 
+!!! note "Refresher: partial derivatives and the chain rule"
+    The symbol ∂L / ∂z\_k is a **partial derivative**: it measures the rate of change of the loss L when a single variable z\_k is nudged slightly and all other variables are held constant.
+
+    When a weight w inside an early layer affects a hidden value h, which affects a logit z, which affects the loss L, the **chain rule** says that the sensitivity along the whole path is the product of each step's sensitivity:
+
+    $$
+    \frac{\partial L}{\partial w} = \frac{\partial L}{\partial z} \cdot \frac{\partial z}{\partial h} \cdot \frac{\partial h}{\partial w}
+    $$
+
+    Backpropagation starts by computing ∂L / ∂z at the output and multiplies backwards layer by layer so that intermediate results are reused instead of recomputed for each weight.
+
 The first link of the chain has a very simple form for softmax followed by cross-entropy. The gradient with respect to each logit is the predicted probability minus the target:
 
 $$
@@ -447,6 +518,15 @@ Here z\_k is the logit of token k (the raw score before softmax), p\_k its proba
 | LOVELY | 0.004 | 0 | +0.004 | Push down very slightly |
 
 The gradients sum to 0. The wrong token that received the most probability (DOG) gets the strongest push down. Backpropagation then carries these four numbers backwards through W\_out, the feed-forward networks, W\_O, W\_Q, W\_K, W\_V and finally E, giving every weight its own gradient.
+
+```mermaid
+flowchart LR
+  W["Weights<br/>E, W_Q...W_out"] -->|"Forward: compute scores"| Z["Logits z_k"]
+  Z -->|"Forward: softmax"| P["Probabilities p_k"]
+  P -->|"Forward: −ln p_correct"| L["Loss L"]
+  L -.->|"Backward: ∂L/∂z_k = p_k − y_k"| Z
+  Z -.->|"Backward: chain rule ∂L/∂w"| W
+```
 
 ### Gradient descent: taking the step
 
@@ -491,6 +571,11 @@ $$
 - **m̂, v̂** are the averages corrected for starting at 0 (the "bias correction").
 - **ε** is a tiny number (10⁻⁹ in the paper) to avoid dividing by 0.
 
+!!! note "Refresher: exponential moving averages and bias correction"
+    A formula like m\_t = 0.9 × m\_{t−1} + 0.1 × g\_t is an **exponential moving average**: at each step it keeps 90% of the previous running average and blends in 10% of the new value g\_t, so older gradients gradually fade away without needing to store a history list.
+
+    Because m starts at 0, the first update is m₁ = 0.9 × 0 + 0.1 × g₁ = 0.1 × g₁, which is biased toward 0 (ten times smaller than g₁). Dividing by 1 − β₁^t undoes this pull toward zero: at step t = 1, 1 − 0.9¹ = 0.1, so m̂₁ = m₁ / 0.1 = g₁. By step t = 50, 0.9⁵⁰ ≈ 0.005, so 1 − 0.9⁵⁰ ≈ 0.995 and the correction almost disappears.
+
 **Worked example: the first step (t = 1), m and v start at 0.**
 
 | Quantity | Weight A: g = 0.2 | Weight B: g = 0.002 |
@@ -516,7 +601,7 @@ $$
 - **step** is the training step number, starting at 1.
 - **warmup** = 4,000 steps.
 
-For the first 4,000 steps the second term is smaller, so the learning rate **rises in a straight line** (the **warm-up**). After that the first term is smaller, so it **decays** in proportion to 1 / √step.
+For the first 4,000 steps the second term is smaller, so the learning rate **rises in a straight line** (the **warm-up**). After that the first term is smaller, so it **decays** in proportion to 1 / √step. At step 4,000 both terms inside min(…) equal 1 / √4,000 ≈ 0.01581, giving the peak learning rate (1 / √512) × (1 / √4,000) ≈ 0.000699.
 
 | Step | Phase | Learning rate | Compared with the peak |
 | --- | --- | --- | --- |
@@ -609,6 +694,16 @@ For example: `[CLS] YOUR CAT IS LOVELY [SEP] IT SLEEPS ALL DAY [SEP]` should be 
 ## Stages of an LLM's life: pre-training, fine-tuning and preference training
 
 A chat model like Claude is not trained once but in several stages, each with different data and a different goal. The architecture and the tokenizer stay the same through all of them; only the weights keep changing, as Chapter 1's note "[Fine-tuning is just more training](01-transformers.md#what-is-learned-and-what-changes-after-training)" said.
+
+```mermaid
+flowchart LR
+  W0["Random weights"] --> S1["Stage 1: Pre-training<br/>Trillions of web/code/book tokens<br/>Loss on every token"]
+  S1 --> BM["Base model<br/>(continues text)"]
+  BM --> S2["Stage 2: SFT<br/>Prompt + good-answer pairs<br/>Loss on answer tokens only"]
+  S2 --> SM["SFT model<br/>(follows instructions)"]
+  SM --> S3["Stage 3: Preference training<br/>RLHF or DPO on ranked pairs<br/>Preferred over rejected"]
+  S3 --> AM["Aligned chat model"]
+```
 
 ### Stage 1: pre-training
 
@@ -713,6 +808,24 @@ The structure is the same as the reward model's loss: −ln σ of a difference. 
 | New answers generated during training? | Yes, the model writes answers that are then scored | No, it learns from a fixed set of pairs |
 | Strength | Can keep improving on fresh answers of its own | Simpler, cheaper and more stable |
 
+```mermaid
+flowchart TD
+  subgraph RLHF["RLHF with PPO (4 models in memory)"]
+    direction LR
+    P1["Prompt x"] --> M1["1. Trained model π<br/>(generates answer)"]
+    M1 --> RM["2. Reward model r<br/>(scores answer)"]
+    M1 --> REF1["3. Frozen reference π_ref<br/>(computes KL penalty)"]
+    M1 --> VM["4. Value model V<br/>(predicts the expected reward)"]
+    RM & REF1 & VM --> PPO["PPO update on π"]
+  end
+  subgraph DPO_Graph["DPO (2 models in memory)"]
+    direction LR
+    P2["Fixed pair (x, y_w, y_l)"] --> M2["1. Trained model π<br/>(scores y_w and y_l)"]
+    P2 --> REF2["2. Frozen reference π_ref<br/>(scores y_w and y_l)"]
+    M2 & REF2 --> DPOL["Direct supervised loss L_DPO"]
+  end
+```
+
 Reasoning models use another reinforcement-learning method, GRPO, which drops the value model; it is covered with reasoning models in [Chapter 6](06-prompting.md#grpo-learning-from-a-group-of-answers).
 
 ### What changes in each stage
@@ -742,6 +855,19 @@ $$
 - **B** and **A** are the two small trainable matrices; their product B · A has the same shape as W₀.
 - **r** is the **rank**, a small number such as 8 or 16. It limits how complex the change can be, and sets how many numbers are trained: r × (d + k) instead of d × k.
 - **B starts at zero**, so at the beginning B · A = 0 and the model behaves exactly like the original. Training then moves B and A away from zero.
+
+```mermaid
+flowchart LR
+  X["Input vector x<br/>(k numbers)"] --> W0["Frozen W₀<br/>(d × k)"]
+  X --> A["Trainable A<br/>(r × k): compress to r"]
+  A --> B["Trainable B<br/>(d × r): expand to d"]
+  W0 --> SUM(("+"))
+  B --> SUM
+  SUM --> Y["Output W₀x + B(Ax)<br/>(d numbers)"]
+```
+
+!!! note "Refresher: what 'low-rank' means for a matrix"
+    When a d × k matrix ΔW is built by multiplying a tall thin matrix B (d × r) by a short wide matrix A (r × k), every row of ΔW is a combination of just r basis rows. In linear algebra, the matrix has **rank** at most r. Fine-tuning a pre-trained model mostly nudges existing features rather than inventing thousands of independent new directions, so a small rank (r = 8 or 16) often reaches quality close to full fine-tuning, while training far fewer numbers.
 
 **Worked example** with a 2 × 2 matrix and rank 1 (made-up numbers):
 

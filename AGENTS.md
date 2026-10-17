@@ -17,7 +17,7 @@ This file defines Antigravity's role, rules, and workflow for this repository. A
 | `training` | `docs/02-training.md` | `gemini/training_agy.md` | `gemini/training_rw_claude.md` | Completed |
 | `inference` | `docs/03-inference.md` | `gemini/inference_agy.md` | `gemini/inference_rw_claude.md` | Completed |
 | `quantization` | `docs/04-quantization.md` | `gemini/quantization_agy.md` | `gemini/quantization_rw_claude.md` | Completed |
-| `evaluation` | `docs/05-evaluation.md` | `gemini/evaluation_agy.md` | `gemini/evaluation_rw_claude.md` | Pending |
+| `evaluation` | `docs/05-evaluation.md` | `gemini/evaluation_agy.md` | `gemini/evaluation_rw_claude.md` | Completed |
 | `prompting` | `docs/06-prompting.md` | `gemini/prompting_agy.md` | `gemini/prompting_rw_claude.md` | Pending |
 
 ---
