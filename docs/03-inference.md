@@ -12,6 +12,16 @@ Each answer is produced by a simple loop:
 4. **Append and repeat.** Add the chosen token to the input and go back to step 2.
 5. **Stop.** End when the model produces an end token or a length limit is reached, then turn the token IDs back into text.
 
+```mermaid
+flowchart LR
+  P["1. Read prompt<br/>(Prefill pass)"] --> S["2. Score every token<br/>(Logits → Softmax)"]
+  S --> C["3. Choose one token<br/>(Decoding rule)"]
+  C --> Stop{"Stop condition<br/>reached?"}
+  Stop -- "No" --> A["4. Append token<br/>& run next pass (Decode)"]
+  A --> S
+  Stop -- "Yes (<EOS> or limit)" --> Out["5. Turn token IDs<br/>back into text"]
+```
+
 The rest of the chapter walks through each step. It starts with what makes inference different from training, then shows the loop on the translation example, explains why the first token is slower than the others and how the KV cache speeds things up, and ends with the decoding rules that turn probabilities into a choice.
 
 ## Inference vs training
@@ -51,6 +61,10 @@ Training must keep more than the weights in memory. For every weight it also sto
 | Inference: weights only | 1 | 65,000,000 × 4 bytes = 260 MB |
 | Training: weights + gradients + m + v | 4 | 4 × 260 MB = 1,040 MB |
 
+!!! note "Quick refresher: Bits, bytes, megabytes and gigabytes"
+    - **1 byte = 8 bits.** A standard 32-bit floating-point number takes 32 ÷ 8 = **4 bytes** of memory; a 16-bit number takes 16 ÷ 8 = **2 bytes**.
+    - Throughout these notes, memory sizes use decimal prefixes: **1 KB** = 1,000 bytes, **1 MB** = 1,000,000 ($10^6$) bytes, and **1 GB** = 1,000,000,000 ($10^9$) bytes. Multiplying the count of numbers by the bytes per number gives the exact memory footprint.
+
 Training needs four times as much memory before counting anything else. (Training also keeps the intermediate results of the forward pass for the backward pass, which adds more.) Inference has one extra cost of its own, the KV cache, explained later in this chapter.
 
 ### Same input, same output?
@@ -75,6 +89,15 @@ The task is the one used to train the model in Chapter 2: translate "I love you 
 | 2 | `<SOS>` Ti | 2 | Position 1 | amo |
 | 3 | `<SOS>` Ti amo | 3 | Position 2 | molto |
 | 4 | `<SOS>` Ti amo molto | 4 | Position 3 | `<EOS>`: stop |
+
+```mermaid
+flowchart TD
+  Src["Source: &lt;SOS&gt; I love you very much &lt;EOS&gt;"] --> Enc["Encoder (runs once)<br/>Output 7 × 512, used for K and V"]
+  Enc -. "reused at every step" .-> D1 & D2 & D3 & D4
+  D1["Pass 1: &lt;SOS&gt; → predicts 'Ti'"] --> D2["Pass 2: &lt;SOS&gt; Ti → predicts 'amo'"]
+  D2 --> D3["Pass 3: &lt;SOS&gt; Ti amo → predicts 'molto'"]
+  D3 --> D4["Pass 4: &lt;SOS&gt; Ti amo molto → predicts '&lt;EOS&gt;' (stop)"]
+```
 
 The final decoder input `<SOS>` Ti amo molto is exactly the decoder input used in training. The difference is how it was built: in training it came from the data and went through the model in one pass; here the model built it itself, one token per pass. [Chapter 2's comparison table](02-training.md#training-vs-generation-for-the-same-sentence) sums this up: 1 forward pass in training, 4 in generation.
 
@@ -119,6 +142,15 @@ In a chat, "the prompt" is the whole conversation so far: earlier messages, the 
 | User message | Translate to Italian: I love you very much | The user's words, as ordinary tokens |
 | End of turn | <code>&lt;&#124;eot_id&#124;&gt;</code> | The user's message is finished |
 | Assistant header | <code>&lt;&#124;start_header_id&#124;&gt;</code> assistant <code>&lt;&#124;end_header_id&#124;&gt;</code>, then a blank line | The next message is from the assistant |
+
+```mermaid
+flowchart LR
+  B["&lt;|begin_of_text|&gt;"] --> UH["&lt;|start_header_id|&gt;user&lt;|end_header_id|&gt;"]
+  UH --> UM["Translate to Italian:<br/>I love you very much"]
+  UM --> EOT1["&lt;|eot_id|&gt;"]
+  EOT1 --> AH["&lt;|start_header_id|&gt;assistant&lt;|end_header_id|&gt;"]
+  AH --> Gen["Model generates:<br/>Ti → amo → molto → &lt;|eot_id|&gt;"]
+```
 
 The prompt ends right after the assistant header, so the most likely continuation is the assistant's answer. The model generates `Ti`, `amo`, `molto`, and then its own `<|eot_id|>`, the end-of-turn token at which generation stops (see [Stopping](#stopping)). A **system message** (instructions from the application, such as "You are a translation assistant") is added the same way, with the role `system`, before the first user message. A longer conversation simply repeats header, message and end-of-turn for every turn.
 
@@ -166,6 +198,11 @@ Every forward pass has to read **all the weights** from the GPU's memory, whethe
 
 In prefill, each weight is read once and used for 1,000 tokens, so the GPU is busy calculating: prefill is **compute-bound** (limited by arithmetic speed). In decode, each weight is read and used for a single token, so the GPU spends most of its time waiting for memory: decode is **memory-bound** (limited by how fast memory can be read). This counts only the weights; attention adds a smaller cost that grows with the length of the text.
 
+!!! note "Quick refresher: Compute-bound vs memory-bound (arithmetic intensity)"
+    A GPU has two separate speed limits: how fast its cores can do arithmetic (FLOPs per second) and how fast its memory wires can deliver bytes from memory to those cores (bytes per second).
+
+    The ratio **FLOPs performed ÷ bytes read from memory** is called **arithmetic intensity**. Modern GPUs can perform hundreds of FLOPs in the time it takes to fetch a single byte from memory. When a workload does hundreds of FLOPs per byte (such as prefill on a long prompt), the arithmetic cores run at full speed and the step is **compute-bound**. When a workload does about 1 FLOP per byte or less (such as decoding 1 token for 1 user), the arithmetic cores sit idle over 99% of the time waiting for weights to arrive from memory, so the step is **memory-bound**.
+
 ### Worked example: a 7-billion-weight model
 
 The effect is easier to feel on a model the size of today's small open models. Assume a model with 7 billion weights stored in 16-bit format, 2 bytes each ([Chapter 4](04-quantization.md#number-formats) covers number formats), and a GPU that can read 2,000 GB of memory per second and compute 500 trillion FLOPs per second. These are round illustrative figures; real GPUs vary.
@@ -177,6 +214,16 @@ The effect is easier to feel on a model the size of today's small open models. A
 | Time to read the weights: 14 GB ÷ 2,000 GB/s | 7 ms | 7 ms |
 | Time for the arithmetic: 2 × 7 billion × tokens ÷ 500 trillion per second | 28 ms | 0.028 ms |
 | Time taken (the slower of the two) | **28 ms**, limited by arithmetic | **7 ms**, limited by memory |
+
+```mermaid
+flowchart LR
+  subgraph Prefill["Phase 1: Prefill (Compute-Bound)"]
+    P1["1,000 prompt tokens<br/>processed in parallel"] --> P2["Read 14 GB weights once<br/>28 ms total (0.028 ms/token)"] --> T1["Output Token 1"]
+  end
+  subgraph Decode["Phase 2: Decode (Memory-Bound)"]
+    T1 --> D1["Pass 2: Read 14 GB<br/>7 ms → Token 2"] --> D2["Pass 3: Read 14 GB<br/>7 ms → Token 3"] --> D3["... (200 tokens = 1,400 ms)"]
+  end
+```
 
 For a 1,000-token prompt and a 200-token answer:
 
@@ -216,6 +263,17 @@ The **KV cache** is a store, in GPU memory, of the key vector k and value vector
 2. Append the new k and v to the cache.
 3. Compare the new q with **every** key in the cache to get the attention scores, apply softmax, and take the weighted sum of **every** value in the cache.
 
+```mermaid
+flowchart LR
+  New["New token only<br/>(1 × 512)"] --> QKV["× W_Q, W_K, W_V"]
+  QKV --> q["New query q<br/>(1 × 64)"]
+  QKV --> kv["New k, v<br/>(1 × 64 each)"]
+  kv --> Cache["KV Cache in GPU Memory<br/>All keys K (t × 64) & values V (t × 64)"]
+  q --> Attn["Attention: q · Kᵀ → Softmax → × V"]
+  Cache --> Attn
+  Attn --> Out["New token output<br/>(1 × 64)"]
+```
+
 Only the new token's query is needed: earlier tokens' predictions were already made, so their queries are never used again. This is why the cache holds K and V, but not Q.
 
 ### The cache growing, step by step
@@ -230,7 +288,7 @@ For the decoder's self-attention in the translation example:
 | 4 | molto | `<SOS>`, Ti, amo, molto | 1 |
 | **Total** | | | **4** instead of 10 |
 
-The saving grows with length. For an answer of 1,000 tokens, the decoder without a cache would process 1 + 2 + … + 1,000 = 500,500 positions; with the cache it processes 1,000.
+The saving grows with length. Without a cache, generating n tokens processes $1 + 2 + \dots + n = \frac{n(n + 1)}{2}$ positions. For an answer of 1,000 tokens, the decoder without a cache would process 1 + 2 + … + 1,000 = 500,500 positions; with the cache it processes 1,000.
 
 For cross-attention the saving is even simpler: the K and V computed from the encoder output never change during the translation, so they are computed once, before step 1, and reused at every step. In a decoder-only chat model, prefill fills the cache with the keys and values of the whole prompt in one pass, and each decode step adds one token.
 
@@ -312,6 +370,16 @@ All the rules below use the same example from [Chapter 1](01-transformers.md#fro
 | DOG (0.211) | `<EOS>` | 0.95 | 0.211 × 0.95 ≈ **0.200** |
 | DOG (0.211) | AND | 0.02 | 0.211 × 0.02 = 0.004 |
 
+```mermaid
+flowchart LR
+  Start["Prompt:<br/>YOUR CAT IS A LOVELY"] --> B1["Beam 1: CAT<br/>(p = 0.772)"]
+  Start --> B2["Beam 2: DOG<br/>(p = 0.211)"]
+  B1 --> C1["CAT &lt;EOS&gt;<br/>0.772 × 0.20 = 0.154 (2nd)"]
+  B1 --> C2["CAT AND<br/>0.772 × 0.18 = 0.139 (dropped)"]
+  B2 --> D1["DOG &lt;EOS&gt;<br/>0.211 × 0.95 = 0.200 (Winner)"]
+  B2 --> D2["DOG AND<br/>0.211 × 0.02 = 0.004 (dropped)"]
+```
+
 Keep the 2 best: `DOG <EOS>` (0.200) and `CAT <EOS>` (0.154). Both have ended, so the search stops and returns the best one, `YOUR CAT IS A LOVELY DOG`.
 
 **Greedy decoding on the same example** picks `CAT` at step 1 and `<EOS>` at step 2, for a sequence score of 0.154. Beam search found a sequence with a higher total probability, 0.200, because it kept `DOG` alive even though `DOG` lost the first step.
@@ -321,6 +389,11 @@ Three practical details:
 - **Logarithms instead of products.** Multiplying many probabilities gives numbers too small for a computer to store accurately, so implementations add the logarithms instead: ln 0.211 + ln 0.95 = −1.607 is higher than ln 0.772 + ln 0.20 = −1.868, giving the same ranking.
 - **Length penalty.** Every extra token multiplies the score by a number below 1, so plain beam search favours short answers. Implementations divide the score by a function of the length to correct this. The original Transformer used a beam width of 4 for translation, with a length penalty.
 - **Where it is used.** Beam search suits tasks with one best answer, such as translation and speech recognition. Chat models rarely use it: it is slower (several beams per step), and its answers tend to be bland and repetitive. They use sampling instead, described next.
+
+!!! note "Quick refresher: Why sequence probabilities multiply, and why logarithms turn products into sums"
+    - **The chain rule of probability:** The probability that event A happens first and event B happens next (given A) is the product $P(A) \times P(B \mid A)$. Over a 100-token answer, a beam's probability is the product of 100 numbers between 0 and 1.
+    - **Why products underflow:** Multiplying 100 probabilities of 0.1 gives $10^{-100}$, which rounds down to 0.0 (**underflow**) in the 32-bit and 16-bit formats GPUs use.
+    - **The logarithm rule $\ln(a \times b) = \ln(a) + \ln(b)$:** Taking the natural logarithm converts multiplication into simple addition. Because $\ln(x)$ is strictly increasing, a higher probability always has a higher (less negative) log-probability, and adding negative numbers like $-1.556 + (-0.051) = -1.607$ never underflows to zero.
 
 ### Sampling and temperature
 
@@ -343,6 +416,8 @@ Dividing by T stretches or squeezes the gaps between logits. A small T makes the
 1. Divide each logit by 2: CAT 3.1, DOG 2.45, IS 1.05, LOVELY 0.5.
 2. Take e to each: e^3.1 = 22.20, e^2.45 = 11.59, e^1.05 = 2.86, e^0.5 = 1.65. Their sum is 38.29.
 3. Divide each by the sum: CAT 22.20 / 38.29 = 0.580, DOG 0.303, IS 0.075, LOVELY 0.043.
+
+At **T = 0.5**, dividing by 0.5 is the same as multiplying each logit by 2 (CAT 12.4, DOG 9.8, IS 4.2, LOVELY 2.0), which doubles the gap between CAT and DOG from 1.3 to 2.6.
 
 **The same logits at three temperatures:**
 
@@ -519,6 +594,13 @@ APIs report which condition ended the answer. Anthropic's API, for example, retu
 ### The context window: a hard limit
 
 The **context window** is the maximum number of tokens the model can handle at once, prompt and answer together. It is fixed when the model is built and trained. If a model has a context window of 8,192 tokens and the prompt uses 7,000, at most 8,192 − 7,000 = 1,192 tokens are left for the answer, whatever max tokens is set to. Every one of those tokens also adds to the KV cache, as shown earlier in this chapter.
+
+```mermaid
+flowchart LR
+  subgraph Window["Total Context Window: 8,192 tokens (hard limit)"]
+    Prompt["Prompt (input + history)<br/>7,000 tokens"] --- Answer["Remaining space for answer<br/>at most 8,192 − 7,000 = 1,192 tokens"]
+  end
+```
 
 ### How big is a context window?
 
