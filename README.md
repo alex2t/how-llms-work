@@ -9,8 +9,8 @@ A plain-English book on how large language models work, with worked numeric exam
 | # | Chapter | Status |
 | --- | --- | --- |
 | 0 | Introduction: foundations and history | Planned |
-| 1 | How Transformers Work: BPE, Attention and Q/K/V | Written, being imported |
-| 2 | Training: how the model learns | Planned |
+| 1 | How Transformers Work: BPE, Attention and Q/K/V | Written |
+| 2 | Training: how the model learns | Written (draft) |
 | 3 | Inference and decoding | Planned |
 | 4 | Quantization, efficiency and the modern Transformer | Planned |
 | 5 | Evaluation: how we measure a model | Planned |
@@ -35,6 +35,8 @@ One line per implemented section, newest at the bottom.
 - 2026-10-17 — Setup — GitHub Pages: site published; workflow actions updated to Node 24 versions.
 - 2026-10-17 — Chapter 1 — Import cleanup: formulas now render as math, date line removed, encoder–decoder diagram added.
 - 2026-10-17 — Chapter 2 — Formulas: 8 formulas now render as math.
+- 2026-10-17 — Chapter 2 — Status and number check: chapter recorded as written, numbers checked, proposed fixes listed in fix.md.
+- 2026-10-17 — Chapter 2 — Fixes: three numbers corrected, chapter references turned into links, home page lists all running examples.
 
 ## Credits
 

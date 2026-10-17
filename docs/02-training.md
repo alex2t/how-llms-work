@@ -2,13 +2,13 @@
 
 ## The big picture
 
-Chapter 1 described a model that is already trained: its embedding table E, its W\_Q, W\_K, W\_V, W\_O and feed-forward weights are fixed numbers. This chapter explains where those numbers come from. In short, the model starts with random weights and plays a guessing game billions of times: guess the next token, see how wrong the guess was, and adjust every weight a tiny amount so the next guess is a little better.
+[Chapter 1](01-transformers.md) described a model that is already trained: its embedding table E, its W\_Q, W\_K, W\_V, W\_O and feed-forward weights are fixed numbers. This chapter explains where those numbers come from. In short, the model starts with random weights and plays a guessing game billions of times: guess the next token, see how wrong the guess was, and adjust every weight a tiny amount so the next guess is a little better.
 
 One round of that game is called a **training step**. Each step does the following:
 
-1. **Take a batch.** Pick a group of text examples from the training data and turn them into token IDs with the tokenizer from Chapter 1.
+1. **Take a batch.** Pick a group of text examples from the training data and turn them into token IDs with the [tokenizer from Chapter 1](01-transformers.md#bpe-tokenizer-from-text-to-token-ids).
 2. **Prepare inputs and targets.** Make every sequence the same length with padding, and shift the text by one position so that each position has a "correct next token" to predict.
-3. **Forward pass.** Run the whole batch through the model, exactly as in Chapter 1, to get a probability for every vocabulary token at every position.
+3. **Forward pass.** Run the whole batch through the model, exactly as in [Chapter 1](01-transformers.md), to get a probability for every vocabulary token at every position.
 4. **Measure the error.** Compare the probabilities with the correct next tokens and compute one number, the **loss**. A low loss means good guesses.
 5. **Backward pass.** Compute, for every weight, which direction to move it to lower the loss.
 6. **Update.** The optimiser moves every weight a small step in that direction.
@@ -17,19 +17,19 @@ Then the next batch is taken and the loop repeats. The original Transformer did 
 
 ## What training is
 
-Training is the process that turns a model full of random numbers into a model that predicts text well. It matters because nothing in a Transformer is designed by hand: every useful behaviour described in Chapter 1 is the result of this process.
+Training is the process that turns a model full of random numbers into a model that predicts text well. It matters because nothing in a Transformer is designed by hand: every useful behaviour described in [Chapter 1](01-transformers.md) is the result of this process.
 
 ### Three ideas: weights, prediction, error
 
 - **Weight (parameter):** one trainable number inside the model. Every entry of E, W\_Q, W\_K, W\_V, W\_O, W₁, W₂ and the layer-normalisation γ and β is a weight. The base model of the original paper has about 65 million of them.
-- **Prediction:** at each position, the model outputs a probability for every token in the vocabulary, as shown in Chapter 1's section "From the last vector back to a word".
+- **Prediction:** at each position, the model outputs a probability for every token in the vocabulary, as shown in Chapter 1's section "[From the last vector back to a word](01-transformers.md#from-the-last-vector-back-to-a-word)".
 - **Error:** how far that prediction is from the token that really came next in the text. Training only ever tries to make this error smaller.
 
 The training data needs no human labels. The text itself provides the answers: in `YOUR CAT IS A LOVELY CAT`, after `YOUR CAT IS A LOVELY` the correct next token is `CAT`, simply because that is what the text says. This is why models can be trained on huge amounts of ordinary text. This style of learning is called **self-supervised**: the labels come from the data itself.
 
 ### What training changes, and what it does not
 
-Chapter 1's section "What is learned, and what changes after training?" listed every component. Training touches only the ones with trainable weights:
+Chapter 1's section "[What is learned, and what changes after training?](01-transformers.md#what-is-learned-and-what-changes-after-training)" listed every component. Training touches only the ones with trainable weights:
 
 | Component | Changed by training? | Why |
 | --- | --- | --- |
@@ -43,7 +43,7 @@ Chapter 1's section "What is learned, and what changes after training?" listed e
 
 ### A first look at "adjusting a weight"
 
-Take Chapter 1's example: after `YOUR CAT IS A LOVELY` the model gives `CAT` a probability of 0.772. The correct answer is `CAT`, so the guess is good but not perfect. Training computes how each weight should move so that 0.772 becomes a little larger next time, then moves all 65 million weights at once by a tiny amount. Later in this chapter, the section on backpropagation shows with real numbers that one such step raises the probability from 0.772 to about 0.808.
+Take [Chapter 1's example](01-transformers.md#from-the-last-vector-back-to-a-word): after `YOUR CAT IS A LOVELY` the model gives `CAT` a probability of 0.772. The correct answer is `CAT`, so the guess is good but not perfect. Training computes how each weight should move so that 0.772 becomes a little larger next time, then moves all 65 million weights at once by a tiny amount. Later in this chapter, the section on backpropagation shows with real numbers that one such step raises the probability from 0.772 to about 0.807.
 
 No single step makes the model smart. The knowledge builds up over many steps and many batches, which is why training a large model takes weeks on thousands of GPUs, while using it afterwards takes seconds.
 
@@ -68,7 +68,7 @@ Why not one sentence at a time? A GPU can process many sequences in parallel alm
 
 ### Tensors and shapes
 
-A **tensor** is a block of numbers with several dimensions: a vector has 1 dimension, a matrix 2, and a batch of matrices 3. The model processes a whole batch as tensors. Take a batch of B = 2 sentences, each n = 6 tokens long, with Chapter 1's settings:
+A **tensor** is a block of numbers with several dimensions: a vector has 1 dimension, a matrix 2, and a batch of matrices 3. The model processes a whole batch as tensors. Take a batch of B = 2 sentences, each n = 6 tokens long, with [Chapter 1's settings](01-transformers.md#key-settings-of-the-base-model):
 
 | Stage | Shape | Numbers in it |
 | --- | --- | --- |
@@ -79,7 +79,7 @@ A **tensor** is a block of numbers with several dimensions: a vector has 1 dimen
 | Attention scores, all 8 heads | 2 × 8 × 6 × 6 | 576 |
 | Logits (with a 50,000-token vocabulary) | 2 × 6 × 50,000 | 600,000 |
 
-Every formula from Chapter 1 stays the same; there is simply one extra dimension at the front for the batch.
+Every formula from [Chapter 1](01-transformers.md) stays the same; there is simply one extra dimension at the front for the batch.
 
 ### Why every sequence in a batch must have the same length
 
@@ -120,7 +120,7 @@ The **padding mask** is a list of 1s and 0s, one per position: 1 for a real toke
 
 ### Step 3: apply it inside attention
 
-The mask is applied exactly like the causal mask in Chapter 1's section "What the mask looks like": every attention score whose **column** (the token being looked at) is a `<pad>` is set to −∞ before softmax, so its weight becomes exactly 0. For sentence B in the encoder, which uses no causal mask, the table becomes:
+The mask is applied exactly like the causal mask in Chapter 1's section "[What the mask looks like](01-transformers.md#what-the-mask-looks-like)": every attention score whose **column** (the token being looked at) is a `<pad>` is set to −∞ before softmax, so its weight becomes exactly 0. For sentence B in the encoder, which uses no causal mask, the table becomes:
 
 | looks at → | YOUR | CAT | IS | LOVELY | `<pad>` | `<pad>` |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -155,7 +155,7 @@ The decoder needs both masks at once. A cell is allowed only if **both** masks a
 | **`<pad>`** | ✓ | ✓ | ✓ | ✓ | 0 | 0 |
 | **`<pad>`** | ✓ | ✓ | ✓ | ✓ | 0 | 0 |
 
-The top-left part is Chapter 1's triangle; the two pad columns are blocked on every row.
+The top-left part is [Chapter 1's triangle](01-transformers.md#what-the-mask-looks-like); the two pad columns are blocked on every row.
 
 ### Step 4: ignore padding in the loss
 
@@ -204,9 +204,9 @@ The decoder input and the target are the same Italian sentence, offset by one po
 | 2 | amo | `<SOS>` Ti amo | molto |
 | 3 | molto | `<SOS>` Ti amo molto | `<EOS>` |
 
-Read each row as a small exam question: "Given the English sentence (from the encoder) and the Italian words so far, what is the next Italian word?" The causal mask from Chapter 1 guarantees that position 1, for example, sees `<SOS>` and Ti but not amo, the word it must predict.
+Read each row as a small exam question: "Given the English sentence (from the encoder) and the Italian words so far, what is the next Italian word?" The [causal mask from Chapter 1](01-transformers.md#what-the-mask-looks-like) guarantees that position 1, for example, sees `<SOS>` and Ti but not amo, the word it must predict.
 
-Every position also looks at the full English sentence through cross-attention (Chapter 1, "Self-attention vs cross-attention"). The encoder needs no causal mask: the English sentence is given, not predicted.
+Every position also looks at the full English sentence through cross-attention (Chapter 1, "[Self-attention vs cross-attention](01-transformers.md#self-attention-vs-cross-attention)"). The encoder needs no causal mask: the English sentence is given, not predicted.
 
 ### With padding
 
@@ -229,11 +229,11 @@ GPT-style models and Claude have no encoder, but they use exactly the same shift
 | Input | YOUR | CAT | IS | A | LOVELY |
 | Target | CAT | IS | A | LOVELY | CAT |
 
-Six tokens give five training examples, one per position. Position 4 is the case from Chapter 1's logits example: after `YOUR CAT IS A LOVELY`, the target is `CAT`.
+Six tokens give five training examples, one per position. Position 4 is the case from [Chapter 1's logits example](01-transformers.md#from-the-last-vector-back-to-a-word): after `YOUR CAT IS A LOVELY`, the target is `CAT`.
 
 ## Teacher forcing: why training happens in one time step
 
-During training the decoder always reads the correct previous words, never its own guesses, and all positions are computed in a single pass. This is the main reason Transformers train so much faster than the older recurrent networks described in Chapter 1's section "The problem it solved".
+During training the decoder always reads the correct previous words, never its own guesses, and all positions are computed in a single pass. This is the main reason Transformers train so much faster than the older recurrent networks described in Chapter 1's section "[The problem it solved](01-transformers.md#the-problem-it-solved)".
 
 ### What teacher forcing means
 
@@ -252,7 +252,7 @@ The wrong guess at position 1 is punished by the loss at position 1, but it does
 
 ### Why training happens in one time step
 
-Because all inputs come from the data, nothing has to wait for the model's own output. The whole decoder input is known before the pass starts. So the complete sequence `<SOS>` Ti amo molto goes through the decoder **at once**, as one 4 × 512 matrix (Chapter 1, "Which X? All tokens, layer by layer"), and the output gives logits for all four positions together:
+Because all inputs come from the data, nothing has to wait for the model's own output. The whole decoder input is known before the pass starts. So the complete sequence `<SOS>` Ti amo molto goes through the decoder **at once**, as one 4 × 512 matrix (Chapter 1, "[Which X? All tokens, layer by layer](01-transformers.md#which-x-all-tokens-layer-by-layer)"), and the output gives logits for all four positions together:
 
 $$
 \underbrace{[\langle SOS\rangle,\ \text{Ti},\ \text{amo},\ \text{molto}]}_{\text{decoder input, } 4 \times 512} \xrightarrow{\ \text{one forward pass}\ } \underbrace{[P_0,\ P_1,\ P_2,\ P_3]}_{4 \times |V| \text{ probabilities}} \xrightarrow{\ \text{compare with}\ } [\text{Ti},\ \text{amo},\ \text{molto},\ \langle EOS\rangle]
@@ -264,7 +264,7 @@ What stops position 1 from simply copying the answer "amo", which sits at positi
 
 ### Training vs generation for the same sentence
 
-Chapter 3 covers generation in detail. The table shows why the two are so different in speed:
+[Chapter 3](03-inference.md) covers generation in detail. The table shows why the two are so different in speed:
 
 |  | Training (teacher forcing) | Generation (Chapter 3) |
 | --- | --- | --- |
@@ -304,7 +304,7 @@ Because every y\_k is 0 except the correct one, the sum collapses to one term: t
 
 ### Worked example: Chapter 1's probabilities
 
-After `YOUR CAT IS A LOVELY`, Chapter 1's model predicted CAT 0.772, DOG 0.211, IS 0.013, LOVELY 0.004. The table shows the loss for each possible correct answer:
+After `YOUR CAT IS A LOVELY`, [Chapter 1's model](01-transformers.md#from-the-last-vector-back-to-a-word) predicted CAT 0.772, DOG 0.211, IS 0.013, LOVELY 0.004. The table shows the loss for each possible correct answer:
 
 | If the correct next token were | Probability the model gave it | Loss = −ln(p) |
 | --- | --- | --- |
@@ -336,7 +336,7 @@ The value 0.383 is the number training tries to reduce. All four positions came 
 
 ### Perplexity: the same number in friendlier units
 
-**Perplexity** is e raised to the average loss. It can be read as "how many tokens the model is hesitating between, on average". Here e^0.383 ≈ 1.47: the model is about as uncertain as if it were choosing between 1.5 equally likely tokens. A perfect model has perplexity 1. Model papers often report perplexity instead of the raw loss.
+**Perplexity** is e raised to the average loss. It can be read as "how many tokens the model is hesitating between, on average". Here e^0.383 ≈ 1.47: the model is about as uncertain as if it were choosing between 1.5 equally likely tokens. A perfect model has perplexity 1. Model papers often report perplexity instead of the raw loss. [Chapter 5](05-evaluation.md) shows how perplexity is used to compare models, and why it is only comparable between models that share a tokenizer.
 
 ## Backpropagation, gradient descent and the optimiser
 
@@ -360,7 +360,7 @@ $$
 \frac{\partial L}{\partial z_k} = p_k - y_k
 $$
 
-Here z\_k is the logit of token k (the raw score before softmax), p\_k its probability and y\_k its target (1 or 0). With Chapter 1's numbers, where the correct token is CAT:
+Here z\_k is the logit of token k (the raw score before softmax), p\_k its probability and y\_k its target (1 or 0). With [Chapter 1's numbers](01-transformers.md#from-the-last-vector-back-to-a-word), where the correct token is CAT:
 
 | Token | p\_k | y\_k | Gradient p\_k − y\_k | Meaning |
 | --- | --- | --- | --- | --- |
@@ -388,7 +388,7 @@ $$
 | Token | Old logit | Gradient | New logit = old − 0.5 × gradient | New probability |
 | --- | --- | --- | --- | --- |
 | CAT | 6.2 | −0.228 | 6.314 | **0.807** |
-| DOG | 4.9 | +0.211 | 4.794 | 0.177 |
+| DOG | 4.9 | +0.211 | 4.795 | 0.177 |
 | IS | 2.1 | +0.013 | 2.094 | 0.012 |
 | LOVELY | 1.0 | +0.004 | 0.998 | 0.004 |
 
@@ -473,21 +473,21 @@ $$
 y_k = (1-\varepsilon)\cdot[\,k = \text{correct}\,] + \frac{\varepsilon}{|V|}
 $$
 
-Here \[k = correct\] is 1 for the correct token and 0 otherwise, and |V| is the vocabulary size. With Chapter 1's four-token toy vocabulary, ε/|V| = 0.1 / 4 = 0.025:
+Here \[k = correct\] is 1 for the correct token and 0 otherwise, and |V| is the vocabulary size. With [Chapter 1's four-token toy vocabulary](01-transformers.md#from-the-last-vector-back-to-a-word), ε/|V| = 0.1 / 4 = 0.025:
 
 | Token | One-hot target | Smoothed target | Model's p | y × (−ln p) with smoothing |
 | --- | --- | --- | --- | --- |
-| CAT | 1 | 0.925 | 0.772 | 0.925 × 0.259 = 0.239 |
+| CAT | 1 | 0.925 | 0.772 | 0.925 × 0.259 = 0.240 |
 | DOG | 0 | 0.025 | 0.211 | 0.025 × 1.556 = 0.039 |
 | IS | 0 | 0.025 | 0.013 | 0.025 × 4.343 = 0.109 |
 | LOVELY | 0 | 0.025 | 0.004 | 0.025 × 5.521 = 0.138 |
-| **Loss** | 0.259 |  |  | **0.525** |
+| **Loss** | 0.259 |  |  | **0.526** |
 
-The smoothed loss is higher (0.525 instead of 0.259) because tokens with very small probabilities now also cost something. The model can no longer win by pushing the wrong tokens to almost 0, so it stays less overconfident. The paper reports that label smoothing made perplexity slightly worse but improved accuracy and the BLEU translation score.
+The smoothed loss is higher (0.526 instead of 0.259) because tokens with very small probabilities now also cost something. The model can no longer win by pushing the wrong tokens to almost 0, so it stays less overconfident. The paper reports that label smoothing made perplexity slightly worse but improved accuracy and the BLEU translation score.
 
 ## Stages of an LLM's life: pre-training, fine-tuning and preference training
 
-A chat model like Claude is not trained once but in several stages, each with different data and a different goal. The architecture and the tokenizer stay the same through all of them; only the weights keep changing, as Chapter 1's note "Fine-tuning is just more training" said.
+A chat model like Claude is not trained once but in several stages, each with different data and a different goal. The architecture and the tokenizer stay the same through all of them; only the weights keep changing, as Chapter 1's note "[Fine-tuning is just more training](01-transformers.md#what-is-learned-and-what-changes-after-training)" said.
 
 ### Stage 1: pre-training
 
@@ -529,7 +529,7 @@ In all of these, the loss is no longer "predict the text in the data" but "make 
 
 **LoRA (low-rank adaptation)** is a cheap way to fine-tune: the original weights are frozen and small extra matrices are trained and added to them. For example, instead of changing a 512 × 512 matrix (262,144 numbers), LoRA with rank 8 trains a 512 × 8 and an 8 × 512 matrix (8,192 numbers in total), about 3% as many.
 
-After the last stage, all weights are frozen again and the model is ready for inference, which is the subject of Chapter 3.
+After the last stage, all weights are frozen again and the model is ready for inference, which is the subject of [Chapter 3](03-inference.md).
 
 ## Cheat sheet
 

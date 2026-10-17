@@ -16,7 +16,7 @@ Legend: `[ ]` to do · `[x]` done · `[~]` in progress
   - [x] Replace the placeholder line `[embedded content: original Transformer · encoder and decoder stacks]` with a Mermaid diagram of the encoder–decoder (source tokens → self-attention → feed-forward → K,V → decoder cross-attention; decoder: output so far → masked self-attention → cross-attention → feed-forward → linear + softmax → next-token probabilities).
   - [x] Unescape `\[` / `\]` and `\_` where they render wrongly; check every table renders. (Checked: all render correctly, no change needed.)
   - [x] `mkdocs build --strict` passes; check all formulas display as math.
-- [ ] Shorten Chapter 1's "Training and generation" section into a summary that links to Chapters 2 and 3. **Propose the new text first** (it replaces existing content).
+- [ ] Shorten Chapter 1's "Training and generation" section into a summary that links to Chapters 2 and 3. **Propose the new text first** (it replaces existing content). Proposed in `fix.md`, F1; on hold until Chapter 3 is written.
 
 ## Phase 1 — Introduction: foundations and history (`docs/00-introduction.md`)
 
@@ -42,15 +42,17 @@ Goal: give the reader the background needed before Chapter 1, and the story of w
 ## Phase 2 — Chapter 2: Training (`docs/02-training.md`)
 
 - [x] Convert every ```` ```latex ```` block to a `$$ … $$` math block (8 blocks).
-- [ ] What training is: predict the next token, measure the error, adjust every weight. Link to Chapter 1 "What is learned, and what changes after training?".
-- [ ] Training data and batches: what a batch is; why sequences in a batch must have the same length.
-- [ ] Padding and the padding mask: add `<pad>` tokens so a batch is rectangular, then mask them so attention and the loss ignore them. 2-sentence batch + its padding mask; contrast with the causal mask in Chapter 1.
-- [ ] Decoder input "shifted right": `<SOS>` / `<EOS>`. Encoder input "`<SOS>` I love you very much `<EOS>`", decoder input "`<SOS>` Ti amo molto", target "Ti amo molto `<EOS>`". Input/target alignment table.
-- [ ] Teacher forcing, and why training happens in one time step: the whole target sentence is fed at once and the causal mask hides each position's answer, so all positions train in parallel. Contrast with word-by-word generation (Chapter 3).
-- [ ] The loss: cross-entropy, worked example with the CAT/DOG/IS/LOVELY probabilities. Two-line teaser for perplexity → Chapter 5.
-- [ ] Backpropagation and gradient descent in plain words; Adam, learning rate, warm-up schedule from the paper; dropout and label smoothing.
-- [ ] Stages of an LLM's life: pre-training, fine-tuning, RLHF/preference training; what changes in each.
-- [ ] Cheat sheet + Sources.
+- [x] What training is: predict the next token, measure the error, adjust every weight. Link to Chapter 1 "What is learned, and what changes after training?".
+- [x] Training data and batches: what a batch is; why sequences in a batch must have the same length.
+- [x] Padding and the padding mask: add `<pad>` tokens so a batch is rectangular, then mask them so attention and the loss ignore them. 2-sentence batch + its padding mask; contrast with the causal mask in Chapter 1.
+- [x] Decoder input "shifted right": `<SOS>` / `<EOS>`. Encoder input "`<SOS>` I love you very much `<EOS>`", decoder input "`<SOS>` Ti amo molto", target "Ti amo molto `<EOS>`". Input/target alignment table.
+- [x] Teacher forcing, and why training happens in one time step: the whole target sentence is fed at once and the causal mask hides each position's answer, so all positions train in parallel. Contrast with word-by-word generation (Chapter 3).
+- [x] The loss: cross-entropy, worked example with the CAT/DOG/IS/LOVELY probabilities. Two-line teaser for perplexity → Chapter 5.
+- [x] Backpropagation and gradient descent in plain words; Adam, learning rate, warm-up schedule from the paper; dropout and label smoothing.
+- [x] Stages of an LLM's life: pre-training, fine-tuning, RLHF/preference training; what changes in each.
+- [x] Cheat sheet + Sources.
+- [x] Check every worked number with a script (33 of 36 correct).
+- [x] Apply the approved Chapter 2 fixes from `fix.md` (F2–F6: three number corrections, perplexity link, chapter links).
 
 ## Phase 3 — Chapter 3: Inference and decoding (`docs/03-inference.md`)
 

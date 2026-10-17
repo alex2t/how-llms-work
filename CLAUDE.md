@@ -10,8 +10,8 @@ A plain-English book that explains how large language models work, written as fi
 | --- | --- | --- | --- |
 | — | Home page (about the book, how to read it) | `docs/index.md` | Written (draft) |
 | 0 | Introduction: foundations and history | `docs/00-introduction.md` | Placeholder |
-| 1 | How Transformers Work: BPE, Attention and Q/K/V | `docs/01-transformers.md` | Written in Claude Docs; must be imported (see `plan.md`, Phase 0) |
-| 2 | Training: how the model learns | `docs/02-training.md` | Placeholder |
+| 1 | How Transformers Work: BPE, Attention and Q/K/V | `docs/01-transformers.md` | Written, imported and live |
+| 2 | Training: how the model learns | `docs/02-training.md` | Written (draft); fixes listed in `fix.md` |
 | 3 | Inference and decoding | `docs/03-inference.md` | Placeholder |
 | 4 | Quantization, efficiency and the modern Transformer | `docs/04-quantization.md` | Placeholder |
 | 5 | Evaluation: how we measure a model | `docs/05-evaluation.md` | Placeholder |
@@ -24,6 +24,7 @@ A plain-English book that explains how large language models work, written as fi
 .
 ├── CLAUDE.md                  # this file: rules for Claude Code + progress log
 ├── plan.md                    # task list: what is done, what is left
+├── fix.md                     # proposed changes to existing content, waiting for approval
 ├── README.md                  # public project page + progress summary
 ├── mkdocs.yml                 # site config, theme and navigation bar
 ├── requirements.txt           # Python packages for the build
@@ -98,3 +99,5 @@ Add one line per implemented section, newest at the bottom: `YYYY-MM-DD — Chap
 - 2026-10-17 — Setup — GitHub Pages — site published at https://alex2t.github.io/how-llms-work/; workflow actions updated to Node 24 versions.
 - 2026-10-17 — Chapter 1 — Import cleanup — 11 latex blocks converted to math, date line removed, encoder–decoder Mermaid diagram added.
 - 2026-10-17 — Chapter 2 — Formulas — 8 latex blocks converted to math blocks.
+- 2026-10-17 — Chapter 2 — Status and number check — chapter recorded as written; worked numbers checked (33 of 36 correct); proposed fixes listed in fix.md.
+- 2026-10-17 — Chapter 2 — Fixes F2–F7 — three number corrections, perplexity link to Chapter 5, 23 chapter links, two running examples added to the home page.

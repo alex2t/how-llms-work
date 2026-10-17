@@ -26,3 +26,5 @@ The same examples appear throughout the book so you never meet unexplained numbe
 - The sentence **`YOUR CAT IS A LOVELY CAT`**, with token IDs YOUR = 105, CAT = 6587, IS = 5475, A = 3578, LOVELY = 65.
 - The original Transformer's settings: 512 numbers per token, 8 attention heads, 6 layers.
 - The translation **"I love you very much" → "Ti amo molto"**.
+- The next-token **logits** CAT 6.2, DOG 4.9, IS 2.1, LOVELY 1.0, which softmax turns into probabilities 0.772, 0.211, 0.013 and 0.004.
+- A **fraud check**: an LLM labelling 100 transactions as fraud or not fraud, used to explain evaluation metrics.
