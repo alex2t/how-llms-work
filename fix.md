@@ -21,29 +21,11 @@ Legend: `[ ]` waiting · `[x]` approved and applied · `[-]` rejected
 
 Topics from Stanford's [CME295](https://cme295.stanford.edu/syllabus/) lectures that the book does not cover yet, one lecture at a time (see `CLAUDE.md`, "CME295 lecture review"). For each item: what is missing, the recommendation (new chapter, or which existing chapter and section), a priority, and a decision line for the user. Approved items become tasks in `plan.md`, Phase 7.
 
-Item IDs: `L<lecture>-<number>`, for example L1-2. Priority: **High** = the book is incomplete without it; **Medium** = a clear improvement; **Low** = nice to have.
+Topics the book already covers are checked but not listed. Item IDs: `L<lecture>-<number>`, for example L1-2. Priority: **High** = the book is incomplete without it; **Medium** = a clear improvement; **Low** = nice to have.
 
 ### Lecture 1 — Transformer foundations, tokenization, embeddings, attention
 
 Reviewed 2026-10-17. Lecture 1 overlaps heavily with the Introduction and Chapter 1. No new chapter is needed.
-
-**Already covered** (no action):
-
-| Lecture 1 topic | Where the book covers it |
-| --- | --- |
-| Task-specific era, the 2017 turning point, parallel training | Introduction: Historical evolution; RNNs and LSTMs |
-| RNN/LSTM limits: sequential processing, vanishing and exploding gradients | Introduction: Why RNNs hit a wall |
-| BPE tokenization; why not plain words or characters | Chapter 1: BPE tokenizer |
-| One-hot vectors, Word2Vec (CBOW, skip-gram), polysemy | Introduction: Vector embeddings |
-| Query, key and value; Q = XW\_Q and so on | Chapter 1: Where Q, K and V come from |
-| Scaled dot-product attention and the reason for √d\_k | Chapter 1: Scaled dot-product attention, step by step |
-| Why position is needed (attention ignores order); sinusoidal encoding | Chapter 1: Positional encoding |
-| Multi-head attention, Add & Norm, feed-forward network | Chapter 1: Multi-head attention; The full Transformer block |
-| Encoder vs decoder, causal mask, cross-attention | Chapter 1; Chapter 2 (masks) |
-| Translation walkthrough, one token per step until the end token | Chapter 3: Generation step by step (with "Ti amo molto") |
-| GQA, MQA, RoPE, SwiGLU, LoRA, DPO, RLHF, PPO, perplexity, LLM-as-judge, MMLU, time to first token, time per output token | Chapters 2 to 5 |
-
-**Gaps:**
 
 #### L1-1. The context bottleneck of sequence-to-sequence RNNs `[ ]`
 
@@ -51,7 +33,7 @@ Reviewed 2026-10-17. Lecture 1 overlaps heavily with the Introduction and Chapte
 - **Recommendation:** existing chapter. **Introduction → "Why RNNs hit a wall"**: add a fourth problem, "One fixed-size summary", with a small example (a 30-word sentence squeezed into one vector), and add a row to the bridge table ("decoder reads all encoder states through attention"). Link to Chapter 1's cross-attention.
 - **Priority:** High. It is the historical origin of attention.
 
-**Decision:**
+**Decision:** Approved (user, 2026-10-17). Not written yet.
 
 #### L1-2. Word, character, subword or byte tokens: the comparison `[ ]`
 
@@ -59,7 +41,7 @@ Reviewed 2026-10-17. Lecture 1 overlaps heavily with the Introduction and Chapte
 - **Recommendation:** existing chapter. **Chapter 1 → "BPE tokenizer: from text to token IDs"**: expand that paragraph into a subsection "Word, character, subword or byte?" with a comparison table and one worked example (the same word split at each granularity, with the token count for each).
 - **Priority:** Medium.
 
-**Decision:**
+**Decision:** Approved (user, 2026-10-17). Not written yet.
 
 #### L1-3. Special tokens in one place, including `[UNK]` and chat role tokens `[ ]`
 
@@ -69,7 +51,7 @@ Reviewed 2026-10-17. Lecture 1 overlaps heavily with the Introduction and Chapte
     - **Chapter 3 → "Decoder-only: how chat models generate"**: a worked chat example showing role tokens around a user message and an assistant answer.
 - **Priority:** Medium.
 
-**Decision:**
+**Decision:** Approved (user, 2026-10-17). Not written yet.
 
 #### L1-4. Other subword algorithms: WordPiece and Unigram `[ ]`
 
@@ -77,7 +59,7 @@ Reviewed 2026-10-17. Lecture 1 overlaps heavily with the Introduction and Chapte
 - **Recommendation:** existing chapter. **Chapter 1 → BPE tokenizer → "Practical consequences"**: a 3- or 4-sentence note with a small table (algorithm, main idea, example models). Model names to be checked against the original papers before writing.
 - **Priority:** Low.
 
-**Decision:**
+**Decision:** Approved (user, 2026-10-17). Not written yet.
 
 #### L1-5. How Word2Vec is trained: the network and negative sampling `[ ]`
 
@@ -85,7 +67,7 @@ Reviewed 2026-10-17. Lecture 1 overlaps heavily with the Introduction and Chapte
 - **Recommendation:** existing chapter. **Introduction → "Word2Vec: learning vectors from context"**: one paragraph with a tiny example of one positive and two negative pairs.
 - **Priority:** Low.
 
-**Decision:**
+**Decision:** Approved (user, 2026-10-17). Not written yet.
 
 #### L1-6. Terms named in Lecture 1 but taught in later lectures `[ ]`
 

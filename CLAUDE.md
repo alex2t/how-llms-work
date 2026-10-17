@@ -54,7 +54,7 @@ Publishing is automatic: push to `main` and the workflow deploys to GitHub Pages
 
 The book is being checked against Stanford's [CME295: Transformers & Large Language Models](https://cme295.stanford.edu/syllabus/) (Afshine and Shervine Amidi). The course has 9 lectures; slides appear one a week. Summaries made with a Gemini notebook are in `sources/` (one file per lecture).
 
-- **One lecture at a time.** For each lecture, compare every topic with the book and write the result into `fix.md`, section "CME295 gap analysis": what is missing, whether it needs a new chapter or belongs in an existing one (give the chapter and section), and a priority. The user decides each item before anything is written.
+- **One lecture at a time.** For each lecture, compare every topic with the book and write only the gaps (not the topics already covered) into `fix.md`, section "CME295 gap analysis": what is missing, whether it needs a new chapter or belongs in an existing one (give the chapter and section), and a priority. The user decides each item before anything is written.
 - **Summaries are pointers, not facts.** Verify every claim and number against the original paper or official documentation before it goes into the book.
 - **Paraphrase and credit.** Do not copy slide text or images; credit CME295 in the chapter's Sources when its lecture shaped a section.
 - **`sources/` is git-ignored** and must never be committed or published.
