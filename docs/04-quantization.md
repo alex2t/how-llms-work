@@ -12,6 +12,7 @@ The chapter follows one question, "how many bytes does this model need, and what
 4. **Kinds of quantization:** when it is done, what is quantized, and the common methods (GPTQ, AWQ, GGUF).
 5. **Quality vs speed:** when the savings start to cost accuracy.
 6. **What changed since 2017:** the improvements that turned the original Transformer of [Chapter 1](01-transformers.md) into today's models, several of them also aimed at efficiency.
+7. **Mixture of Experts:** models with many more weights that use only a few of them for each token.
 
 ## Why size matters
 
@@ -290,6 +291,7 @@ The Transformer explained in [Chapter 1](01-transformers.md) is the 2017 origina
 | Grouped-query attention (GQA) | Several query heads share one key/value head | Shrinks the KV cache | [Multi-head attention](01-transformers.md#multi-head-attention) |
 | SwiGLU | A gated feed-forward network with a smooth activation | Better quality for the same compute | [The feed-forward network in detail](01-transformers.md#the-feed-forward-network-in-detail) |
 | Larger context and vocabulary | Thousands to millions of tokens of context; vocabularies over 100,000 tokens | Longer documents and conversations; fewer tokens per text | [Token embeddings](01-transformers.md#token-embeddings) |
+| Mixture of Experts (MoE) | Several feed-forward "experts" per layer; a router runs only a few of them for each token | Far more weights (knowledge) for about the same compute per token; see [Mixture of Experts](#mixture-of-experts-more-weights-same-compute) below | [The feed-forward network in detail](01-transformers.md#the-feed-forward-network-in-detail) |
 
 ### The base model and a modern model side by side
 
@@ -386,6 +388,96 @@ Because of the third matrix, models usually choose a smaller expansion to keep t
 - **Context.** The 2017 model translated single sentences. Modern models are trained on long documents, with context windows of 8,192 tokens (Llama 3 8B) and, in later models, 128,000 tokens or more. Long contexts are what make the KV cache so large ([Chapter 3](03-inference.md#the-context-window-a-hard-limit)), which is why GQA and KV-cache quantization matter.
 - **Vocabulary.** A larger vocabulary means common words and code fragments become single tokens, so the same text needs fewer tokens and generates faster. The cost is a larger embedding matrix E: Llama 3 8B's has 128,256 × 4,096 = 525,336,576 weights, about 6.5% of the whole model, compared with about 37,000 × 512 ≈ 19 million in the 2017 model.
 
+## Mixture of Experts: more weights, same compute
+
+Quantization makes each weight cheaper to store. **Mixture of Experts (MoE)** attacks cost from the other side: it gives a model many more weights, but uses only a small fraction of them for each token. The model can hold far more knowledge while the arithmetic per token stays close to that of a much smaller model. Many of today's largest models are built this way.
+
+### Experts and a router
+
+In a standard Transformer, every token goes through the same feed-forward network in each layer ([Chapter 1](01-transformers.md#the-feed-forward-network-in-detail)). An MoE layer replaces that one network with:
+
+- **Experts:** several feed-forward networks of the same shape, each with its own weights, for example 8.
+- **A router** (also called a gate): a small learned layer that gives each expert a score for the current token.
+
+For each token, only the **top-k** experts by score are run (for example k = 2), and their outputs are combined with weights from a softmax over their scores. The choice is made **separately for every token** in every layer, so two words in the same sentence can use different experts.
+
+$$
+y = \sum_{i \in \text{top-}k} g_i \, E_i(x) \qquad g_i = \frac{e^{s_i}}{\sum_{j \in \text{top-}k} e^{s_j}}
+$$
+
+- **x** is the token's vector, and **E\_i(x)** the output of expert i.
+- **s\_i** is the router's score for expert i.
+- **g\_i** is the weight given to expert i: a softmax over the chosen experts' scores only.
+
+### Worked example: routing one token
+
+One token, 8 experts, top-2 routing. The router's scores (made-up numbers):
+
+| Expert | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Score s\_i | 1.2 | 0.3 | **2.5** | −0.4 | 0.9 | **2.1** | 0.0 | −1.0 |
+
+1. **Choose the top 2:** expert 3 (2.5) and expert 6 (2.1). The other six experts are not run at all for this token.
+2. **Softmax over the two:** e^2.5 = 12.18 and e^2.1 = 8.17, sum 20.35, so g₃ = 12.18 ÷ 20.35 = 0.599 and g₆ = 0.401.
+3. **Run the two experts.** Suppose (shortened to 2 numbers) E₃(x) = \[1.0, −2.0\] and E₆(x) = \[3.0, 0.5\].
+4. **Combine:** y = 0.599 × \[1.0, −2.0\] + 0.401 × \[3.0, 0.5\] = \[0.599 + 1.203, −1.198 + 0.201\] = **\[1.802, −0.997\]**.
+
+Running every expert and averaging them all would be a **dense** mixture; choosing only the top k is a **sparse** mixture, and it is what saves compute.
+
+### Total weights vs active weights
+
+An MoE model therefore has two sizes:
+
+- **Total weights:** all experts together. They decide how much the model can store, and **all of them must be in memory**.
+- **Active weights:** the weights actually used for one token. They decide the arithmetic per token.
+
+| Model | Experts per MoE layer | Chosen per token | Total weights | Active weights per token |
+| --- | --- | --- | --- | --- |
+| Mixtral 8x7B | 8 | 2 | 46.7 billion | 12.9 billion |
+| DeepSeek-V3 | 256 routed + 1 shared | 8 routed + the shared one | 671 billion | 37 billion (5.5%) |
+
+Mixtral's total is not 8 × 7 = 56 billion because only the feed-forward networks are duplicated; attention and the embeddings are shared by all experts.
+
+**What this means for cost**, using the rules from this chapter and from [Chapter 3](03-inference.md#why-decode-is-limited-by-memory-not-arithmetic):
+
+| | Mixtral 8x7B (MoE) | A dense model of 46.7 billion weights |
+| --- | --- | --- |
+| Arithmetic per token (2 × active weights) | 2 × 12.9 billion ≈ 25.8 billion FLOPs | 2 × 46.7 billion ≈ 93.4 billion FLOPs |
+| Memory for the weights at 16 bits | 46.7 billion × 2 bytes ≈ 93 GB | ≈ 93 GB |
+| Memory at about 4.5 bits per weight | ≈ 26 GB | ≈ 26 GB |
+
+The MoE model computes like a 13-billion-weight model but needs the memory of a 47-billion-weight one. This is why quantization and MoE are often combined. For a single request, each decode step only reads the active experts, so generation is faster than for an equally large dense model; when many requests are batched, different tokens choose different experts and most of the weights are read anyway.
+
+### Keeping the experts balanced
+
+MoE has a typical failure in training, **routing collapse**: early on, a few experts happen to be slightly better, the router sends them more tokens, they improve further, and the other experts receive almost no tokens and never learn. The model then wastes most of its weights.
+
+The usual fix is an extra **load-balancing loss**, added to the normal loss with a small weight α (alpha), that is lowest when tokens are spread evenly:
+
+$$
+L_{\text{balance}} = \alpha \cdot N \cdot \sum_{i=1}^{N} f_i \, P_i
+$$
+
+- **N** is the number of experts.
+- **f\_i** is the fraction of the batch's tokens actually sent to expert i.
+- **P\_i** is the router's average probability for expert i over the batch.
+
+**Worked example** with N = 4 experts, ignoring α:
+
+| Situation | f (share of tokens per expert) | P (average router probability) | N × Σ f\_i P\_i |
+| --- | --- | --- | --- |
+| Balanced | 0.25, 0.25, 0.25, 0.25 | 0.25, 0.25, 0.25, 0.25 | 4 × (4 × 0.0625) = **1.0** |
+| Collapsed | 1, 0, 0, 0 | 0.90, 0.05, 0.03, 0.02 | 4 × (1 × 0.90) = **3.6** |
+
+The collapsed router is penalised 3.6 times more than the balanced one, which pushes it to spread tokens across all experts.
+
+### Recent refinements
+
+- **Fine-grained experts:** many small experts instead of a few large ones, with more of them chosen per token (DeepSeek-V3 chooses 8 of 256). This allows more combinations and more precise specialisation.
+- **Shared experts:** one or more experts that every token always uses, holding general knowledge, so that the routed experts can specialise.
+
+Experts do not usually specialise in human topics such as "law" or "biology"; studies of Mixtral found that routing follows patterns in the text, such as syntax and token types, more than subject areas.
+
 ## Cheat sheet
 
 | Concept | One-line meaning |
@@ -412,6 +504,10 @@ Because of the third matrix, models usually choose a smaller expansion to keep t
 | RoPE | Rotate q and k by position: scores depend only on distance |
 | GQA | Query heads share key/value heads: smaller KV cache |
 | SwiGLU | Gated feed-forward network with three matrices and the Swish activation |
+| Position interpolation | Slow RoPE's rotation so a longer text reuses the angles seen in training |
+| Mixture of Experts | Many feed-forward experts per layer; a router runs the top-k for each token |
+| Total vs active weights | All experts must be in memory; only the chosen ones cost compute (Mixtral: 46.7B vs 12.9B) |
+| Load-balancing loss | Extra loss, lowest when tokens are spread evenly; prevents routing collapse |
 
 ## Sources
 
@@ -430,3 +526,9 @@ Because of the third matrix, models usually choose a smaller expansion to keep t
 - [Attention Is All You Need (Vaswani et al., 2017)](https://arxiv.org/abs/1706.03762): the original settings, including the 37,000-token vocabulary
 - [Extending Context Window of Large Language Models via Positional Interpolation (Chen et al., 2023)](https://arxiv.org/abs/2306.15595)
 - [YaRN: Efficient Context Window Extension of Large Language Models (Peng et al., 2023)](https://arxiv.org/abs/2309.00071)
+- [Outrageously Large Neural Networks: The Sparsely-Gated Mixture-of-Experts Layer (Shazeer et al., 2017)](https://arxiv.org/abs/1701.06538)
+- [Switch Transformers: Scaling to Trillion Parameter Models with Simple and Efficient Sparsity (Fedus et al., 2021)](https://arxiv.org/abs/2101.03961): the load-balancing loss
+- [Mixtral of Experts (Jiang et al., 2024)](https://arxiv.org/abs/2401.04088): 8 experts, top-2 routing, total and active weights, routing analysis
+- [DeepSeekMoE: Towards Ultimate Expert Specialization in Mixture-of-Experts Language Models (Dai et al., 2024)](https://arxiv.org/abs/2401.06066): fine-grained and shared experts
+- [DeepSeek-V3 Technical Report (DeepSeek-AI, 2024)](https://arxiv.org/abs/2412.19437): 671 billion total and 37 billion active weights
+- [CME295: Transformers & Large Language Models, Lecture 2 (Stanford University, Afshine and Shervine Amidi)](https://cme295.stanford.edu/syllabus/): Mixture of Experts and context extension topics

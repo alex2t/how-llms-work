@@ -88,13 +88,13 @@ Reviewed 2026-10-17. Lecture 1 overlaps heavily with the Introduction and Chapte
 
 Reviewed 2026-10-17. Normalisation (RMSNorm, pre-norm), RoPE, attention's quadratic cost, the 0.75-words-per-token rule and temperature, top-k and top-p sampling are already covered. Two topics are large enough to need real space: Mixture of Experts (in Chapter 4) and prompting and reasoning (a new chapter is recommended).
 
-#### L2-1. Mixture of Experts (MoE) `[ ]`
+#### L2-1. Mixture of Experts (MoE) `[x]`
 
 - **Missing:** the book does not mention MoE at all, yet many large modern models use it. An MoE layer replaces the single feed-forward network with several **experts** (smaller feed-forward networks) and a **router** that sends each token to only the top-k of them (for example 2 of 8). The model has many weights in total but uses only a fraction for each token, so it gains knowledge without a matching rise in compute. Also missing: **routing collapse** (the router keeps choosing the same few experts) and the **load-balancing loss** that prevents it; **shared experts** and **fine-grained experts** in recent designs.
 - **Recommendation:** existing chapter. **Chapter 4**, a new section "**Mixture of Experts: more weights, same compute**" after "What changed since 2017", plus a row in that section's overview table. Worked example: one token, router scores for 8 experts, softmax, top-2 selection and the weighted sum; then total vs active weights for a real model (figures to be checked against its paper), and why every expert must still sit in memory, which links back to quantization.
 - **Priority:** High.
 
-**Decision:** Approved (user, 2026-10-17). Not written yet.
+**Decision:** Approved (user, 2026-10-17). Written 2026-10-17.
 
 #### L2-2. Prompting and reasoning: in-context learning, chain-of-thought, self-consistency `[ ]`
 

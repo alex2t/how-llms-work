@@ -162,3 +162,4 @@ Add one line per implemented section, newest at the bottom: `YYYY-MM-DD — Chap
 - 2026-10-17 — Chapter 2 — Distillation (L3-8) — soft-target loss; students A and B (one-hot 0.357 vs 0.051, soft 0.628 vs 0.855; minimum 0.607); three distillation methods incl. on-policy; link from Chapter 4.
 - 2026-10-17 — Chapter 2 — Cheat sheet — 11 rows added for the CME295 topics (data pipeline to distillation).
 - 2026-10-17 — Chapter 4 — RoPE context extension (L2-6) — position interpolation with the 0.1-radian example (speed 0.05: position 30 → 1.5; cos 0.989 vs 0.955); YaRN.
+- 2026-10-17 — Chapter 4 — Mixture of Experts (L2-1) — router and top-2 example (weights 0.599 / 0.401, output [1.802, −0.997]); total vs active (Mixtral 46.7B / 12.9B, DeepSeek-V3 671B / 37B); cost table; load-balancing loss (1.0 vs 3.6); fine-grained and shared experts; overview row, opening list and cheat sheet updated.
