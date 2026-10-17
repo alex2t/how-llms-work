@@ -254,9 +254,9 @@ The wrong guess at position 1 is punished by the loss at position 1, but it does
 
 Because all inputs come from the data, nothing has to wait for the model's own output. The whole decoder input is known before the pass starts. So the complete sequence `<SOS>` Ti amo molto goes through the decoder **at once**, as one 4 × 512 matrix (Chapter 1, "Which X? All tokens, layer by layer"), and the output gives logits for all four positions together:
 
-```latex
+$$
 \underbrace{[\langle SOS\rangle,\ \text{Ti},\ \text{amo},\ \text{molto}]}_{\text{decoder input, } 4 \times 512} \xrightarrow{\ \text{one forward pass}\ } \underbrace{[P_0,\ P_1,\ P_2,\ P_3]}_{4 \times |V| \text{ probabilities}} \xrightarrow{\ \text{compare with}\ } [\text{Ti},\ \text{amo},\ \text{molto},\ \langle EOS\rangle]
-```
+$$
 
 Here P\_i is the probability list at position i, and |V| is the vocabulary size.
 
@@ -290,9 +290,9 @@ The loss is the single number that says how wrong the model's predictions were. 
 - **Target distribution:** what the model *should* have predicted. For next-token prediction it is **one-hot**: probability 1 for the correct token and 0 for every other token.
 - **Cross-entropy:** a standard way to measure how far the predicted probabilities are from the target distribution.
 
-```latex
+$$
 L = -\sum_{k=1}^{|V|} y_k \ln p_k \qquad \text{with a one-hot target:} \qquad L = -\ln p_{\text{correct}}
-```
+$$
 
 - **L** is the loss for one position.
 - **|V|** is the vocabulary size, and **k** runs over every token in it.
@@ -356,9 +356,9 @@ A **gradient** is, for one weight, the answer to: "if I increase this weight by 
 
 The first link of the chain has a very simple form for softmax followed by cross-entropy. The gradient with respect to each logit is the predicted probability minus the target:
 
-```latex
+$$
 \frac{\partial L}{\partial z_k} = p_k - y_k
-```
+$$
 
 Here z\_k is the logit of token k (the raw score before softmax), p\_k its probability and y\_k its target (1 or 0). With Chapter 1's numbers, where the correct token is CAT:
 
@@ -375,9 +375,9 @@ The gradients sum to 0. The wrong token that received the most probability (DOG)
 
 **Gradient descent** moves each weight a small step against its gradient:
 
-```latex
+$$
 w_{\text{new}} = w_{\text{old}} - \eta \cdot g
-```
+$$
 
 - **w** is one weight.
 - **g** is that weight's gradient.
@@ -401,13 +401,13 @@ Plain gradient descent uses the same learning rate for every weight. The paper u
 - **m (momentum):** the recent average of the gradient. It smooths out noise from one batch to the next, like a ball rolling downhill that keeps its speed.
 - **v:** the recent average of the **squared** gradient. It measures how large the gradients for this weight usually are.
 
-```latex
+$$
 m_t = \beta_1 m_{t-1} + (1-\beta_1)\, g_t \qquad v_t = \beta_2 v_{t-1} + (1-\beta_2)\, g_t^2
-```
+$$
 
-```latex
+$$
 \hat m_t = \frac{m_t}{1-\beta_1^{\,t}} \qquad \hat v_t = \frac{v_t}{1-\beta_2^{\,t}} \qquad w_t = w_{t-1} - \eta\, \frac{\hat m_t}{\sqrt{\hat v_t} + \epsilon}
-```
+$$
 
 - **t** is the step number and **g\_t** the gradient at step t.
 - **β₁, β₂** control how long the averages remember: the paper used β₁ = 0.9 and β₂ = 0.98.
@@ -431,9 +431,9 @@ The two gradients differ by a factor of 100, yet both weights move by the same a
 
 The paper did not keep the learning rate fixed. It used a **schedule**: a formula giving the learning rate at each step.
 
-```latex
+$$
 \eta(\text{step}) = d_{model}^{-0.5} \cdot \min\left(\text{step}^{-0.5},\ \text{step} \cdot \text{warmup}^{-1.5}\right)
-```
+$$
 
 - **d\_model** = 512, so d\_model^−0.5 = 1 / √512 ≈ 0.0442.
 - **step** is the training step number, starting at 1.
@@ -469,9 +469,9 @@ Because any number can disappear, the model cannot depend on one specific path a
 
 With a one-hot target, the loss only reaches 0 when the model gives the correct token probability 1, which pushes the logits towards extreme values and makes the model overconfident. **Label smoothing** softens the target: the correct token gets 1 − ε, and the remaining ε is shared equally among all tokens. The paper used ε = 0.1.
 
-```latex
+$$
 y_k = (1-\varepsilon)\cdot[\,k = \text{correct}\,] + \frac{\varepsilon}{|V|}
-```
+$$
 
 Here \[k = correct\] is 1 for the correct token and 0 otherwise, and |V| is the vocabulary size. With Chapter 1's four-token toy vocabulary, ε/|V| = 0.1 / 4 = 0.025:
 

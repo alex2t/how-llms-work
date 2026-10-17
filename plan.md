@@ -41,6 +41,7 @@ Goal: give the reader the background needed before Chapter 1, and the story of w
 
 ## Phase 2 — Chapter 2: Training (`docs/02-training.md`)
 
+- [x] Convert every ```` ```latex ```` block to a `$$ … $$` math block (8 blocks).
 - [ ] What training is: predict the next token, measure the error, adjust every weight. Link to Chapter 1 "What is learned, and what changes after training?".
 - [ ] Training data and batches: what a batch is; why sequences in a batch must have the same length.
 - [ ] Padding and the padding mask: add `<pad>` tokens so a batch is rectangular, then mask them so attention and the loss ignore them. 2-sentence batch + its padding mask; contrast with the causal mask in Chapter 1.

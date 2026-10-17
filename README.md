@@ -34,6 +34,7 @@ One line per implemented section, newest at the bottom.
 - 2026-10-17 — Setup — Repository scaffold: MkDocs Material site with a chapter navigation bar, GitHub Pages workflow, home page and chapter placeholders.
 - 2026-10-17 — Setup — GitHub Pages: site published; workflow actions updated to Node 24 versions.
 - 2026-10-17 — Chapter 1 — Import cleanup: formulas now render as math, date line removed, encoder–decoder diagram added.
+- 2026-10-17 — Chapter 2 — Formulas: 8 formulas now render as math.
 
 ## Credits
 

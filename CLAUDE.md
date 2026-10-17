@@ -97,3 +97,4 @@ Add one line per implemented section, newest at the bottom: `YYYY-MM-DD — Chap
 - 2026-10-17 — Setup — Repository scaffold — MkDocs Material site, navigation tabs, GitHub Pages workflow, home page and placeholders for the Introduction and Chapters 1–5 created.
 - 2026-10-17 — Setup — GitHub Pages — site published at https://alex2t.github.io/how-llms-work/; workflow actions updated to Node 24 versions.
 - 2026-10-17 — Chapter 1 — Import cleanup — 11 latex blocks converted to math, date line removed, encoder–decoder Mermaid diagram added.
+- 2026-10-17 — Chapter 2 — Formulas — 8 latex blocks converted to math blocks.
