@@ -177,3 +177,84 @@ Prefill handled 1,000 tokens in 28 ms; decode would need 1,000 × 7 ms = 7 secon
 - **Long prompts delay the first token.** Prefill time grows with the prompt length, so a 10,000-token document takes about ten times longer to process than a 1,000-token prompt before any answer appears.
 - **Streaming speed depends on memory speed and model size.** Each decode step reads every weight, so a smaller model, or the same model stored in fewer bytes per weight, generates faster. This is a main reason for quantization ([Chapter 4](04-quantization.md)).
 - **Serving many users at once is efficient.** When several users' decode steps are grouped into one batch, the weights are read once and used for all of them. The memory cost is shared, which is why providers batch requests together.
+
+## The KV cache
+
+The KV cache is the main trick that makes generation fast: it stores the keys and values of tokens already processed, so each decode step only computes them for the one new token. It saves a great deal of arithmetic, but it costs memory, and that memory cost shapes how long a conversation can be and how many users a GPU can serve.
+
+### The waste it removes
+
+In the translation example, the decoder processed 1 + 2 + 3 + 4 = 10 positions to produce 4 tokens. At step 4, for example, it recomputed the key and value vectors of `<SOS>`, Ti and amo, which it had already computed at steps 1 to 3, and got exactly the same numbers.
+
+They are exactly the same because nothing that produces them has changed:
+
+- The weights W\_K and W\_V are frozen.
+- A token's vector at every layer depends only on itself and the tokens **before** it, because the causal mask ([Chapter 1](01-transformers.md#what-the-mask-looks-like)) hides everything after it. Appending a new token at the end cannot change the vectors of the tokens before it.
+
+So the key and value of each earlier token, in every layer and head, can be computed once and kept.
+
+### What the KV cache is
+
+The **KV cache** is a store, in GPU memory, of the key vector k and value vector v of every token processed so far, for every layer and every head. Each decode step then does only this, in each layer and head:
+
+1. Compute q, k and v for the **new token only**: one row of 512 numbers times W\_Q, W\_K and W\_V, giving three vectors of 64 numbers ([Chapter 1](01-transformers.md#where-q-k-and-v-come-from)).
+2. Append the new k and v to the cache.
+3. Compare the new q with **every** key in the cache to get the attention scores, apply softmax, and take the weighted sum of **every** value in the cache.
+
+Only the new token's query is needed: earlier tokens' predictions were already made, so their queries are never used again. This is why the cache holds K and V, but not Q.
+
+### The cache growing, step by step
+
+For the decoder's self-attention in the translation example:
+
+| Step | New token computed | Keys and values in the cache after the step | Positions processed |
+| --- | --- | --- | --- |
+| 1 | `<SOS>` | `<SOS>` | 1 |
+| 2 | Ti | `<SOS>`, Ti | 1 |
+| 3 | amo | `<SOS>`, Ti, amo | 1 |
+| 4 | molto | `<SOS>`, Ti, amo, molto | 1 |
+| **Total** | | | **4** instead of 10 |
+
+The saving grows with length. For an answer of 1,000 tokens, the decoder without a cache would process 1 + 2 + … + 1,000 = 500,500 positions; with the cache it processes 1,000.
+
+For cross-attention the saving is even simpler: the K and V computed from the encoder output never change during the translation, so they are computed once, before step 1, and reused at every step. In a decoder-only chat model, prefill fills the cache with the keys and values of the whole prompt in one pass, and each decode step adds one token.
+
+### How much memory the cache needs
+
+For every token, the cache holds one key and one value vector in every layer. Across all heads of a layer, these are d\_model numbers each (8 heads × 64 = 512 in the base model). So:
+
+$$
+\text{cache bytes per token} = 2 \times \text{layers} \times d_{model} \times \text{bytes per number}
+$$
+
+- **2** counts the key and the value.
+- **layers** is the number of layers that attend to earlier tokens.
+- **d\_model** is the number of key (or value) numbers per token per layer, summed over all heads.
+- **bytes per number** is 4 for 32-bit numbers and 2 for 16-bit numbers.
+
+**Base model** (6 decoder layers, d\_model = 512, 4 bytes):
+
+| Quantity | Calculation | Result |
+| --- | --- | --- |
+| Per token | 2 × 6 × 512 × 4 bytes | 24,576 bytes ≈ 24.6 KB |
+| 1,000 tokens | 24,576 × 1,000 bytes | ≈ 24.6 MB |
+
+That is about 9% of the 260 MB of weights: small, because the base model is small.
+
+**A 7-billion-weight model** with settings similar to Llama 2 7B (32 layers, d\_model = 4,096, 16-bit numbers of 2 bytes):
+
+| Quantity | Calculation | Result |
+| --- | --- | --- |
+| Per token | 2 × 32 × 4,096 × 2 bytes | 524,288 bytes ≈ 0.52 MB |
+| One conversation of 4,096 tokens | 524,288 × 4,096 bytes | ≈ 2.15 GB |
+| 32 users at once, 4,096 tokens each | 32 × 2.15 GB | ≈ 68.7 GB |
+
+The weights of this model take 14 GB (previous section). With 32 users the cache takes almost five times as much memory as the model itself.
+
+### The trade-off
+
+- **Compute saved:** each decode step processes one new token instead of recomputing every earlier token.
+- **Memory spent:** the cache grows by a fixed amount with every token, for every user. On a busy server it, not the weights, often decides how many conversations fit on one GPU.
+- **Attention still grows with length:** the new query must still be compared with every cached key, so each step does a little more work than the one before. This is much smaller than the work the cache saves.
+
+This is why longer conversations cost more to serve, and why model designers try to shrink the cache. Chapter 4 describes the two main ways: storing it in fewer bytes ([quantization](04-quantization.md)) and sharing keys and values between heads (grouped-query attention).
