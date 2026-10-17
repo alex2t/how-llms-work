@@ -773,6 +773,45 @@ The memory figures cover the weights and optimiser state only (as in [Chapter 3]
 
 After the last stage, all weights are frozen again and the model is ready for inference, which is the subject of [Chapter 3](03-inference.md).
 
+## Distillation: a small model learns from a large one
+
+Large models are expensive to run ([Chapter 4](04-quantization.md#why-size-matters)). **Distillation** trains a small model, the **student**, to imitate a large trained model, the **teacher**. The student ends up much better than if it had been trained on the raw data alone, because the teacher's outputs carry more information than the data's correct answers. Many small models are produced this way.
+
+### Learning from the teacher's probabilities
+
+Normal training uses a **one-hot** target: probability 1 for the token that really came next, 0 for all others ([The loss: cross-entropy](#the-loss-cross-entropy)). In distillation, the target is the teacher's whole probability list, called a **soft target**. The loss is still cross-entropy, now summed over every token:
+
+$$
+L = -\sum_k t_k \ln s_k
+$$
+
+- **t\_k** is the teacher's probability for token k (the soft target).
+- **s\_k** is the student's probability for token k.
+- With a one-hot target, only the correct token's term is left, which is the usual loss.
+
+**Worked example.** After `YOUR CAT IS A LOVELY`, the teacher gives Chapter 1's probabilities: CAT 0.772, DOG 0.211, IS 0.013, LOVELY 0.004. Two students (made-up numbers):
+
+| | CAT | DOG | IS | LOVELY | Loss, one-hot target (CAT) | Loss, teacher's soft target |
+| --- | --- | --- | --- | --- | --- | --- |
+| Teacher (target) | 0.772 | 0.211 | 0.013 | 0.004 | — | — |
+| Student A | 0.700 | 0.250 | 0.040 | 0.010 | −ln 0.70 = 0.357 | 0.276 + 0.292 + 0.042 + 0.018 = **0.628** |
+| Student B | 0.950 | 0.030 | 0.015 | 0.005 | −ln 0.95 = **0.051** | 0.039 + 0.740 + 0.055 + 0.021 = 0.855 |
+
+- With the **one-hot** target, student B looks better: it is more confident about CAT.
+- With the **teacher's** target, student A is better: like the teacher, it treats DOG as a reasonable alternative. Student B is penalised for being almost certain that DOG is wrong.
+
+The soft target teaches the student which wrong answers are nearly right, knowledge that the one-hot target throws away. The lowest possible soft-target loss here is 0.607, reached when the student matches the teacher exactly. The idea is close to [label smoothing](#label-smoothing-do-not-aim-for-100-certainty), except that the probability spread over the other tokens comes from the teacher, not from a fixed rule.
+
+### Three ways to distil a language model
+
+| Method | What the student learns from | Example |
+| --- | --- | --- |
+| **Soft-target distillation** | The teacher's probabilities at every position of the training text, as above | Training a small model alongside a large one on the same text |
+| **Distilling outputs, including chains of thought** | Complete answers written by the teacher, used as supervised fine-tuning data | DeepSeek-R1's reasoning answers used to fine-tune smaller Qwen and Llama models |
+| **On-policy distillation** | The student writes its own answers; the teacher scores each token of them with its probabilities, and the student moves toward those | Training on the student's own mistakes |
+
+On-policy distillation addresses the weakness of teacher forcing described in [The trade-off: exposure bias](#the-trade-off-exposure-bias): the student practises on text it actually produces, including its own errors, with the teacher showing at each token what it should have done instead. A related variant, **self-distillation**, uses the same model as teacher and student, giving the teacher extra help such as the correct solution in its prompt.
+
 ## Cheat sheet
 
 | Concept | One-line meaning |
@@ -824,3 +863,6 @@ After the last stage, all weights are frozen again and the model is ready for in
 - [QLoRA: Efficient Finetuning of Quantized LLMs (Dettmers et al., 2023)](https://arxiv.org/abs/2305.14314)
 - [Parameter-Efficient Transfer Learning for NLP (Houlsby et al., 2019)](https://arxiv.org/abs/1902.00751): adapters
 - [Prefix-Tuning: Optimizing Continuous Prompts for Generation (Li and Liang, 2021)](https://arxiv.org/abs/2101.00190)
+- [Distilling the Knowledge in a Neural Network (Hinton et al., 2015)](https://arxiv.org/abs/1503.02531): soft targets
+- [DeepSeek-R1: Incentivizing Reasoning Capability in LLMs via Reinforcement Learning (DeepSeek-AI, 2025)](https://arxiv.org/abs/2501.12948): distilling reasoning answers into smaller models
+- [On-Policy Distillation of Language Models: Learning from Self-Generated Mistakes (Agarwal et al., 2023)](https://arxiv.org/abs/2306.13649)

@@ -265,7 +265,7 @@ The pattern: going from 16 to 8 bits is almost free, 4 bits is the usual sweet s
 
 ### A bigger model at low precision often beats a smaller one at high precision
 
-With a fixed memory budget, the choice is often between a small model at 16 bits and a larger model at 4 bits. A 7-billion-weight model at 16 bits needs 14 GB; a 70-billion-weight model at 4.5 bits needs 70,000,000,000 × 4.5 ÷ 8 ≈ 39 GB. For a given amount of memory, a larger model quantized to about 4 bits usually gives better answers than a smaller model kept at 16 bits. This is one reason 4-bit models are so popular for running on personal computers.
+With a fixed memory budget, the choice is often between a small model at 16 bits and a larger model at 4 bits. A 7-billion-weight model at 16 bits needs 14 GB; a 70-billion-weight model at 4.5 bits needs 70,000,000,000 × 4.5 ÷ 8 ≈ 39 GB. For a given amount of memory, a larger model quantized to about 4 bits usually gives better answers than a smaller model kept at 16 bits. This is one reason 4-bit models are so popular for running on personal computers. Another way to get a small model that performs well is to train it to imitate a large one: [distillation](02-training.md#distillation-a-small-model-learns-from-a-large-one), explained in Chapter 2.
 
 ### How to check a quantized model
 

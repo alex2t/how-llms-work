@@ -81,6 +81,7 @@ One line per implemented section, newest at the bottom.
 - 2026-10-17 — Chapter 2 — Masked language modelling: how encoder-only models such as BERT are trained (CME295 L2-4).
 - 2026-10-17 — Chapter 2 — Preference training in detail: reward model, KL penalty, DPO loss and their costs (CME295 L3-6).
 - 2026-10-17 — Chapter 2 — Cheap fine-tuning with LoRA and QLoRA; instruction tuning named (CME295 L3-5).
+- 2026-10-17 — Chapter 2 — Distillation: a small model learns from a large one; linked from Chapter 4 (CME295 L3-8).
 
 ## Credits
 

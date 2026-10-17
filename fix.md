@@ -216,13 +216,13 @@ Reviewed 2026-10-17. The next-token objective, teacher forcing, and supervised f
 
 **Decision:** Approved (user, 2026-10-17). Not written yet.
 
-#### L3-8. Distillation: a small model learns from a large one `[ ]`
+#### L3-8. Distillation: a small model learns from a large one `[x]`
 
 - **Missing:** **knowledge distillation**: a small **student** model is trained to match the probabilities of a large **teacher** model, instead of one-hot targets. Variants from the lecture: distilling a teacher's chains of thought into a smaller model, and **on-policy distillation** (the teacher scores answers that the student itself wrote).
 - **Recommendation:** existing chapter. **Chapter 2**, a new section "**Distillation**" after "Stages of an LLM's life". Worked example reusing Chapter 1's probabilities as the teacher's soft target (CAT 0.772, DOG 0.211, IS 0.013, LOVELY 0.004) and comparing the student's loss with the one-hot loss, which connects to label smoothing. Link from **Chapter 4** as another way to get a smaller, cheaper model.
 - **Priority:** Medium.
 
-**Decision:** Approved (user, 2026-10-17). Not written yet.
+**Decision:** Approved (user, 2026-10-17). Written 2026-10-17.
 
 #### L3-9. Benchmarks for maths, code and preferences; Elo and pass@k `[ ]`
 
