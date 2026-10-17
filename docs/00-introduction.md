@@ -193,6 +193,18 @@ It learns them with a **proxy task**: a simple prediction task nobody actually n
 
 Training slides this window over billions of words of text and adjusts the vectors to make these predictions better, just as training adjusts weights to lower a loss ([Chapter 2](02-training.md#what-training-is)). Because "cat" and "dog" appear among the same neighbours (the, sat, fed, pet), they end up with similar vectors. The prediction task is then thrown away; the vectors are the product.
 
+**The network behind it, and negative sampling.** Word2Vec is a tiny neural network with one hidden layer: the input is a one-hot vector (as long as the vocabulary), the hidden layer has d numbers (for example 300), and the output again has one score per vocabulary word. Multiplying a one-hot vector by the first weight matrix simply picks out one row of it, and **that row is the word's vector**: the first layer is the embedding table. Predicting a word with a softmax over the whole vocabulary would mean computing 50,000 scores for every training example, so Word2Vec uses a shortcut called **negative sampling**: it turns each prediction into a few yes/no questions. "Is *sat* a real neighbour of *cat*?" should be answered yes; for a handful of randomly drawn words ("negatives", typically 2 to 20), the answer should be no. The probability of "yes" is σ(dot product of the two words' vectors), where σ squeezes any number into 0 to 1.
+
+**Worked example** (made-up dot products), centre word *cat*, one true neighbour and two negatives:
+
+| Pair | Should be | Dot product | σ(dot product) | Loss term |
+| --- | --- | --- | --- | --- |
+| cat, sat | Yes | 2.0 | 0.881 | −ln 0.881 = 0.127 |
+| cat, bank | No | −1.0 | 0.269 | −ln(1 − 0.269) = 0.313 |
+| cat, river | No | 0.5 | 0.622 | −ln(1 − 0.622) = 0.974 |
+
+The total loss is 0.127 + 0.313 + 0.974 = 1.414. The largest term comes from *river*, a random word the model currently thinks is a likely neighbour; training pushes the vectors of *cat* and *river* apart and those of *cat* and *sat* together. Each example now needs 3 dot products instead of 50,000.
+
 ### Vector arithmetic: Paris − France + Germany ≈ Berlin
 
 The learned space has a striking property: **directions carry meaning**. The step from a country to its capital points in roughly the same direction for every country, so it can be computed with ordinary vector arithmetic.

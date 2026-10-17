@@ -124,7 +124,7 @@ Compare the book with each lecture of Stanford's CME295 (summaries in `sources/`
   - [x] L1-2: Chapter 1 → BPE tokenizer: subsection "Word, character, subword or byte?" with a table and worked example.
   - [x] L1-3: Chapter 1 special-tokens table; Chapter 3 worked chat example with role tokens.
   - [x] L1-4: Chapter 1 → Practical consequences: short note on WordPiece and Unigram.
-  - [ ] L1-5: Introduction → Word2Vec: the network and negative sampling.
+  - [x] L1-5: Introduction → Word2Vec: the network and negative sampling.
 - [x] Lecture 2 — Model families, Mixture of Experts, normalisation, context, decoding, prompting. Gap analysis in `fix.md`; L2-1 to L2-7 approved.
   - [x] L2-1: Chapter 4 → new section "Mixture of Experts: more weights, same compute" + row in the overview table.
   - [ ] L2-2: new Chapter 6 "Prompting, reasoning and agents" (`docs/06-prompting.md`, added to nav): in-context learning, chain-of-thought, self-consistency.

@@ -171,3 +171,4 @@ Add one line per implemented section, newest at the bottom: `YYYY-MM-DD — Chap
 - 2026-10-17 — Chapter 1 — Word, character, subword or byte? (L1-2) — existing paragraph kept under a new subsection; OOV and [UNK]; 4-way comparison table on `unbelievable`; UTF-8 bytes (café = 5 bytes, 😀 = 4); byte-level BPE.
 - 2026-10-17 — Chapter 1 — Other subword algorithms (L1-4) — WordPiece score on the chapter corpus (first merge i + d at 0.333 vs BPE e + s); Unigram; algorithm table; SentencePiece.
 - 2026-10-17 — Chapter 1 — Special tokens (L1-3, Chapter 1 part) — table of 7 token kinds with other names, purpose and links to Chapters 2 and 3; 4 cheat-sheet rows; CME295 Lecture 1 credited.
+- 2026-10-17 — Introduction — How Word2Vec is trained (L1-5) — one-hidden-layer network, first layer = embedding table; negative sampling example (losses 0.127 + 0.313 + 0.974 = 1.414; 3 dot products instead of 50,000).

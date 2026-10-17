@@ -61,13 +61,13 @@ Reviewed 2026-10-17. Lecture 1 overlaps heavily with the Introduction and Chapte
 
 **Decision:** Approved (user, 2026-10-17). Written 2026-10-17.
 
-#### L1-5. How Word2Vec is trained: the network and negative sampling `[ ]`
+#### L1-5. How Word2Vec is trained: the network and negative sampling `[x]`
 
 - **Missing:** the Introduction explains Word2Vec's prediction tasks but not the network behind them (vocabulary size → d numbers → vocabulary size, where the word vectors are the weights of the first layer), or **negative sampling** (instead of a softmax over the whole vocabulary, the model answers yes/no for the true neighbour and a few random words, which makes training fast).
 - **Recommendation:** existing chapter. **Introduction → "Word2Vec: learning vectors from context"**: one paragraph with a tiny example of one positive and two negative pairs.
 - **Priority:** Low.
 
-**Decision:** Approved (user, 2026-10-17). Not written yet.
+**Decision:** Approved (user, 2026-10-17). Written 2026-10-17.
 
 #### L1-6. Terms named in Lecture 1 but taught in later lectures `[ ]`
 
