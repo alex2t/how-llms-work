@@ -119,7 +119,7 @@ Goal: give the reader the background needed before Chapter 1, and the story of w
 Compare the book with each lecture of Stanford's CME295 (summaries in `sources/`, git-ignored). For each lecture, write the missing topics into `fix.md` ("CME295 gap analysis") with a recommendation: new chapter, or which existing chapter and section. The user decides; approved items become tasks here. Slides appear one a week.
 
 - [x] Set-up: `sources/` git-ignored; credits in `README.md`; workflow in `CLAUDE.md`.
-- [ ] Lecture 1 — Transformer foundations, tokenization, embeddings, attention.
+- [x] Lecture 1 — Transformer foundations, tokenization, embeddings, attention. Gap analysis in `fix.md` (L1-1 to L1-7); waiting for decisions.
 - [ ] Lecture 2 — Model families, Mixture of Experts, normalisation, context, decoding, prompting.
 - [ ] Lecture 3 — Pre-training data, SFT, LoRA, RLHF vs DPO, GRPO, distillation.
 - [ ] Lecture 4 (when published).

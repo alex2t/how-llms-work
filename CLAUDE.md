@@ -150,3 +150,4 @@ Add one line per implemented section, newest at the bottom: `YYYY-MM-DD — Chap
 - 2026-10-17 — Introduction — Vector embeddings — one-hot on a 5-word vocabulary (all dot products 0, all distances 1.414); Word2Vec CBOW and skip-gram; Paris − France + Germany = (4, 3), nearest Berlin (0.14); polysemy and word-order limits.
 - 2026-10-17 — Introduction — RNNs and LSTMs — RNN formula and diagram; 3-step worked example (h = 0.462, 0.551, 0.189); LSTM gates; vanishing/exploding table (0.8ⁿ vs 1.2ⁿ); long-range and sequential limits; bridge table to Chapter 1.
 - 2026-10-17 — Introduction — Cheat sheet + Sources — 19-row cheat sheet and 13 sources; chapter complete (draft).
+- 2026-10-17 — CME295 review — Lecture 1 — compared with the Introduction and Chapter 1; no new chapter needed; 5 gaps proposed in fix.md (context bottleneck, tokenizer granularity, special tokens, WordPiece/Unigram, Word2Vec training) plus 2 notes.
