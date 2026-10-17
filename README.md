@@ -48,6 +48,7 @@ One line per implemented section, newest at the bottom.
 - 2026-10-17 — Chapter 3 — How the rules combine: temperature, top-k and top-p applied in sequence, plus typical settings.
 - 2026-10-17 — Chapter 3 — Stopping: end token, max tokens, stop sequences and the context window.
 - 2026-10-17 — Chapter 3 — Cheat sheet and sources: chapter complete.
+- 2026-10-17 — Chapter 1 — Training and generation: shortened to a summary linking to Chapters 2 and 3.
 
 ## Credits
 

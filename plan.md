@@ -16,7 +16,7 @@ Legend: `[ ]` to do · `[x]` done · `[~]` in progress
   - [x] Replace the placeholder line `[embedded content: original Transformer · encoder and decoder stacks]` with a Mermaid diagram of the encoder–decoder (source tokens → self-attention → feed-forward → K,V → decoder cross-attention; decoder: output so far → masked self-attention → cross-attention → feed-forward → linear + softmax → next-token probabilities).
   - [x] Unescape `\[` / `\]` and `\_` where they render wrongly; check every table renders. (Checked: all render correctly, no change needed.)
   - [x] `mkdocs build --strict` passes; check all formulas display as math.
-- [ ] Shorten Chapter 1's "Training and generation" section into a summary that links to Chapters 2 and 3. **Propose the new text first** (it replaces existing content). Proposed in `fix.md`, F1; on hold until Chapter 3 is written.
+- [x] Shorten Chapter 1's "Training and generation" section into a summary that links to Chapters 2 and 3. **Propose the new text first** (it replaces existing content). Done: `fix.md`, F1.
 
 ## Phase 1 — Introduction: foundations and history (`docs/00-introduction.md`)
 

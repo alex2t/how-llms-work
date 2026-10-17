@@ -112,3 +112,4 @@ Add one line per implemented section, newest at the bottom: `YYYY-MM-DD — Chap
 - 2026-10-17 — Chapter 3 — How the rules combine + typical settings — pipeline diagram; T = 2, k = 3, p = 0.9 worked (CAT 0.657, DOG 0.343) vs T = 1 (0.785 / 0.215); settings table by task.
 - 2026-10-17 — Chapter 3 — Stopping — end token, max tokens and stop sequences with examples; stop_reason; context window (8,192 − 7,000 = 1,192); decoding IDs back to text and streaming.
 - 2026-10-17 — Chapter 3 — Cheat sheet + Sources — 19-row cheat sheet and 8 sources; chapter complete (draft).
+- 2026-10-17 — Chapter 1 — Training and generation (F1) — two 4-step lists replaced by a summary that links to Chapters 2 and 3.

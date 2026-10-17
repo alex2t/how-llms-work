@@ -517,23 +517,10 @@ On WMT 2014 English–German translation the big model scored 28.4 BLEU, more th
 
 ## Training and generation
 
-Every weight in the model, including W\_Q, W\_K, W\_V, W\_O, the embeddings and the feed-forward layers, is learned the same way: predict the next token, measure the error, nudge all weights to reduce it.
+Every weight in the model, including W\_Q, W\_K, W\_V, W\_O, the embeddings and the feed-forward layers, is learned the same way: predict the next token, measure the error, nudge all weights to reduce it. This is the answer to "where do the Q, K, V weights come from": they are whatever values made next-token prediction most accurate over the training data.
 
-### Training
-
-1. Take a chunk of text, tokenize it, and feed it in.
-2. At every position, the model outputs a probability for each vocabulary token as the next one. Masking means position i only sees tokens 1…i, so all positions are trained in parallel in one pass.
-3. The loss is cross-entropy: how little probability the model gave to the token that actually came next.
-4. Backpropagation computes how each weight affected the loss, and an optimiser (Adam in the paper) adjusts every weight slightly. Repeat over billions of tokens.
-
-This is the answer to "where do the Q, K, V weights come from": they are whatever values made next-token prediction most accurate over the training data.
-
-### Generation
-
-1. Tokenize the prompt and run it through the model.
-2. Take the probabilities for the next token and pick one (the most likely, or a random sample shaped by a temperature setting).
-3. Append that token and run again. Models cache the K and V of earlier tokens (the "KV cache") so only the new token's Q, K and V must be computed each step.
-4. Stop at an end-of-sequence token or a length limit, then decode the token IDs back to text.
+- **Training** feeds the whole text in at once. The causal mask hides each position's answer, so every position is trained in parallel in one pass ([Chapter 2](02-training.md#teacher-forcing-why-training-happens-in-one-time-step)). The loss is [cross-entropy](02-training.md#the-loss-cross-entropy), and the [Adam optimiser](02-training.md#adam-a-smarter-step) adjusts every weight slightly after each batch. [Chapter 2](02-training.md) walks through each step with numbers.
+- **Generation** runs the model once per new token: [pick the next token](03-inference.md#choosing-the-next-token) from the probabilities, append it to the input, and repeat until an end-of-sequence token or a length limit ([Chapter 3](03-inference.md#stopping)). The [KV cache](03-inference.md#the-kv-cache) stores the K and V of earlier tokens so they are not recomputed. [Chapter 3](03-inference.md#generation-step-by-step) covers this in detail.
 
 ## Cheat sheet
 
