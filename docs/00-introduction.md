@@ -46,7 +46,7 @@ A **vector** is an ordered list of numbers. If you write software, you can think
 
 In a language model, every **token** (a word or word piece, such as `CAT`) is represented by a vector. The number of entries in the vector is called its **length** or **dimension**.
 
-- To keep the arithmetic easy to read on the page, our worked examples shorten each token vector to **3 numbers** (dimension $= 3$).
+- To keep the arithmetic easy to read on the page, our worked examples shorten each token vector to **3 numbers** (dimension $= 3$). These shortened vectors are called **toy vectors**: small, made-up stand-ins for the real ones. They follow exactly the same rules as real vectors, so every calculation done on them works the same way with 512 numbers; only the numbers themselves are invented for illustration.
 - In the real 2017 base Transformer model, each token vector holds **512 numbers**. That vector length is called **$d_{\text{model}}$** (the dimension of the model).
 
 | Token | Token ID | Toy vector in these notes (length $3$) | Real base-model vector (length $d_{\text{model}} = 512$) |
@@ -54,6 +54,15 @@ In a language model, every **token** (a word or word piece, such as `CAT`) is re
 | `CAT` | `6587` | $[0.81,\; 0.10,\; -0.52]$ | $512$ numbers (too long to show) |
 
 ### The dot product: a measure of similarity
+
+The dot product is the single most important operation in a language model, which is why this subsection explains it in detail. It turns two vectors into one number that says how much they point in the same direction. An LLM uses it everywhere:
+
+- **Attention.** To decide which earlier words matter for the current word, the model takes the dot product of the current word's *query* vector with every other word's *key* vector. A large result means "pay attention to this word" ([Chapter 1](01-transformers.md#scaled-dot-product-attention-step-by-step)).
+- **Every layer.** A [neuron](#what-a-neural-network-is) computes a dot product of its inputs with its weights, and a [matrix multiplication](#matrix-multiplication) is simply many dot products done at once. Every layer of the model is built from them.
+- **Choosing the next word.** At the end, the model takes the dot product of its final vector with one learned vector per vocabulary token. Each result is that token's score (its logit), and the highest scores become the most likely next words ([Chapter 1](01-transformers.md#from-the-last-vector-back-to-a-word)).
+- **Similar meaning.** Words used in similar ways get similar vectors, so their dot product is large: in the example below, `CAT` and `DOG` score $0.888$.
+
+In practice, almost all of the computation in an LLM is dot products. This is also why models run on GPUs: a GPU can do thousands of these multiplications and additions at the same time.
 
 The **dot product** of two vectors of the same length multiplies them position by position and adds the products into a single number. For two vectors $a = [a_1, a_2, \dots, a_d]$ and $b = [b_1, b_2, \dots, b_d]$, the formula is:
 
