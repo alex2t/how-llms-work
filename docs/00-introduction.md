@@ -25,7 +25,7 @@ Readers who are already comfortable with linear algebra and basic machine learni
 
 ## What you need to know first
 
-Everything a language model does—from reading your prompt to choosing the next word—is ordinary arithmetic on lists and tables of numbers. This section defines those building blocks and walks through a small, hand-checkable calculation for each one.
+Everything a language model does—from reading your prompt to choosing the next word—is ordinary arithmetic on lists and tables of numbers. An LLM uses that arithmetic to statistically guess the most likely next token based on all the preceding context. This section defines those building blocks and walks through a small, hand-checkable calculation for each one, before [Chapter 1 explains how the Transformer](01-transformers.md) carries out this process.
 
 ### Vectors
 
@@ -55,9 +55,11 @@ $$
 - **$a_i$ and $b_i$** are the numbers at position $i$ in vector $a$ and vector $b$.
 - **$\sum_{i=1}^{d}$** (the Greek capital letter sigma) means "add up the expression that follows for every position $i$ from $1$ to $d$".
 
+The diagram below computes the dot product of two toy token vectors (made-up numbers): $a$ = `CAT` $= [0.81,\; 0.10,\; -0.52]$, the vector from the table above, and $b$ = `DOG` $= [0.77,\; 0.15,\; -0.48]$. In each box, the first number comes from `CAT` and the second from `DOG`.
+
 ```mermaid
 flowchart LR
-  subgraph Pair["1. Multiply matching positions"]
+  subgraph Pair["1. Multiply matching positions: CAT × DOG"]
     p1["Pos 1: 0.81 × 0.77 = 0.6237"]
     p2["Pos 2: 0.10 × 0.15 = 0.0150"]
     p3["Pos 3: (−0.52) × (−0.48) = +0.2496"]
@@ -102,9 +104,7 @@ flowchart LR
 | 3rd | $-0.52$ | $0.91$ | $-0.52 \times 0.91$ | $-0.4732$ |
 | **Sum** | | | $-0.0405 + 0.0080 - 0.4732$ | **$-0.5057 \approx -0.506$** |
 
-**The sign rule decides the result.** Two numbers with the same sign multiply to a positive product; two numbers with opposite signs give a negative product. In `CAT` $\cdot$ `DOG`, all three positions have matching signs ($+$ with $+$, $+$ with $+$, $-$ with $-$), so every product is positive and they add up to a large total ($0.888$). In `CAT` $\cdot$ `A`, the first and third positions have opposite signs, so two of the products are negative. The third product ($-0.4732$) is the largest in size, so the total ends up negative ($-0.506$). Positions where both numbers are large in magnitude count the most: that is why the 1st position dominates `CAT` $\cdot$ `DOG` and the 3rd position dominates `CAT` $\cdot$ `A`.
-
-`CAT` and `DOG`, which are nouns used in similar contexts, have a large positive dot product. `CAT` and the article `A` have a negative dot product. Attention in [Chapter 1](01-transformers.md) is built on this exact operation: it uses dot products to score how strongly each token should attend to every other token in a sentence.
+`CAT` and `DOG`, which are nouns used in similar contexts, have matching signs in every position, so all three products are positive and the dot product is large. `CAT` and the article `A` have opposite signs in two positions, so the dot product is negative. Positions where both numbers are large count the most: in `CAT` $\cdot$ `A`, the 3rd position ($-0.52 \times 0.91 = -0.4732$) outweighs the other two products together ($-0.0405 + 0.0080 = -0.0325$). Attention in [Chapter 1](01-transformers.md) is built on this exact operation: it uses dot products to score how strongly each token should attend to every other token in a sentence.
 
 ### Matrices and their shapes
 
@@ -209,9 +209,11 @@ $$
 **Worked example:** Suppose the inputs are $[2, 3]$, the weights are $[0.5, -1]$, and the bias is $1$ (made-up numbers):
 
 - Weighted sum: $2 \times 0.5 + 3 \times (-1) = 1 - 3 = -2$. Add the bias: $-2 + 1 = -1$.
-- Activation: $\text{ReLU}(-1) = 0$. The neuron outputs $0$.
+- Activation: $\text{ReLU}(-1) = \max(0,\; -1) = 0$. ReLU picks the larger of $0$ and the sum. Here the sum is $-1$, and $0$ is larger than $-1$, so the neuron outputs $0$. In effect, a negative sum switches the neuron off for this input.
 
-The diagram below shows this single neuron from left to right. Because there are two inputs, the neuron has two weights: the first input ($2$) is multiplied by the first weight ($0.5$), and the second input ($3$) is multiplied by the second weight ($-1$).
+For comparison, with the inputs $[4, 1]$ and the same weights and bias, the sum is $4 \times 0.5 + 1 \times (-1) + 1 = 2 - 1 + 1 = 2$. This time the sum is positive, so ReLU leaves it unchanged: $\text{ReLU}(2) = \max(0,\; 2) = 2$, and the neuron outputs $2$.
+
+The diagram below shows the first example (inputs $[2, 3]$) from left to right. Because there are two inputs, the neuron has two weights: the first input ($2$) is multiplied by the first weight ($0.5$), and the second input ($3$) is multiplied by the second weight ($-1$).
 
 ```mermaid
 flowchart LR
@@ -256,6 +258,8 @@ $$
 \text{Loss} = (\text{output} - \text{target})^2 = (5 - 3)^2 = 4
 $$
 
+**The aim of the exercise:** change the two weights and the bias, all three at the same time, until the neuron outputs $3$. We are not solving for one particular parameter; training adjusts every one of them a little at each step. When the output equals the target, the loss is $(3 - 3)^2 = 0$. Because the loss is a squared number, it can never go below $0$, so $0$ is the best possible loss and the value training aims for.
+
 The output ($5$) is $2$ units too high. To lower the output toward $3$, we reduce each weight and the bias in proportion to how strongly it pushed the output up:
 
 | Parameter | Multiplied by input | Correction ($\text{error signal} \times \text{input} \times \text{step size}$) | New value |
@@ -291,10 +295,14 @@ The loss drops from $4.00$ to $(4.44 - 3)^2 = 1.44^2 \approx 2.07$. Repeating th
 | 2 | $0.362,\; 0.794$ | $0.931$ | $4.04$ | $1.07$ |
 | 3 | $0.321,\; 0.731$ | $0.910$ | $3.75$ | $0.56$ |
 | 5 | $0.270,\; 0.654$ | $0.885$ | $3.39$ | $0.15$ |
+| 10 | $0.225,\; 0.587$ | $0.862$ | $3.07$ | $0.006$ |
+| 30 | $0.214,\; 0.571$ | $0.857$ | $3.00$ | $0.000$ |
 
 *(Each loss is computed from the unrounded output, so it can differ slightly from squaring the rounded output shown: at step 2 the output is $4.0368$, and $(4.0368 - 3)^2 = 1.07$.)*
 
-After five steps, the output is down to $3.39$ and the loss has fallen from $4.00$ to $0.15$, with weights of about $0.270$ and $0.654$. Nobody hand-picked those numbers: they are simply where the automatic adjustments arrived. A large language model learns in this exact way, except that it adjusts billions of weights at once across billions of text examples: a 7-billion-weight model has 7 billion numbers set this way. [Chapter 2](02-training.md#backpropagation-gradient-descent-and-the-optimiser) explains how gradients and backpropagation compute all those adjustments efficiently in a deep network.
+**The result.** After five steps the output is $3.39$ and the loss is $0.15$. After about $30$ steps the output is $3.00$ and the loss is practically $0$, so training stops: the neuron has learned weights $[0.214, 0.571]$ and bias $0.857$. Check: $2 \times 0.214 + 3 \times 0.571 + 0.857 = 0.428 + 1.713 + 0.857 = 2.998 \approx 3$ (the small gap comes from rounding to three decimals).
+
+This is not the only answer. Other values also give an output of $3$, for example weights $[0, 1]$ and bias $0$ ($2 \times 0 + 3 \times 1 + 0 = 3$). Training does not look for one "correct" set of numbers; it stops at the first set it reaches whose loss is small enough, which here is a set close to the starting values. Nobody hand-picked those numbers: they are simply where the automatic adjustments arrived. A large language model learns in this exact way, except that it adjusts billions of weights at once across billions of text examples: a 7-billion-weight model has 7 billion numbers set this way. [Chapter 2](02-training.md#backpropagation-gradient-descent-and-the-optimiser) explains how gradients and backpropagation compute all those adjustments efficiently in a deep network.
 
 **From one neuron to layers and deep networks.** A **layer** is a group of neurons working side by side on the same input vector—which is simply a matrix multiplication followed by an activation function. A neural network stacks multiple layers one after another, with the output of one layer feeding into the next. The Transformer's feed-forward network ([Chapter 1](01-transformers.md#the-feed-forward-network-in-detail)) is made of two such layers.
 
@@ -309,6 +317,35 @@ To summarise the two core machine-learning terms used throughout these notes:
 - **Training:** The loop that repeatedly adjusts every weight by a small step in the direction that reduces the loss across many examples.
 
 [Chapter 2](02-training.md) covers both in full detail: the specific loss function used for language modelling (cross-entropy), how backpropagation finds the direction to move every weight, and how modern optimisers take each step.
+
+### Softmax: turning scores into probabilities
+
+A model often ends with one raw score per possible answer, for example one score per word in the vocabulary. These raw scores are called **logits**: a higher logit means "more likely", but logits can be negative and do not add up to anything in particular, so they are not probabilities. **Softmax** is the function that turns a list of logits into probabilities: every result is between $0$ and $1$, and all results add up to $1$.
+
+$$
+P(k) = \frac{e^{z_k}}{\sum_{j=1}^{n} e^{z_j}}
+$$
+
+- **$z_k$** is the logit of answer $k$, and **$n$** is the number of possible answers.
+- **$e \approx 2.718$** is Euler's number. $e^{z}$ is always positive, even when $z$ is negative, so every probability is positive.
+- **$\sum_{j=1}^{n} e^{z_j}$** is the total of all the exponentials. Dividing by it makes the results add up to $1$.
+- **$P(k)$** is the probability softmax gives to answer $k$.
+
+In words: raise $e$ to the power of each logit, then divide each result by the total.
+
+**Worked example** with the logits the notes use in later chapters, after the model has read `YOUR CAT IS A LOVELY` and scores four candidate next words (made-up logits, a four-word vocabulary for readability):
+
+| Token | Logit $z$ | $e^{z}$ | Probability $= e^{z} \div 637.9$ |
+| --- | --- | --- | --- |
+| `CAT` | $6.2$ | $492.75$ | $0.772$ |
+| `DOG` | $4.9$ | $134.29$ | $0.211$ |
+| `IS` | $2.1$ | $8.17$ | $0.013$ |
+| `LOVELY` | $1.0$ | $2.72$ | $0.004$ |
+| **Total** | | **$637.9$** | **$1.000$** |
+
+The exponential makes softmax favour the largest score strongly. `CAT`'s logit is only $1.3$ higher than `DOG`'s, but its probability is more than three times larger ($0.772$ vs $0.211$), because $e^{1.3} \approx 3.7$.
+
+Softmax appears throughout these notes: in Word2Vec below, in attention ([Chapter 1](01-transformers.md#scaled-dot-product-attention-step-by-step)), when the model picks the next word ([Chapter 1](01-transformers.md#from-the-last-vector-back-to-a-word)), and in temperature sampling ([Chapter 3](03-inference.md#sampling-and-temperature)).
 
 ### Embeddings
 
@@ -445,7 +482,11 @@ Measuring the straight-line **distance** between two vectors tells the exact sam
     - Sum of squares: $1^2 + (-1)^2 + 0^2 + 0^2 + 0^2 = 1 + 1 = 2$.
     - Distance: $\sqrt{2} \approx 1.414$.
 
-    For `cat` and `bank`, the difference is $[1, 0, -1, 0, 0]$ and the distance is again $\sqrt{1^2 + (-1)^2} = \sqrt{2} \approx 1.414$. Because every one-hot vector points along its own separate coordinate axis at $90^\circ$ to all the others (**orthogonal**), every word is equally far ($\approx 1.414$) from every other word.
+    For `cat` and `bank`, the difference is $[1, 0, -1, 0, 0]$ and the distance is again $\sqrt{1^2 + (-1)^2} = \sqrt{2} \approx 1.414$.
+
+    The result is always the same because two different one-hot vectors always differ in exactly two slots: one slot gives $1 - 0 = 1$ and the other gives $0 - 1 = -1$. Every other slot is $0 - 0 = 0$. So the sum of squares is always $1 + 1 = 2$, and every word is exactly $\sqrt{2} \approx 1.414$ away from every other word.
+
+    In geometric terms, think of a 3-word vocabulary with the vectors $[1, 0, 0]$, $[0, 1, 0]$ and $[0, 0, 1]$. Each one is an arrow of length $1$ along a different axis ($x$, $y$ or $z$), and each pair of arrows meets at a right angle ($90^\circ$), like the edges at the corner of a box. Vectors at right angles to each other are called **orthogonal**, and their dot product is $0$ (see [the dot product](#the-dot-product-a-measure-of-similarity)). One-hot vectors work the same way with $5$ or $50,000$ axes: each word has its own axis, so no word leans towards any other.
 
 One-hot vectors therefore have two major flaws:
 
@@ -458,7 +499,10 @@ One-hot vectors therefore have two major flaws:
 
 Word2Vec learns these vectors using a self-supervised **proxy task** (a practice task). We train a small network to guess a word from its neighbouring words in a sentence, or to guess the neighbours from the word. Nobody actually cares about the guesses after training finishes; the guessing game exists only because, in order to get good at it, the network is forced to place words that share similar contexts (`cat` and `dog`) at nearby coordinates in vector space. It is like practising scales on a piano: nobody performs scales at a concert, but practising them builds the finger control you actually want.
 
-Consider the sentence `"the cat sat on the mat"` with a **context window** of $2$ words on each side of the centre word `"sat"`. Word2Vec offers two variants that predict in opposite directions:
+Consider the sentence `"the cat sat on the mat"` with a **context window** of $2$ words on each side of the centre word `"sat"`. Word2Vec offers two variants of the guessing game. They use the same words but swap the question and the answer:
+
+- **CBOW** (continuous bag of words) hides the centre word and asks: *"Given `the`, `cat`, `on`, `the`, which word is in the middle?"* The four context vectors are averaged into one vector, so their order does not matter (hence "bag of words"), and the model makes **one** prediction: `sat`.
+- **Skip-gram** does the reverse. It shows the centre word and asks: *"Given `sat`, which words are nearby?"* Each context word becomes its own training pair, so one window gives **four** predictions: (`sat` → `the`), (`sat` → `cat`), (`sat` → `on`), (`sat` → `the`).
 
 ```mermaid
 flowchart LR
@@ -474,6 +518,19 @@ flowchart LR
 | --- | --- | --- |
 | **CBOW** (continuous bag of words) | The surrounding context words: `the`, `cat`, `on`, `the` | The middle word: `sat` |
 | **Skip-gram** | The middle word: `sat` | Each surrounding context word: `the`, `cat`, `on`, `the` |
+
+**When each variant is used.** The difference in the number of predictions per window explains the choice:
+
+| | CBOW | Skip-gram |
+| --- | --- | --- |
+| Predictions per window | $1$ | $1$ per context word ($4$ here) |
+| Training speed | Several times faster | Slower |
+| Best for | Large datasets; good vectors for frequent words | Smaller datasets; good vectors for rare words |
+
+- **Use CBOW** when there is plenty of text and training time matters. Averaging the context smooths out noise, which works well for common words that appear many times anyway.
+- **Use Skip-gram** when the text is limited or rare words matter. A rare word that appears only a few times still gets a separate training update for each of its neighbours, instead of being blended into an average.
+
+The original Word2Vec paper compared the two variants with word-analogy tests: the model is given three words and must find the fourth from the word vectors alone. Skip-gram scored clearly higher on tests of word meaning (for example, `Paris` is to `France` as `Rome` is to `Italy`), while CBOW scored slightly higher on tests of grammar (for example, `walk` is to `walked` as `swim` is to `swam`).
 
 During training, this window slides across billions of words of unlabelled text, nudging the word vectors at every step to make the predictions more accurate ([Chapter 2](02-training.md#what-training-is)). Because `"cat"` and `"dog"` repeatedly appear surrounded by the same words (`"the ___ sat"`, `"fed the ___"`, `"pet ___"`), training pushes their vectors close together. When training finishes, we throw away the prediction layer and keep the learned vectors.
 
@@ -500,7 +557,7 @@ The first weight matrix—connecting the $50{,}000$-number input to the $300$-nu
 
 The hidden layer for `dog` is literally Row 2 of the first weight matrix. **That row is `dog`'s embedding vector**, and the entire first weight matrix is the **embedding table**. When training adjusts the weights of that matrix, it is directly sculpting the word vectors.
 
-**Negative sampling: a cheaper way to train.** Computing the full output layer is expensive: for every single word pair in the training text, the network would have to compute $50{,}000$ dot products (one for every word in the vocabulary) and normalise them with a softmax across all $50{,}000$ words. Across billions of words, that is far too slow.
+**Negative sampling: a cheaper way to train.** Computing the full output layer is expensive: for every single word pair in the training text, the network would have to compute $50{,}000$ dot products (one for every word in the vocabulary) and turn them into probabilities with a [softmax](#softmax-turning-scores-into-probabilities) across all $50{,}000$ words. Across billions of words, that is far too slow.
 
 **Negative sampling** replaces that huge 50,000-way question (*"Which of the 50,000 vocabulary words is the neighbour?"*) with a handful of fast binary yes/no questions:
 
@@ -647,6 +704,14 @@ To make the arithmetic easy to check by hand, let each token $x_t$ and the hidde
 | 2 (`CAT`) | $0.5$ | $0.25$ | $0.8 \times 0.462 = 0.370$ | $0.620$ | $\tanh(0.620) = \mathbf{0.551}$ |
 | 3 (`IS`) | $-0.5$ | $-0.25$ | $0.8 \times 0.551 = 0.441$ | $0.191$ | $\tanh(0.191) = \mathbf{0.189}$ |
 
+**How each hidden state is computed.** Each step applies the same formula $h_t = \tanh(0.5\, x_t + 0.8\, h_{t-1} + 0)$, and each step uses the result of the step before it:
+
+1. **$h_1$ (reading `YOUR`):** there is no memory yet, so $h_0 = 0$. Sum $= 0.5 \times 1.0 + 0.8 \times 0 = 0.500$. Then $\tanh(0.500) = \frac{e^{0.5} - e^{-0.5}}{e^{0.5} + e^{-0.5}} = \frac{1.649 - 0.607}{1.649 + 0.607} = \frac{1.042}{2.256} = 0.462$.
+2. **$h_2$ (reading `CAT`):** the memory is now $h_1 = 0.462$. Sum $= 0.5 \times 0.5 + 0.8 \times 0.462 = 0.250 + 0.370 = 0.620$. Then $\tanh(0.620) = \frac{1.859 - 0.538}{1.859 + 0.538} = \frac{1.321}{2.397} = 0.551$.
+3. **$h_3$ (reading `IS`):** the memory is now $h_2 = 0.551$. Sum $= 0.5 \times (-0.5) + 0.8 \times 0.551 = -0.250 + 0.441 = 0.191$. Then $\tanh(0.191) = \frac{1.210 - 0.826}{1.210 + 0.826} = \frac{0.384}{2.036} = 0.189$.
+
+The memory term $0.8 \times h_{t-1}$ is how earlier words reach later steps: $h_3$ depends on `IS` directly, on `CAT` through $h_2$, and on `YOUR` through $h_1$ inside $h_2$. In practice $\tanh$ is computed by a library function; the fractions above only show that it is ordinary arithmetic. Because these sums are small, each $\tanh$ result is close to the sum itself, as the refresher above notes.
+
 After step 3, the single number $h_3 = 0.189$ holds the network's entire memory of the phrase `YOUR CAT IS`. Notice the strict sequential dependency: step 2 cannot begin until step 1 finishes computing $h_1 = 0.462$, and step 3 cannot begin until step 2 finishes computing $h_2 = 0.551$.
 
 ### The LSTM
@@ -735,6 +800,7 @@ That final row is what made modern large language models possible: once training
 | Neuron | Weighted sum + bias, then an activation such as ReLU |
 | Layer and network | Many neurons side by side; layers stacked one after another |
 | Loss and training | A number measuring error; adjust the weights to lower it |
+| Softmax | Turns raw scores (logits) into probabilities: $e^{z}$ for each, divided by the total |
 | Embedding | A learned vector per item, read from a table |
 | Task-specific era | One separately trained model per task, usually an RNN |
 | Pre-train, then adapt | One large model trained on plain text, then used for many tasks |
@@ -753,6 +819,7 @@ That final row is what made modern large language models possible: once training
 - [Deep Learning (Goodfellow, Bengio and Courville, 2016)](https://www.deeplearningbook.org/): linear algebra, neural networks and recurrent networks
 - [Speech and Language Processing, 3rd edition draft (Jurafsky and Martin)](https://web.stanford.edu/~jurafsky/slp3/): word vectors, RNNs and LSTMs
 - [Efficient Estimation of Word Representations in Vector Space (Mikolov et al., 2013)](https://arxiv.org/abs/1301.3781): Word2Vec, CBOW and skip-gram
+- [word2vec project page (Google, 2013)](https://code.google.com/archive/p/word2vec/): when to choose CBOW or skip-gram
 - [Distributed Representations of Words and Phrases and their Compositionality (Mikolov et al., 2013)](https://arxiv.org/abs/1310.4546): word-vector arithmetic
 - [Long Short-Term Memory (Hochreiter and Schmidhuber, 1997)](https://doi.org/10.1162/neco.1997.9.8.1735)
 - [Sequence to Sequence Learning with Neural Networks (Sutskever et al., 2014)](https://arxiv.org/abs/1409.3215)
