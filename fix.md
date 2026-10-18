@@ -13,6 +13,64 @@ Legend: `[ ]` waiting · `[x]` approved and applied · `[-]` rejected
 
 ## Waiting for approval
 
+### S-1. Section introductions: numbered sections without a full introduction `[x]`
+
+- **Rule:** `CLAUDE.md`, Writing style: every numbered section (`##`, for example 3.3) starts with a clear introduction before its first subsection: what the section is about, the key idea in plain words, and a short list of its subsections linked by anchor, saying what each one covers. Model: 3.3 "Generation step by step" in `docs/03-inference.md`.
+- **Checked:** every `##` section of Chapters 0–6. Sections with no subsections (The big picture, Cheat sheet, Sources, 1.6, 1.8, 1.10, 5.2) are outside the rule. Only 3.3 meets it today.
+- **Below:** the 43 sections that fall short. "Intro words" counts the text between the heading and the first subsection; under 60 words is flagged as too short to explain the section (a rough guide, to be judged section by section).
+- **Proposed change:** for each section, rewrite the introduction to match the model: what the section covers and why, the key idea, and a linked list of its subsections. Nothing is removed; existing introduction text is kept and extended.
+- **Priority:** Medium.
+
+| Section | Title | Location | Subsections | Intro words | What is missing |
+| --- | --- | --- | --- | --- | --- |
+| 0.2 | What you need to know first | `docs/00-introduction.md:26` | 10 | 76 | No subsection list |
+| 0.3 | Historical evolution of text modelling | `docs/00-introduction.md:365` | 4 | 54 | Intro too short; no subsection list |
+| 0.4 | Vector embeddings: static representations | `docs/00-introduction.md:433` | 4 | 77 | No subsection list |
+| 0.5 | Sequence architectures: RNNs and LSTMs | `docs/00-introduction.md:660` | 5 | 62 | No subsection list |
+| 1.2 | BPE tokenizer: from text to token IDs | `docs/01-transformers.md:25` | 6 | 61 | No subsection list |
+| 1.3 | From token IDs to vectors | `docs/01-transformers.md:172` | 8 | 57 | Intro too short; no subsection list |
+| 1.4 | Where Q, K and V come from | `docs/01-transformers.md:368` | 5 | 260 | No subsection list |
+| 1.5 | Scaled dot-product attention, step by step | `docs/01-transformers.md:460` | 3 | 477 | No subsection list |
+| 1.7 | The full Transformer block | `docs/01-transformers.md:581` | 4 | 63 | No subsection list |
+| 1.9 | "Attention Is All You Need" (2017) | `docs/01-transformers.md:728` | 4 | 52 | Intro too short; no subsection list |
+| 2.2 | What training is | `docs/02-training.md:28` | 3 | 49 | Intro too short; no subsection list |
+| 2.3 | Training data and batches | `docs/02-training.md:78` | 7 | 48 | Intro too short; no subsection list |
+| 2.4 | Padding and the padding mask | `docs/02-training.md:213` | 7 | 45 | Intro too short; no subsection list |
+| 2.5 | The decoder input "shifted right": `<SOS>` and `<EOS>` | `docs/02-training.md:336` | 5 | 52 | Intro too short; no subsection list |
+| 2.6 | Teacher forcing: why training happens in one time step | `docs/02-training.md:404` | 4 | 55 | Intro too short; no subsection list |
+| 2.7 | The loss: cross-entropy | `docs/02-training.md:472` | 4 | 34 | Intro too short; no subsection list |
+| 2.8 | Backpropagation, gradient descent and the optimiser | `docs/02-training.md:537` | 7 | 355 | No subsection list |
+| 2.9 | Another training objective: masked language modelling | `docs/02-training.md:733` | 3 | 83 | No subsection list |
+| 2.10 | Stages of an LLM's life: pre-training, fine-tuning and preference training | `docs/02-training.md:777` | 9 | 61 | No subsection list |
+| 2.11 | Distillation: a small model learns from a large one | `docs/02-training.md:985` | 2 | 67 | No subsection list |
+| 3.2 | Inference vs training | `docs/03-inference.md:27` | 4 | 46 | Intro too short; no subsection list |
+| 3.4 | Prefill vs decode: why the first token is slower | `docs/03-inference.md:192` | 5 | 41 | Intro too short; no subsection list |
+| 3.5 | The KV cache | `docs/03-inference.md:266` | 5 | 63 | No subsection list |
+| 3.6 | Choosing the next token | `docs/03-inference.md:358` | 8 | 129 | No subsection list |
+| 3.7 | Stopping | `docs/03-inference.md:597` | 5 | 37 | Intro too short; no subsection list |
+| 4.2 | Why size matters | `docs/04-quantization.md:28` | 3 | 20 | Intro too short; no subsection list |
+| 4.3 | Number formats | `docs/04-quantization.md:75` | 4 | 59 | Intro too short; no subsection list |
+| 4.4 | How quantization works | `docs/04-quantization.md:146` | 5 | 56 | Intro too short; no subsection list |
+| 4.5 | Kinds of quantization | `docs/04-quantization.md:239` | 4 | 50 | Intro too short; no subsection list |
+| 4.6 | Quality vs speed | `docs/04-quantization.md:289` | 4 | 42 | Intro too short; no subsection list |
+| 4.7 | What changed since 2017 | `docs/04-quantization.md:326` | 9 | 86 | No subsection list |
+| 4.8 | Mixture of Experts: more weights, same compute | `docs/04-quantization.md:488` | 5 | 66 | No subsection list |
+| 5.3 | Loss vs metric | `docs/05-evaluation.md:43` | 3 | 53 | Intro too short; no subsection list |
+| 5.4 | Perplexity | `docs/05-evaluation.md:84` | 5 | 61 | No subsection list |
+| 5.5 | Mean squared error (MSE) | `docs/05-evaluation.md:156` | 3 | 57 | Intro too short; no subsection list |
+| 5.6 | Classification metrics: the fraud example | `docs/05-evaluation.md:205` | 4 | 57 | Intro too short; no subsection list |
+| 5.7 | Evaluating generative LLMs | `docs/05-evaluation.md:318` | 7 | 114 | No subsection list |
+| 5.8 | Business outcomes | `docs/05-evaluation.md:458` | 6 | 151 | No subsection list |
+| 5.9 | Choosing metrics for a project | `docs/05-evaluation.md:560` | 3 | 50 | Intro too short; no subsection list |
+| 6.2 | In-context learning | `docs/06-prompting.md:28` | 2 | 97 | No subsection list |
+| 6.3 | Chain-of-thought | `docs/06-prompting.md:90` | 3 | 66 | No subsection list |
+| 6.4 | Self-consistency | `docs/06-prompting.md:130` | 2 | 52 | Intro too short; no subsection list |
+| 6.5 | Reasoning models: thinking before answering | `docs/06-prompting.md:190` | 5 | 74 | No subsection list |
+
+**Decision:** Approved and applied for all chapters (0 to 6): every listed section now has an introduction and a linked list of its subsections.
+
+---
+
 ### L1-7. Hands-on exercises `[ ]`
 
 - **Not in the book:** the lecture suggests labs (build a BPE tokenizer, attention from scratch, a mini Transformer). The book is a reading book with worked examples, so this is out of its current scope.

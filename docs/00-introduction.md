@@ -2,7 +2,7 @@
 
 ## The big picture
 
-These notes explain how large language models work, using plain words and real arithmetic at every step. Before [Chapter 1](01-transformers.md) opens up the Transformer architecture, this introduction gives you the background needed to read the rest of the notes effortlessly:
+These notes explain how large language models work, using plain words and real arithmetic at every step. Before [Chapter 1](01-transformers.md#the-big-picture) opens up the Transformer architecture, this introduction gives you the background needed to read the rest of the notes effortlessly:
 
 1. **Foundations.** It reviews the small amount of linear algebra and machine learning that language models are built on: vectors, dot products, matrices, neural networks, loss functions, training, and embeddings. If you studied a computing or engineering degree years ago and your maths is rusty, short refreshers explain every operation from scratch.
 2. **History.** It traces how computers learned to represent and process text—from one-hot vectors to Word2Vec to recurrent neural networks (RNNs and LSTMs)—and shows the exact bottlenecks that led to the invention of the Transformer in 2017.
@@ -19,13 +19,26 @@ flowchart LR
   H4 --> Ch1["Chapter 1:<br/>How Transformers Work"]
 ```
 
-Readers who are already comfortable with linear algebra and basic machine learning can skip straight to [Historical evolution of text modelling](#historical-evolution-of-text-modelling) or [Chapter 1](01-transformers.md).
+Readers who are already comfortable with linear algebra and basic machine learning can skip straight to [Historical evolution of text modelling](#historical-evolution-of-text-modelling) or [Chapter 1](01-transformers.md#the-big-picture).
 
 ---
 
 ## What you need to know first
 
-Everything a language model does—from reading your prompt to choosing the next word—is ordinary arithmetic on lists and tables of numbers. An LLM uses that arithmetic to statistically guess the most likely next token based on all the preceding context. This section defines those building blocks and walks through a small, hand-checkable calculation for each one, before [Chapter 1 explains how the Transformer](01-transformers.md) carries out this process.
+Everything a language model does—from reading your prompt to choosing the next word—is ordinary arithmetic on lists and tables of numbers. An LLM uses that arithmetic to statistically guess the most likely next token based on all the preceding context. This section defines those building blocks and walks through a small, hand-checkable calculation for each one, before [Chapter 1 explains how the Transformer](01-transformers.md#the-big-picture) carries out this process.
+
+This section covers:
+
+1. [Vectors](#vectors): a token as a list of numbers.
+2. [The dot product: a measure of similarity](#the-dot-product-a-measure-of-similarity): one number that says how alike two vectors are.
+3. [Matrices and their shapes](#matrices-and-their-shapes): a whole sentence as a table of numbers.
+4. [Matrix multiplication](#matrix-multiplication): many dot products at once, and the rule for shapes.
+5. [The transpose](#the-transpose): swapping rows and columns, and why attention needs it.
+6. [What a neural network is](#what-a-neural-network-is): weighted sum, bias and activation, with a worked neuron.
+7. [Where the weights and the bias come from](#where-the-weights-and-the-bias-come-from): random start, then one training step with numbers.
+8. [Loss and training](#loss-and-training): the two core machine-learning terms in short.
+9. [Softmax: turning scores into probabilities](#softmax-turning-scores-into-probabilities): from raw scores to probabilities that add up to 1.
+10. [Embeddings](#embeddings): the learned vector for each token, read from a table.
 
 ### Vectors
 
@@ -104,7 +117,7 @@ flowchart LR
 | 3rd | $-0.52$ | $0.91$ | $-0.52 \times 0.91$ | $-0.4732$ |
 | **Sum** | | | $-0.0405 + 0.0080 - 0.4732$ | **$-0.5057 \approx -0.506$** |
 
-`CAT` and `DOG`, which are nouns used in similar contexts, have matching signs in every position, so all three products are positive and the dot product is large. `CAT` and the article `A` have opposite signs in two positions, so the dot product is negative. Positions where both numbers are large count the most: in `CAT` $\cdot$ `A`, the 3rd position ($-0.52 \times 0.91 = -0.4732$) outweighs the other two products together ($-0.0405 + 0.0080 = -0.0325$). Attention in [Chapter 1](01-transformers.md) is built on this exact operation: it uses dot products to score how strongly each token should attend to every other token in a sentence.
+`CAT` and `DOG`, which are nouns used in similar contexts, have matching signs in every position, so all three products are positive and the dot product is large. `CAT` and the article `A` have opposite signs in two positions, so the dot product is negative. Positions where both numbers are large count the most: in `CAT` $\cdot$ `A`, the 3rd position ($-0.52 \times 0.91 = -0.4732$) outweighs the other two products together ($-0.0405 + 0.0080 = -0.0325$). Attention in [Chapter 1](01-transformers.md#scaled-dot-product-attention-step-by-step) is built on this exact operation: it uses dot products to score how strongly each token should attend to every other token in a sentence.
 
 ### Matrices and their shapes
 
@@ -181,7 +194,7 @@ $$
 
 Each number moves from $(\text{row } r, \text{column } c)$ to $(\text{row } c, \text{column } r)$. For instance, the number $6$ sits in row 2, column 3 of $A$, and moves to row 3, column 2 of $A^T$.
 
-**Why attention needs the transpose.** In [Chapter 1](01-transformers.md), a 6-token sentence has a query matrix $Q$ of shape $6 \times 64$ and a key matrix $K$ of shape $6 \times 64$ (one row per token). We want the dot product of every token's query row with every token's key row. We cannot multiply $(6 \times 64) \cdot (6 \times 64)$ because the inner numbers ($64$ and $6$) do not match. Transposing $K$ into $K^T$ (shape $64 \times 6$) turns each token's key into a column, so the inner numbers match:
+**Why attention needs the transpose.** In [Chapter 1](01-transformers.md#where-q-k-and-v-come-from), a 6-token sentence has a query matrix $Q$ of shape $6 \times 64$ and a key matrix $K$ of shape $6 \times 64$ (one row per token). We want the dot product of every token's query row with every token's key row. We cannot multiply $(6 \times 64) \cdot (6 \times 64)$ because the inner numbers ($64$ and $6$) do not match. Transposing $K$ into $K^T$ (shape $64 \times 6$) turns each token's key into a column, so the inner numbers match:
 
 $$
 Q \cdot K^T \;\;=\;\; (6 \times 64) \cdot (64 \times 6) \;\;=\;\; (6 \times 6)
@@ -316,7 +329,7 @@ To summarise the two core machine-learning terms used throughout these notes:
 - **Loss:** A single number that measures how wrong the model's predictions are on a set of examples. Lower is better; a loss of $0$ means a perfect prediction.
 - **Training:** The loop that repeatedly adjusts every weight by a small step in the direction that reduces the loss across many examples.
 
-[Chapter 2](02-training.md) covers both in full detail: the specific loss function used for language modelling (cross-entropy), how backpropagation finds the direction to move every weight, and how modern optimisers take each step.
+[Chapter 2](02-training.md#the-big-picture) covers both in full detail: the specific loss function used for language modelling (cross-entropy), how backpropagation finds the direction to move every weight, and how modern optimisers take each step.
 
 ### Softmax: turning scores into probabilities
 
@@ -366,6 +379,15 @@ The numbers in the embedding table start out random and are updated during train
 
 Modern chat assistants are the result of a sequence of breakthroughs over roughly a decade, each solving a concrete limitation of the method before it. Tracing that progression explains why the 2017 Transformer was such a turning point—and why understanding older ideas like Word2Vec and RNNs makes the Transformer's design immediately clear.
 
+In short: language software went from one small model per task, trained on hand-labelled data, to one very large model trained on plain text and then adapted to many tasks. The Transformer (2017) made that change possible because it can be trained in parallel on huge amounts of text.
+
+This section covers:
+
+1. [Timeline](#timeline): the main steps from 1997 to today in one table.
+2. [The task-specific era (the 2010s)](#the-task-specific-era-the-2010s): one separately trained model per task.
+3. [The turning point (2017)](#the-turning-point-2017): attention replaces recurrence, and training becomes parallel.
+4. [Scaling to modern LLMs (2018–2026)](#scaling-to-modern-llms-20182026): pre-train one large model, then adapt it.
+
 ### Timeline
 
 | Year | Step | What changed |
@@ -407,7 +429,7 @@ flowchart TD
 
 ### The turning point (2017)
 
-In 2017, the paper *"Attention Is All You Need"* replaced recurrence with self-attention ([Chapter 1](01-transformers.md)). The breakthrough was not just higher translation accuracy—it was **parallelism**. Because an RNN reads one word after another, training on a 1,000-word document takes 1,000 sequential steps. A Transformer processes all 1,000 positions **in parallel** during training ([Chapter 2](02-training.md#why-training-happens-in-one-time-step)). That unlocked the full parallel computing power of GPUs: from then on, adding more training data, more weights, and more compute reliably produced a stronger model.
+In 2017, the paper *"Attention Is All You Need"* replaced recurrence with self-attention ([Chapter 1](01-transformers.md#attention-is-all-you-need-2017)). The breakthrough was not just higher translation accuracy—it was **parallelism**. Because an RNN reads one word after another, training on a 1,000-word document takes 1,000 sequential steps. A Transformer processes all 1,000 positions **in parallel** during training ([Chapter 2](02-training.md#why-training-happens-in-one-time-step)). That unlocked the full parallel computing power of GPUs: from then on, adding more training data, more weights, and more compute reliably produced a stronger model.
 
 ### Scaling to modern LLMs (2018–2026)
 
@@ -433,6 +455,13 @@ To appreciate why the Transformer's design works so well, the next two sections 
 ## Vector embeddings: static representations
 
 A computer can only do arithmetic on numbers, so every word must first be converted into a vector. How we construct those vectors determines what the model can understand about relationships between words. This section compares the two classic approaches before the Transformer: **one-hot encoding**, which treats every word as an isolated symbol with no meaning, and **Word2Vec**, which learns meaningful vectors from context but gives every word a single static vector regardless of the sentence.
+
+This section covers:
+
+1. [One-hot encoding](#one-hot-encoding): one slot per word, and why every word ends up equally far from every other.
+2. [Word2Vec: learning vectors from context](#word2vec-learning-vectors-from-context): dense vectors learned by predicting neighbouring words.
+3. [Vector arithmetic: Paris − France + Germany ≈ Berlin](#vector-arithmetic-paris-france-germany-berlin): directions in the space that carry meaning.
+4. [The limits of Word2Vec](#the-limits-of-word2vec): one fixed vector per word, whatever the sentence.
 
 ### One-hot encoding
 
@@ -661,6 +690,14 @@ Before the Transformer solved both problems with attention and positional encodi
 
 Static word vectors capture general word meaning, but understanding a sentence requires reading words in order and remembering earlier words as later ones arrive. For most of the 2010s, recurrent neural networks (RNNs) and their gated variant (LSTMs) were the standard architecture for sequence tasks. Walking through how they work—and the four walls they hit—shows why the Transformer was invented.
 
+This section covers:
+
+1. [The recurrent neural network (RNN)](#the-recurrent-neural-network-rnn): reading one token at a time while carrying a memory.
+2. [Worked example: three steps](#worked-example-three-steps): the memory computed by hand for `YOUR CAT IS`.
+3. [The LSTM](#the-lstm): an RNN with gates that keep information for longer.
+4. [Why RNNs hit a wall](#why-rnns-hit-a-wall): the four limits that stopped them from scaling.
+5. [The bridge to Chapter 1](#the-bridge-to-chapter-1): how attention removes all four limits.
+
 ### The recurrent neural network (RNN)
 
 A **recurrent neural network (RNN)** reads a sequence one token at a time, from left to right. It maintains a **hidden state** $h_t$: a vector that acts as the network's running memory of every token read so far. At each time step $t$, the RNN combines the new token vector $x_t$ with the previous hidden state $h_{t-1}$ to compute the updated hidden state $h_t$:
@@ -784,7 +821,7 @@ The Transformer removes all four walls at once by dropping recurrence and relyin
 | The whole source sentence squeezed into one fixed-size vector | Every decoder step attends across all source tokens directly, so no sentence ever has to be compressed into a single vector ([Chapter 1](01-transformers.md#self-attention-vs-cross-attention)) |
 | Sequential step-by-step processing | All token positions are computed **in parallel** during training ([Chapter 2](02-training.md#why-training-happens-in-one-time-step)), saturating modern GPUs |
 
-That final row is what made modern large language models possible: once training could run in parallel across thousands of GPU cores, models and datasets could scale up by thousands of times. [Chapter 1](01-transformers.md) opens the Transformer and walks through every piece step by step.
+That final row is what made modern large language models possible: once training could run in parallel across thousands of GPU cores, models and datasets could scale up by thousands of times. [Chapter 1](01-transformers.md#the-big-picture) opens the Transformer and walks through every piece step by step.
 
 ---
 

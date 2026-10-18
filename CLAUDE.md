@@ -91,6 +91,7 @@ The notes are being checked against Stanford's [CME295: Transformers & Large Lan
 - **Call it "notes", never "book"** (in the site and the README): "book" sounds presumptuous.
 - **Audience:** a technical reader (computing degree, enterprise software background) who is not an ML specialist. English may not be the reader's first language: short, direct sentences; no unfinished sentences.
 - Open every section with one or two sentences saying what it explains and why it matters.
+- **Every numbered section (`##`, for example 3.3) starts with a clear introduction** before its first subsection: what the section is about, the key idea in plain words, and a short list of its subsections (3.3.1, 3.3.2, …) linked by anchor, saying what each one covers. Model: the introduction of 3.3 "Generation step by step" in `docs/03-inference.md`. Subsections (`###`, for example 3.3.1) do not need this introduction.
 - Define every term in plain words the first time it appears (e.g. "logit", "batch", "gradient", "vocabulary", "d_model"). Explain every letter in a formula.
 - Every important idea gets a **small worked example with real arithmetic**. If numbers are made up, say so in one short line.
 - **Reuse the running examples** so the reader never meets new mystery numbers:
@@ -103,6 +104,7 @@ The notes are being checked against Stanford's [CME295: Transformers & Large Lan
 - When the user comments that a part "is not clear": rewrite it with a definition plus a concrete example. Do not just shorten it.
 - End each chapter with a **Cheat sheet** table and a **Sources** list.
 - Link back to earlier chapters by page and heading instead of repeating them, e.g. `[causal mask](01-transformers.md#what-the-mask-looks-like)`.
+- **Every cross-reference is an anchor link** to the exact heading that explains the topic (`page.md#heading`), never a bare link to the top of a page (`page.md`). Check that the anchor matches an existing heading.
 
 ## Markdown conventions for MkDocs
 
@@ -114,6 +116,7 @@ The notes are being checked against Stanford's [CME295: Transformers & Large Lan
   ```
   Do **not** use fenced ```` ```latex ```` blocks: they render as code, not math.
 - One `#` heading per page (the chapter title); sections are `##`, subsections `###`.
+- **Sections and subsections are numbered** (for example 3.2 and 3.2.1 in Chapter 3) so the reader always sees where a passage sits in the chapter's structure. The numbers are added automatically on the site by `docs/javascripts/numbering.js` (chapter number taken from the file name); never type numbers into the headings, because that would change every anchor.
 - Callouts with Material admonitions: `!!! note`, `!!! tip "Key idea"`, `!!! warning`.
 - Diagrams: prefer Mermaid (```` ```mermaid ````) for flows; otherwise put an SVG in `docs/images/` and reference it with a relative path.
 - Sources from the attached slides by Umar Jamil are CC BY-NC 4.0: paraphrase and credit them; do not copy slide images.

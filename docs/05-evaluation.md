@@ -2,7 +2,7 @@
 
 ## The big picture
 
-The earlier chapters explained how a model is built ([Chapter 1](01-transformers.md)), trained ([Chapter 2](02-training.md)), used ([Chapter 3](03-inference.md)) and shrunk ([Chapter 4](04-quantization.md)). Each step raised the same question: is the result any good? This chapter explains how that question is answered, from the single number that training watches to the business results that justify a project.
+The earlier chapters explained how a model is built ([Chapter 1](01-transformers.md#the-big-picture)), trained ([Chapter 2](02-training.md#the-big-picture)), used ([Chapter 3](03-inference.md#the-big-picture)) and shrunk ([Chapter 4](04-quantization.md#the-big-picture)). Each step raised the same question: is the result any good? This chapter explains how that question is answered, from the single number that training watches to the business results that justify a project.
 
 The chapter uses one running example from start to finish:
 
@@ -44,6 +44,12 @@ The rest of the chapter climbs the three levels in order: loss and perplexity, t
 
 Training optimises a **loss**, but people judge a model by a **metric**. The two are often confused because both are "a number that says how good the model is". Knowing why they differ explains why training never optimises accuracy directly, and why a good loss alone does not prove a model is useful.
 
+This section covers:
+
+1. [Definitions](#definitions): loss and metric, and what each one must be able to do.
+2. [Worked example: four fraud cases](#worked-example-four-fraud-cases): the same predictions scored with a loss and with a metric.
+3. [Loss and metric side by side](#loss-and-metric-side-by-side): the differences in one table.
+
 ### Definitions
 
 - **Loss:** a number the training process makes smaller. It must change smoothly when the weights change slightly, so that a gradient can be computed ([Chapter 2](02-training.md#the-gradient-which-way-to-move-each-weight)). For LLMs it is the [cross-entropy](02-training.md#the-loss-cross-entropy): −ln of the probability given to the correct token.
@@ -84,6 +90,14 @@ The practical rule: watch the loss to check that training works, but decide whet
 ## Perplexity
 
 Perplexity is the standard way to report a language model's loss as a number people can picture. It is the main measure used during pre-training and when comparing quantized models with the original ([Chapter 4](04-quantization.md#how-to-check-a-quantized-model)), so it is worth knowing exactly what it means and when it can be compared.
+
+This section covers:
+
+1. [Definition](#definition): perplexity as e raised to the average loss, and how to read it.
+2. [Worked examples with the running numbers](#worked-examples-with-the-running-numbers): perplexity for good, average and poor predictions.
+3. [What a good value is](#what-a-good-value-is): why there is no universal target.
+4. [Only comparable with the same tokenizer](#only-comparable-with-the-same-tokenizer): why two models with different tokenizers cannot be compared this way.
+5. [What perplexity does not tell you](#what-perplexity-does-not-tell-you): correctness, helpfulness and safety need other measures.
 
 ### Definition
 
@@ -157,6 +171,12 @@ Perplexity measures how well a model predicts text, not whether its answers are 
 
 Cross-entropy suits answers that are one choice out of many, such as the next token or a fraud label. When the answer is a **number**, such as an amount of money, the usual measure is the mean squared error. This section shows how it works and why it is the wrong tool for next-token prediction.
 
+This section covers:
+
+1. [Definitions](#definitions_1): regression, classification, and the MSE formula.
+2. [Worked example: estimating the amount at risk](#worked-example-estimating-the-amount-at-risk): MSE on four fraud amounts.
+3. [Why MSE does not suit next-token prediction](#why-mse-does-not-suit-next-token-prediction): token IDs have no meaningful distance.
+
 ### Definitions
 
 - **Regression:** predicting a number on a continuous scale (an amount, a temperature, a price), as opposed to **classification**, which predicts a category (fraud / not fraud, or one token from the vocabulary).
@@ -205,6 +225,13 @@ So for next-token prediction, the model outputs a probability for every token an
 ## Classification metrics: the fraud example
 
 When a model sorts items into categories, its answers can be checked one by one against the truth. This section builds every common classification metric from a single table of counts, using the 100-transaction evaluation sample: 10 fraud cases and 90 genuine ones. The model answers `FRAUD` when its fraud score is at least 0.5.
+
+This section covers:
+
+1. [The confusion matrix](#the-confusion-matrix): the four possible outcomes of a yes/no prediction, counted.
+2. [Accuracy, and why it misleads](#accuracy-and-why-it-misleads): a high score that hides missed frauds.
+3. [Precision, recall and F1](#precision-recall-and-f1): two metrics that look only at the rare category, and their combination.
+4. [Moving the threshold: the ROC curve and AUC](#moving-the-threshold-the-roc-curve-and-auc): how results change with the decision threshold, summed up in one number.
 
 ### The confusion matrix
 
@@ -320,6 +347,16 @@ Estimating the area from the seven points above, as a series of trapezoids, give
 A fraud label is either right or wrong, so it can be counted. Most LLM output is free text: an explanation, a summary, an answer to a question. There are many good answers and no single correct string to compare against, so other methods are needed. This section covers the three main ones and what each can and cannot tell you.
 
 In the fraud example, the model also writes a short **explanation** for each flagged transaction, for example "Amount is 12 times this customer's average and the merchant is in a country the card has never been used in." Analysts read it before deciding. Its quality cannot be measured with a confusion matrix.
+
+This section covers:
+
+1. [Benchmarks](#benchmarks): fixed public test sets used to compare models.
+2. [Benchmark families](#benchmark-families): the main groups of benchmarks and what each one measures.
+3. [Scoring code: pass@k](#scoring-code-passk): the chance that at least one of k attempts is correct.
+4. [Human evaluation](#human-evaluation): people judging outputs directly.
+5. [Ranking models from votes: Elo ratings](#ranking-models-from-votes-elo-ratings): turning many pairwise votes into one ranking.
+6. [LLM-as-judge](#llm-as-judge): a second model scoring outputs against a rubric.
+7. [Choosing a method](#choosing-a-method): what each method measures, costs and risks.
 
 ### Benchmarks
 
@@ -466,6 +503,15 @@ The numbers below use real traffic: 100,000 transactions a month, 2% (2,000) fra
 - Running the model costs **€0.002 per transaction**, so €200 a month ([Chapter 4](04-quantization.md#fewer-bytes-also-means-faster-generation) explains what drives this cost).
 - About **5%** of genuine customers whose transaction is wrongly flagged complain.
 
+This section covers:
+
+1. [KPIs tied to a business objective](#kpis-tied-to-a-business-objective): the business numbers to track, each linked to the model metric behind it.
+2. [From the sample to real traffic: precision falls](#from-the-sample-to-real-traffic-precision-falls): why precision drops when fraud is rarer in real use.
+3. [Time, cost and resources: the model against the current process](#time-cost-and-resources-the-model-against-the-current-process): the model compared with the existing rules engine in hours and money.
+4. [Customer satisfaction](#customer-satisfaction): the cost of wrongly blocking genuine customers.
+5. [Comparing against a baseline](#comparing-against-a-baseline): why results only mean something next to an alternative.
+6. [The trade-off: choosing the threshold](#the-trade-off-choosing-the-threshold): the same model at different thresholds, and why the choice is a business decision.
+
 ### KPIs tied to a business objective
 
 A **KPI** (key performance indicator) is a number the business tracks to see whether it is meeting an objective. Each KPI should be linked to the model metric that drives it, so that a change in the model can be translated into a change the business cares about:
@@ -560,6 +606,12 @@ A different bank, with more analysts or customers more tolerant of checks, could
 ## Choosing metrics for a project
 
 The previous sections described many measures. A real project needs only a few, chosen in the right order: start from what the business wants, and work down to what can be measured on the model. This checklist puts that order into steps, and fills them in for the fraud example.
+
+This section covers:
+
+1. [The checklist](#the-checklist): the steps from the business objective down to the model metrics.
+2. [The checklist for the fraud example](#the-checklist-for-the-fraud-example): every step filled in.
+3. [Drift: why measurement does not stop at go-live](#drift-why-measurement-does-not-stop-at-go-live): why a model must keep being measured after it goes live.
 
 ### The checklist
 

@@ -2,7 +2,7 @@
 
 ## The big picture
 
-[Chapter 3](03-inference.md) showed that generating text is limited mostly by memory: every decode step reads every weight, and the KV cache grows with every token. This chapter is about making models smaller and faster without making them noticeably worse. The main tool is **quantization**: storing each number with fewer bits.
+[Chapter 3](03-inference.md#why-decode-is-limited-by-memory-not-arithmetic) showed that generating text is limited mostly by memory: every decode step reads every weight, and the KV cache grows with every token. This chapter is about making models smaller and faster without making them noticeably worse. The main tool is **quantization**: storing each number with fewer bits.
 
 The chapter follows one question, "how many bytes does this model need, and what do we lose by using fewer?":
 
@@ -11,7 +11,7 @@ The chapter follows one question, "how many bytes does this model need, and what
 3. **How quantization works:** turning real numbers into small integers with a scale, and the rounding error this causes.
 4. **Kinds of quantization:** when it is done, what is quantized, and the common methods (GPTQ, AWQ, GGUF).
 5. **Quality vs speed:** when the savings start to cost accuracy.
-6. **What changed since 2017:** the improvements that turned the original Transformer of [Chapter 1](01-transformers.md) into today's models, several of them also aimed at efficiency.
+6. **What changed since 2017:** the improvements that turned the original Transformer of [Chapter 1](01-transformers.md#attention-is-all-you-need-2017) into today's models, several of them also aimed at efficiency.
 7. **Mixture of Experts:** models with many more weights that use only a few of them for each token.
 
 ```mermaid
@@ -28,6 +28,14 @@ flowchart LR
 ## Why size matters
 
 A model's size decides which hardware can run it and how fast it generates. Both follow from one multiplication.
+
+The multiplication is: memory = number of weights × bytes per weight. A 7-billion-weight model needs 14 GB when each weight takes 2 bytes, but only 3.5 GB when each takes half a byte. Because generating each token means reading every weight from memory, a smaller model in memory is also a faster one.
+
+This section covers:
+
+1. [Memory = weights × bytes per weight](#memory-weights-bytes-per-weight): the formula and what a byte per weight means.
+2. [Worked example: a 7-billion-weight model](#worked-example-a-7-billion-weight-model): the same model in 32, 16, 8 and 4 bits.
+3. [Fewer bytes also means faster generation](#fewer-bytes-also-means-faster-generation): why a smaller file generates tokens faster.
 
 ### Memory = weights × bytes per weight
 
@@ -75,6 +83,13 @@ Halving the bytes per weight roughly doubles the decode speed limit. In practice
 ## Number formats
 
 Every number in a model, whether a weight, an activation or a value in the KV cache, is stored in a **number format**: a fixed rule for turning a pattern of bits into a value. The format decides how much memory each number uses, how large or small a value it can hold, and how precisely it holds it.
+
+This section covers:
+
+1. [Floating-point numbers: range and precision](#floating-point-numbers-range-and-precision): how a number with a decimal point is stored in bits, and the trade-off between range and precision.
+2. [Worked example: storing the same values in each format](#worked-example-storing-the-same-values-in-each-format): what each format does to the same numbers.
+3. [Integer formats](#integer-formats): the whole-number formats used by quantized models.
+4. [Summary of the formats](#summary-of-the-formats): all formats in one table.
 
 ### Floating-point numbers: range and precision
 
@@ -146,6 +161,14 @@ Because $b$ bits provide $2^b$ distinct patterns, an 8-bit integer holds $2^8 = 
 ## How quantization works
 
 **Quantization** means storing numbers in a format with fewer bits, usually by mapping real-valued weights onto a small set of whole numbers. The mapping uses one extra number, the **scale**, which says how much one integer step is worth. Understanding the scale explains both why quantization works so well and where its errors come from.
+
+This section covers:
+
+1. [Definitions](#definitions): quantize, dequantize, scale and rounding error.
+2. [Worked example: five weights to INT8](#worked-example-five-weights-to-int8): the full calculation with real numbers.
+3. [The same weights in INT4](#the-same-weights-in-int4): fewer bits, bigger steps, larger errors.
+4. [Zero-point (asymmetric) quantization](#zero-point-asymmetric-quantization): using the integer range better when the weights are not centred on zero.
+5. [The outlier problem and group-wise scales](#the-outlier-problem-and-group-wise-scales): why one large weight hurts all the others, and how one scale per small group fixes it.
 
 ### Definitions
 
@@ -240,13 +263,20 @@ So a "4-bit" 7-billion-weight model with groups of 32 really uses 4.5 bits per w
 
 "A 4-bit model" can mean several quite different things. Quantization methods differ in **when** the quantization is done, **what** is quantized, and **how** the rounding is chosen. This section sorts them out, so that names such as GPTQ, AWQ or a GGUF file can be placed at a glance.
 
+This section covers:
+
+1. [When: after training, or during it](#when-after-training-or-during-it): post-training quantization against quantization-aware training.
+2. [What: weights, activations, or the KV cache](#what-weights-activations-or-the-kv-cache): which numbers are stored in fewer bits.
+3. [How: three names you will meet](#how-three-names-you-will-meet): GPTQ, AWQ and GGUF.
+4. [Summary](#summary): the choices in one table, with the most common option today.
+
 ### When: after training, or during it
 
 | | Post-training quantization (PTQ) | Quantization-aware training (QAT) |
 | --- | --- | --- |
 | When | After training is finished | During training (or extra fine-tuning) |
 | How | Take the trained weights and round them, as in the previous section | The forward pass simulates the rounding, so the model learns weights that still work after rounding |
-| Cost | Minutes to hours; needs at most a few hundred example prompts | A training run, with all its data and compute ([Chapter 2](02-training.md)) |
+| Cost | Minutes to hours; needs at most a few hundred example prompts | A training run, with all its data and compute ([Chapter 2](02-training.md#what-training-is)) |
 | Quality | Very good at 8 bits; good at 4 bits with a smart method | Best at very low bit counts |
 | Typical use | Almost all open models you can download in quantized form | Models whose makers publish an official low-bit version |
 
@@ -290,6 +320,15 @@ flowchart LR
 
 Every bit removed saves memory and time, but each step down adds more rounding error to every weight. This section shows where the trade-off usually lands and how to check it for a particular model, instead of trusting the file name.
 
+In short: 8 bits per weight is almost always safe, 4 bits is usually a good balance, and below 4 bits the quality drops quickly.
+
+This section covers:
+
+1. [The trade-off for a 7-billion-weight model](#the-trade-off-for-a-7-billion-weight-model): size, speed and quality for each number of bits.
+2. [When quality drops noticeably](#when-quality-drops-noticeably): the cases where quantization hurts most.
+3. [A bigger model at low precision often beats a smaller one at high precision](#a-bigger-model-at-low-precision-often-beats-a-smaller-one-at-high-precision): how to spend a fixed memory budget.
+4. [How to check a quantized model](#how-to-check-a-quantized-model): measuring it against the original.
+
 ### The trade-off for a 7-billion-weight model
 
 Sizes include one 16-bit scale per group of 32 weights (computed as 7 billion × bits per weight ÷ 8 bits per byte); speeds are the upper limit on the same illustrative GPU (2,000 GB/s ÷ unrounded size in GB) used earlier. The quality column describes the pattern widely reported for models of this size, not a measurement.
@@ -325,7 +364,19 @@ Do not rely on the label: measure the quantized model against the original on th
 
 ## What changed since 2017
 
-The Transformer explained in [Chapter 1](01-transformers.md) is the 2017 original. Today's models keep its core, attention plus a feed-forward network in a stack of layers, but almost every part has since been replaced by a better-working variant. Several of these changes, like quantization, exist to save memory or make training more stable. This section lists them, so a reader of a modern model card can map each term back to the Chapter 1 section it modifies.
+The Transformer explained in [Chapter 1](01-transformers.md#the-full-transformer-block) is the 2017 original. Today's models keep its core, attention plus a feed-forward network in a stack of layers, but almost every part has since been replaced by a better-working variant. Several of these changes, like quantization, exist to save memory or make training more stable. This section lists them, so a reader of a modern model card can map each term back to the Chapter 1 section it modifies.
+
+This section covers:
+
+1. [Overview](#overview): every change in one table, with what it replaces in Chapter 1.
+2. [The base model and a modern model side by side](#the-base-model-and-a-modern-model-side-by-side): the 2017 base model against Llama 3 8B.
+3. [Decoder-only](#decoder-only): why almost every modern model drops the encoder.
+4. [Pre-norm](#pre-norm): normalising before each sublayer instead of after it.
+5. [RMSNorm](#rmsnorm): a simpler, cheaper layer normalisation.
+6. [RoPE: rotary position embedding](#rope-rotary-position-embedding): position encoded by rotating queries and keys in every layer.
+7. [Grouped-query attention (GQA)](#grouped-query-attention-gqa): heads sharing keys and values to shrink the KV cache.
+8. [SwiGLU feed-forward network](#swiglu-feed-forward-network): a feed-forward network with three matrices and a gate.
+9. [Larger context and vocabulary](#larger-context-and-vocabulary): longer inputs and bigger tokenizers.
 
 ### Overview
 
@@ -488,6 +539,14 @@ Because of the third matrix, models usually choose a smaller expansion to keep t
 ## Mixture of Experts: more weights, same compute
 
 Quantization makes each weight cheaper to store. **Mixture of Experts (MoE)** attacks cost from the other side: it gives a model many more weights, but uses only a small fraction of them for each token. The model can hold far more knowledge while the arithmetic per token stays close to that of a much smaller model. Many of today's largest models are built this way.
+
+This section covers:
+
+1. [Experts and a router](#experts-and-a-router): several feed-forward networks per layer, and the router that picks a few for each token.
+2. [Worked example: routing one token](#worked-example-routing-one-token): the router's choice and the weighted result, with numbers.
+3. [Total weights vs active weights](#total-weights-vs-active-weights): the two sizes of an MoE model, and what each one costs.
+4. [Keeping the experts balanced](#keeping-the-experts-balanced): how training stops a few experts from taking all the tokens.
+5. [Recent refinements](#recent-refinements): fine-grained and shared experts in recent models.
 
 ### Experts and a router
 

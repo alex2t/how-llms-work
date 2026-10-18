@@ -2,13 +2,13 @@
 
 ## The big picture
 
-[Chapter 1](01-transformers.md) described a model that is already trained: its embedding table E, its W\_Q, W\_K, W\_V, W\_O and feed-forward weights are fixed numbers. This chapter explains where those numbers come from. In short, the model starts with random weights and plays a guessing game billions of times: guess the next token, see how wrong the guess was, and adjust every weight a tiny amount so the next guess is a little better.
+[Chapter 1](01-transformers.md#what-is-learned-and-what-changes-after-training) described a model that is already trained: its embedding table E, its W\_Q, W\_K, W\_V, W\_O and feed-forward weights are fixed numbers. This chapter explains where those numbers come from. In short, the model starts with random weights and plays a guessing game billions of times: guess the next token, see how wrong the guess was, and adjust every weight a tiny amount so the next guess is a little better.
 
 One round of that game is called a **training step**. Each step does the following:
 
 1. **Take a batch.** Pick a group of text examples from the training data and turn them into token IDs with the [tokenizer from Chapter 1](01-transformers.md#bpe-tokenizer-from-text-to-token-ids).
 2. **Prepare inputs and targets.** Make every sequence the same length with [padding](#step-1-pad-the-short-sentences) (filler tokens added to the end of short sentences), and shift the text by one position so that each position has a "correct next token" to predict.
-3. **Forward pass.** Run the whole batch through the model, exactly as in [Chapter 1](01-transformers.md), to get a probability for every vocabulary token at every position.
+3. **Forward pass.** Run the whole batch through the model, exactly as in [Chapter 1](01-transformers.md#the-big-picture), to get a probability for every vocabulary token at every position.
 4. **Measure the error.** Compare the probabilities with the correct next tokens and compute one number, the **loss** ([defined in the Introduction](00-introduction.md#loss-and-training)). A low loss means good guesses. Language models use a loss called [cross-entropy](#the-loss-cross-entropy), explained later in this chapter.
 5. **Backward pass.** Compute, for every weight, which direction to move it to lower the loss.
 6. **Update.** The optimiser moves every weight a small step in that direction.
@@ -27,11 +27,19 @@ Then the next batch is taken and the loop repeats. The original Transformer did 
 
 ## What training is
 
-Training is the process that turns a model full of random numbers into a model that predicts text well. It matters because nothing in a Transformer is designed by hand: every useful behaviour described in [Chapter 1](01-transformers.md) is the result of this process.
+Training is the process that turns a model full of random numbers into a model that predicts text well. It matters because nothing in a Transformer is designed by hand: every useful behaviour described in [Chapter 1](01-transformers.md#the-big-picture) is the result of this process.
+
+In short: the model makes a prediction, the prediction is compared with the text that really came next, and every weight is moved a tiny amount to make the error smaller. Repeated billions of times, this is all that training is.
+
+This section covers:
+
+1. [Three ideas: weights, prediction, error](#three-ideas-weights-prediction-error): the three terms everything else builds on, and why no human labels are needed.
+2. [What training changes, and what it does not](#what-training-changes-and-what-it-does-not): which parts of the model are learned and which stay fixed.
+3. [A first look at "adjusting a weight"](#a-first-look-at-adjusting-a-weight): one training step on Chapter 1's example.
 
 ### Three ideas: weights, prediction, error
 
-- **Weight (parameter):** one trainable number inside the model. Every number in the following parts of the model, all described in [Chapter 1](01-transformers.md), is a weight:
+- **Weight (parameter):** one trainable number inside the model. Every number in the following parts of the model, all described in [Chapter 1](01-transformers.md#what-is-learned-and-what-changes-after-training), is a weight:
     - **E**, the [embedding table](01-transformers.md#token-embeddings) that turns each token ID into a vector.
     - **W\_Q, W\_K, W\_V**, the three matrices that turn each token's vector into its [query, key and value](01-transformers.md#where-q-k-and-v-come-from).
     - **W\_O**, the matrix that combines the outputs of the [attention heads](01-transformers.md#multi-head-attention).
@@ -78,6 +86,16 @@ No single step makes the model smart. The knowledge builds up over many steps an
 ## Training data and batches
 
 The model does not learn from one sentence at a time; it learns from groups of sentences processed together. This section defines those groups and explains why they force every sentence in a group to have the same length, which leads directly to padding in the next section.
+
+This section covers:
+
+1. [Training data](#training-data): the text the model learns from.
+2. [Where pre-training data comes from](#where-pre-training-data-comes-from): how raw web text is collected and cleaned.
+3. [Choosing the data mixture](#choosing-the-data-mixture): how much web, code, books and maths to use, and how teams test mixtures.
+4. [Model collapse: training on AI-written text](#model-collapse-training-on-ai-written-text): what happens when models learn from other models' output.
+5. [What a batch is](#what-a-batch-is): training examples processed together in one step.
+6. [Tensors and shapes](#tensors-and-shapes): the shapes of the numbers as a batch goes through the model.
+7. [Why every sequence in a batch must have the same length](#why-every-sequence-in-a-batch-must-have-the-same-length): short sentences, long documents, and the terms that handle them.
 
 ### Training data
 
@@ -163,7 +181,7 @@ A **tensor** is a block of numbers with several dimensions: a vector has 1 dimen
 | Attention scores, all 8 heads | 2 × 8 × 6 × 6 | 576 |
 | Logits (with a 50,000-token vocabulary) | 2 × 6 × 50,000 | 600,000 |
 
-Batching does not change any formula from [Chapter 1](01-transformers.md). Chapter 1 followed **one** sentence; a batch simply stacks several sentences, one behind the other, and adds a dimension at the front of every shape that says which sentence a number belongs to. Compare the same step with one sentence and with the batch of 2:
+Batching does not change any formula from [Chapter 1](01-transformers.md#where-q-k-and-v-come-from). Chapter 1 followed **one** sentence; a batch simply stacks several sentences, one behind the other, and adds a dimension at the front of every shape that says which sentence a number belongs to. Compare the same step with one sentence and with the batch of 2:
 
 | Step | One sentence (Chapter 1) | Batch of B = 2 | What happens |
 | --- | --- | --- | --- |
@@ -213,6 +231,16 @@ Padding and packing are the two alternatives for short text; chunking handles lo
 ## Padding and the padding mask
 
 Padding makes a batch rectangular by filling short sentences with a filler token; the padding mask then makes the model ignore that filler. Both are needed: without padding the batch cannot be built, and without the mask the filler would change the model's results.
+
+This section covers:
+
+1. [Step 1: pad the short sentences](#step-1-pad-the-short-sentences): filling short sentences with `<pad>` tokens.
+2. [Step 2: build the padding mask](#step-2-build-the-padding-mask): marking which positions are real and which are filler.
+3. [Step 3: apply it inside attention](#step-3-apply-it-inside-attention): stopping every token from looking at `<pad>`.
+4. [Padding mask + causal mask in the decoder](#padding-mask-causal-mask-in-the-decoder): combining the two masks.
+5. [Step 4: ignore padding in the loss](#step-4-ignore-padding-in-the-loss): leaving filler out of the average.
+6. [Padding mask vs causal mask](#padding-mask-vs-causal-mask): the two masks compared.
+7. [Packing: the alternative to padding](#packing-the-alternative-to-padding): joining examples instead of padding them, to avoid wasted work.
 
 ### Step 1: pad the short sentences
 
@@ -337,6 +365,14 @@ The result is one causal triangle per example: P and Q see only each other, exac
 
 To train a decoder, each position needs an input to read and a correct token to predict. The trick is to feed the decoder the target sentence moved one place to the right, so that at every position the correct answer is simply the next word. Two special tokens make this work.
 
+This section covers:
+
+1. [The special tokens](#the-special-tokens): `<SOS>` and `<EOS>`, and what each one is for.
+2. [The translation example](#the-translation-example): "I love you very much" → "Ti amo molto" as decoder input and target.
+3. [Input and target, position by position](#input-and-target-position-by-position): what each position reads, sees and must predict.
+4. [With padding](#with-padding): the same example padded to a fixed length.
+5. [The same idea in decoder-only models](#the-same-idea-in-decoder-only-models): how one sentence becomes several training examples in GPT-style models.
+
 ### The special tokens
 
 - **`<SOS>` (start of sentence):** a token that means "the sentence begins here". It gives the decoder something to read at the very first position, before any real word exists.
@@ -405,6 +441,13 @@ Six tokens give five training examples, one per position. Position 4 is the case
 
 During training the decoder always reads the correct previous words, never its own guesses, and all positions are computed in a single pass. This is the main reason Transformers train so much faster than the older recurrent networks described in Chapter 1's section "[The problem it solved](01-transformers.md#the-problem-it-solved)".
 
+This section covers:
+
+1. [What teacher forcing means](#what-teacher-forcing-means): feeding the correct previous tokens instead of the model's own guesses.
+2. [Why training happens in one time step](#why-training-happens-in-one-time-step): the whole sentence goes through the model in one pass.
+3. [Training vs generation for the same sentence](#training-vs-generation-for-the-same-sentence): one pass in training against one pass per token in generation.
+4. [The trade-off: exposure bias](#the-trade-off-exposure-bias): the model never practises recovering from its own mistakes.
+
 ### What teacher forcing means
 
 A [decoder](01-transformers.md#the-full-transformer-block) (the part of the Transformer that generates the output text) builds a sentence one token at a time, and each new token is predicted from the tokens before it. During training, there are two possible sources for those previous tokens:
@@ -441,7 +484,7 @@ What stops position 1 from simply copying the answer "amo", which sits at positi
 
 ### Training vs generation for the same sentence
 
-[Chapter 3](03-inference.md) covers generation in detail. The table shows why the two are so different in speed:
+[Chapter 3](03-inference.md#generation-step-by-step) covers generation in detail. The table shows why the two are so different in speed:
 
 |  | Training (teacher forcing) | Generation (Chapter 3) |
 | --- | --- | --- |
@@ -472,6 +515,15 @@ Teacher forcing has one known weakness, called **exposure bias**: during trainin
 ## The loss: cross-entropy
 
 The loss is the single number that says how wrong the model's predictions were. Training has only one goal, making this number smaller, so it is worth knowing exactly how it is computed.
+
+The loss used for language models is **cross-entropy**: at each position, minus the natural logarithm of the probability the model gave to the correct token. A confident, correct prediction costs little (probability 0.772 gives −ln(0.772) = 0.259); a prediction that gave the correct token almost no probability costs a lot.
+
+This section covers:
+
+1. [Definitions](#definitions): loss, target distribution and cross-entropy.
+2. [Worked example: Chapter 1's probabilities](#worked-example-chapter-1s-probabilities): the loss computed for `CAT`.
+3. [From one position to a whole batch](#from-one-position-to-a-whole-batch): averaging over every real position.
+4. [Perplexity: the same number in friendlier units](#perplexity-the-same-number-in-friendlier-units): the loss turned into "how many tokens the model hesitates between".
 
 ### Definitions
 
@@ -552,6 +604,16 @@ These are not alternatives to choose between. Each one does a different job, and
 One training step runs them in this order: the forward pass computes the predictions (with dropout switched on) and the loss (against smoothed targets, if label smoothing is used); backpropagation computes every gradient; Adam updates every weight, with a step size set by the learning rate schedule. The original Transformer used all of them together, with Adam in place of plain gradient descent.
 
 Dropout and label smoothing are tuning choices, not required parts. They help most when a model could memorise its data, such as a translation model trained many times over a limited set of sentence pairs. Large modern LLMs often see each piece of text only once, so memorisation is less of a risk: PaLM (Google, 2022), for example, was pre-trained on exactly one pass over its data, without dropout and without label smoothing, and the published pre-training settings of Llama 2 (Meta, 2023) list neither.
+
+This section covers:
+
+1. [The gradient: which way to move each weight](#the-gradient-which-way-to-move-each-weight): what a gradient tells you about one weight.
+2. [Backpropagation: computing every gradient at once](#backpropagation-computing-every-gradient-at-once): one backward pass from the loss to the embeddings.
+3. [Gradient descent: taking the step](#gradient-descent-taking-the-step): moving each weight against its gradient, with numbers.
+4. [Adam: a smarter step](#adam-a-smarter-step): a separate step size for every weight.
+5. [The learning rate and the warm-up schedule](#the-learning-rate-and-the-warm-up-schedule): how big the steps are, and how that changes during training.
+6. [Dropout: forcing the model not to rely on any single number](#dropout-forcing-the-model-not-to-rely-on-any-single-number): randomly setting numbers to 0 during training.
+7. [Label smoothing: do not aim for 100% certainty](#label-smoothing-do-not-aim-for-100-certainty): softening the target to avoid overconfidence.
 
 ### The gradient: which way to move each weight
 
@@ -734,6 +796,12 @@ The smoothed loss is higher (0.526 instead of 0.259) because tokens with very sm
 
 Everything so far trains a model to predict the **next** token, which is what decoder models such as GPT and Claude do. Encoder-only models such as BERT ([Chapter 1](01-transformers.md#three-ways-the-block-is-used-today)) are trained with a different game: fill in hidden words using the text on **both** sides. They cannot generate text well, but they produce very good representations of a whole text, which is why they are still widely used for classification and search.
 
+This section covers:
+
+1. [Masked language modelling (MLM)](#masked-language-modelling-mlm): hiding tokens and predicting them from both sides.
+2. [Next sentence prediction and the tokens `[CLS]` and `[SEP]`](#next-sentence-prediction-and-the-tokens-cls-and-sep): BERT's second training task.
+3. [Next-token prediction vs masked language modelling](#next-token-prediction-vs-masked-language-modelling): the two objectives compared.
+
 ### Masked language modelling (MLM)
 
 In **masked language modelling**, some tokens of the input are hidden and the model must predict them. BERT picks 15% of the tokens at random. Of the picked tokens:
@@ -787,6 +855,18 @@ flowchart LR
   SM --> S3["Stage 3: Preference training<br/>RLHF or DPO on ranked pairs<br/>Preferred over rejected"]
   S3 --> AM["Aligned chat model"]
 ```
+
+This section covers:
+
+1. [Stage 1: pre-training](#stage-1-pre-training): next-token prediction on a huge amount of text.
+2. [Stage 2: supervised fine-tuning (SFT)](#stage-2-supervised-fine-tuning-sft): learning to follow instructions from written examples.
+3. [Stage 3: preference training](#stage-3-preference-training): learning which of two answers people prefer, with RLHF or DPO.
+4. [Inside RLHF: training the reward model](#inside-rlhf-training-the-reward-model): a model that scores answers.
+5. [Inside RLHF: the KL penalty and reward hacking](#inside-rlhf-the-kl-penalty-and-reward-hacking): stopping the model from gaming the reward model.
+6. [Inside DPO: preferences without a reward model](#inside-dpo-preferences-without-a-reward-model): the same goal in one supervised step.
+7. [RLHF vs DPO: what each costs](#rlhf-vs-dpo-what-each-costs): the two methods compared.
+8. [What changes in each stage](#what-changes-in-each-stage): the three stages compared in one table.
+9. [Cheap fine-tuning: LoRA](#cheap-fine-tuning-lora): training small extra matrices instead of all the weights.
 
 ### Stage 1: pre-training
 
@@ -980,11 +1060,16 @@ The memory figures cover the weights and optimiser state only (as in [Chapter 3]
 
 **Other parameter-efficient methods.** LoRA belongs to a family called **parameter-efficient fine-tuning (PEFT)**. Two other members: **adapters**, small extra layers inserted inside each Transformer block, and **prefix tuning**, which trains a few extra key and value vectors that every token can attend to, as if a learned prompt were placed in front of the input.
 
-After the last stage, all weights are frozen again and the model is ready for inference, which is the subject of [Chapter 3](03-inference.md).
+After the last stage, all weights are frozen again and the model is ready for inference, which is the subject of [Chapter 3](03-inference.md#the-big-picture).
 
 ## Distillation: a small model learns from a large one
 
 Large models are expensive to run ([Chapter 4](04-quantization.md#why-size-matters)). **Distillation** trains a small model, the **student**, to imitate a large trained model, the **teacher**. The student ends up much better than if it had been trained on the raw data alone, because the teacher's outputs carry more information than the data's correct answers. Many small models are produced this way.
+
+This section covers:
+
+1. [Learning from the teacher's probabilities](#learning-from-the-teachers-probabilities): soft targets instead of one-hot targets, with numbers.
+2. [Three ways to distil a language model](#three-ways-to-distil-a-language-model): the different things a student can learn from.
 
 ### Learning from the teacher's probabilities
 

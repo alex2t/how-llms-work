@@ -26,6 +26,15 @@ The rest of this document walks through each step, with most detail on attention
 
 Before a neural network can read a sentence, it must cut the raw text into discrete pieces called **tokens** and map each piece to an integer ID. Byte Pair Encoding (BPE) builds a vocabulary by repeatedly merging the most frequent pair of adjacent symbols, starting from single characters. Frequent words end up as one token; rare words split into known pieces.
 
+This section covers:
+
+1. [Word, character, subword or byte?](#word-character-subword-or-byte): the four ways to cut text, and why subwords and bytes won.
+2. [Training: learning the merges](#training-learning-the-merges): how BPE builds its vocabulary, with a worked corpus.
+3. [Encoding new text](#encoding-new-text): replaying the merges to turn any word into token IDs.
+4. [Practical consequences](#practical-consequences): what tokenization means for spaces, word counts and letter-level tasks, and the other subword algorithms (WordPiece, Unigram, SentencePiece).
+5. [Special tokens](#special-tokens): the markers for start, end, padding and chat roles.
+6. [Does the tokenizer change during or after training?](#does-the-tokenizer-change-during-or-after-training): no, it is built first and then frozen.
+
 ### Word, character, subword or byte?
 
 **Why not just use words or characters?** A word vocabulary cannot handle a word it never saw (a typo, a new name, `ChatGPT`). A character vocabulary handles anything but makes sequences very long, and attention cost grows with length squared. BPE sits in the middle. It started as a compression algorithm (Gage, 1994) and was adapted for translation by Sennrich et al. (2016). GPT-2 and later models use byte-level BPE: the starting alphabet is the 256 possible bytes, so any text in any language can be encoded with no "unknown" token.
@@ -172,6 +181,17 @@ No. The BPE tokenizer is trained **first**, on its own, by counting and merging 
 ## From token IDs to vectors
 
 This step turns each token into a list of numbers the network can compute with. It happens in two moves: token → **token ID** (a whole number), then token ID → **embedding vector** (512 numbers). A position vector is then added, giving a matrix X with one row per token. X is the input to the first Transformer block.
+
+This section covers:
+
+1. [What is a token ID?](#what-is-a-token-id): a token's number in the vocabulary, and why it carries no meaning.
+2. [Token embeddings](#token-embeddings): the table E that turns each ID into a vector, and how it is learned.
+3. [Positional encoding](#positional-encoding): why the model also needs to know where each token sits.
+4. [How it is added: a worked sentence](#how-it-is-added-a-worked-sentence): embedding plus position vector for `YOUR CAT IS A LOVELY CAT`.
+5. [The formula](#the-formula): the sine and cosine waves that build each position vector.
+6. [Why sine and cosine?](#why-sine-and-cosine): why waves, and why a sine and a cosine together.
+7. [The encoder input](#the-encoder-input): the final matrix X that enters the first layer.
+8. [What is learned, and what changes after training?](#what-is-learned-and-what-changes-after-training): which parts are trained and which are fixed.
 
 ### What is a token ID?
 
@@ -388,6 +408,14 @@ flowchart LR
   X --> WV["× W_V (512 × 64)"] --> V["Values V<br/>(6 × 64)"]
 ```
 
+This section covers:
+
+1. [Which X? All tokens, layer by layer](#which-x-all-tokens-layer-by-layer): X holds every token, and changes from layer to layer.
+2. [What each one is for](#what-each-one-is-for): the question each of Q, K and V answers.
+3. [Why three separate matrices?](#why-three-separate-matrices): one token plays different roles.
+4. [Self-attention vs cross-attention](#self-attention-vs-cross-attention): where Q, K and V come from in each case.
+5. [Tiny worked example](#tiny-worked-example): Q, K and V computed by hand for three tokens.
+
 ### Which X? All tokens, layer by layer
 
 **X covers every token of the input at once.** X has one row per token of the whole sentence, and Q = X·W\_Q produces one query row per token in a single matrix multiplication. Likewise for K and V. For `YOUR CAT IS A LOVELY CAT` (6 tokens), X is 6 × 512, so Q, K and V are each 6 rows: one query, one key and one value for each word.
@@ -496,6 +524,12 @@ flowchart LR
 
     **Why divide by $\sqrt{d_k}$?** When two vectors have length $d_k = 64$, their dot product is the sum of 64 products, so its typical size grows in proportion to $\sqrt{64} = 8$ (when the numbers are random with a spread of 1). Because $e^x$ grows exponentially, unscaled scores like 16 vs 8 produce $e^{16} \approx 8{,}886{,}111$ vs $e^8 \approx 2{,}981$ (about 2,981 to 1), forcing softmax to put 99.97% of the weight on a single token. Dividing by $\sqrt{64} = 8$ brings those scores back to 2 vs 1 ($e^2 \approx 7.39$ vs $e^1 \approx 2.72$), keeping attention weights smooth and learnable.
 
+This section covers:
+
+1. [What the mask looks like](#what-the-mask-looks-like): how the decoder is stopped from seeing the words after it.
+2. [Worked example (continuing from above)](#worked-example-continuing-from-above): the five steps computed for one token.
+3. [The cost of attention](#the-cost-of-attention): why the work grows with the square of the text length.
+
 ### What the mask looks like
 
 A decoder must predict each word **without seeing the words after it**, otherwise training would be cheating: the answer would be sitting in the input. The mask enforces this in the n × n attention table by blocking every cell above the diagonal.
@@ -595,6 +629,13 @@ flowchart LR
 ```
 
 The encoder reads the whole source sentence at once; the decoder generates the output one token at a time and looks up the encoder through cross-attention.
+
+This section covers:
+
+1. [The pieces inside each layer](#the-pieces-inside-each-layer): attention, feed-forward network, residual connections and layer normalisation.
+2. [Layer normalisation in detail](#layer-normalisation-in-detail): keeping each token's numbers at a stable scale, with a worked example.
+3. [The feed-forward network in detail](#the-feed-forward-network-in-detail): the small two-layer network applied to each token separately.
+4. [Three ways the block is used today](#three-ways-the-block-is-used-today): encoder-only, encoder–decoder and decoder-only models.
 
 ### The pieces inside each layer
 
@@ -729,6 +770,13 @@ $$
 
 The paper by Vaswani and seven co-authors at Google showed that a model built only from attention and feed-forward layers, with no recurrence and no convolution, could beat the best translation systems while training much faster. That architecture is the Transformer, and it underlies essentially every large language model today.
 
+This section covers:
+
+1. [The problem it solved](#the-problem-it-solved): the limits of recurrent networks.
+2. [What the paper introduced](#what-the-paper-introduced): the main ideas of the Transformer.
+3. [Key settings of the base model](#key-settings-of-the-base-model): the sizes used throughout these notes.
+4. [Results and impact](#results-and-impact): the translation scores, and what followed.
+
 ### The problem it solved
 
 Before 2017, sequence models were mostly recurrent neural networks (RNNs and LSTMs). They read text one token at a time, carrying a hidden state forward. That caused two problems:
@@ -766,7 +814,7 @@ On WMT 2014 English–German translation the big model scored 28.4 BLEU, more th
 
 Every weight in the model, including W\_Q, W\_K, W\_V, W\_O, the embeddings and the feed-forward layers, is learned the same way: predict the next token, measure the error, nudge all weights to reduce it. This is the answer to "where do the Q, K, V weights come from": they are whatever values made next-token prediction most accurate over the training data.
 
-- **Training** feeds the whole text in at once. The causal mask hides each position's answer, so every position is trained in parallel in one pass ([Chapter 2](02-training.md#teacher-forcing-why-training-happens-in-one-time-step)). The loss is [cross-entropy](02-training.md#the-loss-cross-entropy), and the [Adam optimiser](02-training.md#adam-a-smarter-step) adjusts every weight slightly after each batch. [Chapter 2](02-training.md) walks through each step with numbers.
+- **Training** feeds the whole text in at once. The causal mask hides each position's answer, so every position is trained in parallel in one pass ([Chapter 2](02-training.md#teacher-forcing-why-training-happens-in-one-time-step)). The loss is [cross-entropy](02-training.md#the-loss-cross-entropy), and the [Adam optimiser](02-training.md#adam-a-smarter-step) adjusts every weight slightly after each batch. [Chapter 2](02-training.md#the-big-picture) walks through each step with numbers.
 - **Generation** runs the model once per new token: [pick the next token](03-inference.md#choosing-the-next-token) from the probabilities, append it to the input, and repeat until an end-of-sequence token or a length limit ([Chapter 3](03-inference.md#stopping)). The [KV cache](03-inference.md#the-kv-cache) stores the K and V of earlier tokens so they are not recomputed. [Chapter 3](03-inference.md#generation-step-by-step) covers this in detail.
 
 ## Cheat sheet

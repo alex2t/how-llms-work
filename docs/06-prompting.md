@@ -2,7 +2,7 @@
 
 ## The big picture
 
-The earlier chapters explained how a model is built, trained and run. This chapter is about **using** a trained model well: how the text you give it steers what it does, and how models can be made to "think" before they answer. None of the techniques in the first sections change a single weight; they work entirely through the prompt and the decoding settings of [Chapter 3](03-inference.md). The last section shows how newer **reasoning models** are trained to think on their own.
+The earlier chapters explained how a model is built, trained and run. This chapter is about **using** a trained model well: how the text you give it steers what it does, and how models can be made to "think" before they answer. None of the techniques in the first sections change a single weight; they work entirely through the prompt and the decoding settings of [Chapter 3](03-inference.md#choosing-the-next-token). The last section shows how newer **reasoning models** are trained to think on their own.
 
 1. **In-context learning:** teaching a task inside the prompt, with instructions or a few examples.
 2. **Chain-of-thought:** asking for the steps before the answer.
@@ -28,6 +28,11 @@ flowchart LR
 ## In-context learning
 
 A pre-trained model has seen so much text that it can often do a new task just from how the prompt is written, without any fine-tuning. This is called **in-context learning**: the model picks up the task from the **context** (the prompt) at inference time, and its weights stay exactly as they were. It matters because it is the cheapest way to adapt a model: changing a prompt takes seconds, while fine-tuning ([Chapter 2](02-training.md#stage-2-supervised-fine-tuning-sft)) takes data, compute and a new copy of the weights.
+
+This section covers:
+
+1. [Zero-shot and few-shot prompts](#zero-shot-and-few-shot-prompts): describing a task, with or without solved examples, and a worked fraud-labelling example.
+2. [Why it works, and what it costs](#why-it-works-and-what-it-costs): why next-token prediction can follow a pattern set up in the prompt, and the price of longer prompts.
 
 ### Zero-shot and few-shot prompts
 
@@ -91,6 +96,12 @@ Whether the extra cost is worth it is decided as in Chapter 5: measure both prom
 
 Some questions need several steps of reasoning, and a model that must give the answer as its very next token has no room to work them out. **Chain-of-thought (CoT)** prompting asks the model to write the intermediate steps first and the answer last. It matters because, for multi-step problems in maths, logic and planning, this simple change makes answers much more often correct.
 
+This section covers:
+
+1. [Why writing the steps helps](#why-writing-the-steps-helps): each written step gives the model another forward pass of computation.
+2. [Worked example](#worked-example): a multi-step question answered directly and with chain-of-thought.
+3. [Limits](#limits): the extra cost, and the tasks where it does not help.
+
 ### Why writing the steps helps
 
 A model produces one token per forward pass, and each pass does a fixed amount of computation ([Chapter 3](03-inference.md#generation-step-by-step)). When the answer must come immediately, all the reasoning has to happen inside a single pass. When the model first writes the steps, every written step becomes part of the input for the next token: the model can read its own intermediate results, exactly as a person uses scratch paper. More output tokens means more computation spent on the problem.
@@ -130,6 +141,11 @@ Two ways to get a chain of thought:
 ## Self-consistency
 
 A single chain of thought can take a wrong turn. **Self-consistency** asks the same question several times, with sampling switched on so the chains differ, and returns the answer that comes up most often. It trades extra computation for accuracy, and it needs no change to the model or the prompt.
+
+This section covers:
+
+1. [How it works](#how-it-works): sample several chains, extract each answer, take a majority vote.
+2. [Why voting helps, in numbers](#why-voting-helps-in-numbers): how the chance of a right answer grows with the number of chains.
 
 ### How it works
 
@@ -190,6 +206,14 @@ The cost grows with every chain: 5 chains cost about 5 times the decode time and
 ## Reasoning models: thinking before answering
 
 Chain-of-thought and self-consistency are tricks applied from outside, through the prompt. **Reasoning models** are trained to reason on their own: before every answer they write a long, often hidden, chain of thought, and they have learned through reinforcement learning which kinds of reasoning lead to correct answers. They are much stronger at maths, coding and planning, and they show a new way to buy accuracy: spending more computation at answer time.
+
+This section covers:
+
+1. [Thinking tokens and test-time compute](#thinking-tokens-and-test-time-compute): the hidden reasoning before the answer, and spending more computation to get better answers.
+2. [Training with verifiable rewards](#training-with-verifiable-rewards): learning from problems whose answers can be checked automatically.
+3. [GRPO: learning from a group of answers](#grpo-learning-from-a-group-of-answers): the reinforcement-learning method behind DeepSeek-R1, with numbers.
+4. [What emerges](#what-emerges): the reasoning behaviours that appear during this training.
+5. [Prompted reasoning vs reasoning models](#prompted-reasoning-vs-reasoning-models): chain-of-thought prompting and reasoning models compared.
 
 ### Thinking tokens and test-time compute
 

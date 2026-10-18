@@ -2,11 +2,11 @@
 
 ## The big picture
 
-[Chapter 2](02-training.md) explained how the model's weights are learned. This chapter explains what happens when the trained model is used: you type a prompt, and the model writes an answer one token at a time. This use of a trained model is called **inference**.
+[Chapter 2](02-training.md#the-big-picture) explained how the model's weights are learned. This chapter explains what happens when the trained model is used: you type a prompt, and the model writes an answer one token at a time. This use of a trained model is called **inference**.
 
 Each answer is produced by a simple loop:
 
-1. **Read the prompt.** Tokenize it and run it through the model once, exactly as in [Chapter 1](01-transformers.md).
+1. **Read the prompt.** Tokenize it and run it through the model once, exactly as in [Chapter 1](01-transformers.md#the-big-picture).
 2. **Score every token.** The last position gives a probability for every token in the vocabulary.
 3. **Choose one token.** A decoding rule picks the next token from those probabilities: always the most likely one, or a random choice shaped by settings such as temperature.
 4. **Append and repeat.** Add the chosen token to the input and go back to step 2.
@@ -28,15 +28,24 @@ The rest of the chapter walks through each step. It starts with what makes infer
 
 Inference uses the same model and the same forward pass as training, but nothing is learned. Knowing exactly what is switched off explains why using a model is so much cheaper than training it, and why the same prompt can give the same answer every time.
 
+In short: at inference the model runs only the forward pass. The loss, backpropagation, the optimiser and dropout are all switched off, and the weights never change.
+
+This section covers:
+
+1. [Definitions](#definitions): inference, frozen weights and the forward pass.
+2. [What is switched off](#what-is-switched-off): training and inference side by side, and why nothing can be learned without a correct answer.
+3. [Why inference needs less memory](#why-inference-needs-less-memory): one number per weight instead of four.
+4. [Same input, same output?](#same-input-same-output): why the same prompt always gives the same probabilities, and where variety in answers comes from.
+
 ### Definitions
 
 - **Inference:** running a trained model on new input to get an output. In a chat model, it means generating an answer to a prompt.
-- **Frozen weights:** weights that are only read, never changed. After the last training stage, every weight in E, W\_Q, W\_K, W\_V, W\_O and the feed-forward layers is frozen.
-- **Forward pass:** one run of the input through the model, from token IDs to probabilities, as described in [Chapter 1](01-transformers.md).
+- **Frozen weights:** weights that are only read, never changed. After the last training stage, every weight in [E](01-transformers.md#token-embeddings), [W\_Q, W\_K, W\_V](01-transformers.md#where-q-k-and-v-come-from), [W\_O](01-transformers.md#multi-head-attention) and the [feed-forward layers](01-transformers.md#the-feed-forward-network-in-detail) is frozen.
+- **Forward pass:** one run of the input through the model, from token IDs to probabilities, as described in [Chapter 1](01-transformers.md#the-big-picture).
 
 ### What is switched off
 
-| | Training ([Chapter 2](02-training.md)) | Inference |
+| | Training ([Chapter 2](02-training.md#what-training-is)) | Inference |
 | --- | --- | --- |
 | Weights | Change after every batch | Frozen: read only |
 | Forward pass | Yes | Yes, the same computation |
@@ -48,11 +57,19 @@ Inference uses the same model and the same forward pass as training, but nothing
 | Decoder input | The true text ([teacher forcing](02-training.md#teacher-forcing-why-training-happens-in-one-time-step)) | The model's own previous outputs |
 | Typical cost | Weeks on thousands of GPUs | Seconds per answer |
 
-The most important row is "Correct answer known?". During training, after `YOUR CAT IS A LOVELY`, the text says the next token is `CAT`, so the model's probability of 0.772 for `CAT` can be turned into a loss of 0.259 ([Chapter 2](02-training.md#worked-example-chapter-1s-probabilities)). At inference, the same probabilities come out: CAT 0.772, DOG 0.211, IS 0.013, LOVELY 0.004. But there is no correct answer to compare them with. The model simply **uses** them to choose the next token. With no loss there is nothing to backpropagate, and with no gradients there is nothing for the optimiser to do.
+The most important row is "Correct answer known?". During training, after `YOUR CAT IS A LOVELY`, the text says the next token is `CAT`, so the model's probability of 0.772 for `CAT` can be turned into a loss of 0.259 ([Chapter 2](02-training.md#worked-example-chapter-1s-probabilities)). At inference, the same probabilities come out: CAT 0.772, DOG 0.211, IS 0.013, LOVELY 0.004. But there is no correct answer to compare them with. The model simply **uses** them to choose the next token.
+
+Without a correct answer, the three training steps that follow the forward pass cannot run, because each one needs the result of the step before it:
+
+1. **The loss needs the correct answer.** The loss measures the distance between the model's probabilities and the correct token. During training, the correct token is `CAT`, so the loss is −ln(0.772) = 0.259. At inference there is no correct token, so there is no distance to measure and no loss.
+2. **Backpropagation needs the loss.** Backpropagation answers one question for every weight: "if this weight changed a little, would the loss go up or down, and by how much?" The answer is the weight's **gradient**. It starts from the loss: for example, the gradient of the `CAT` logit during training is its probability minus its target, 0.772 − 1 = −0.228, which says "raise this score". At inference the target is unknown, so this first number cannot be computed, and neither can any gradient that depends on it.
+3. **The optimiser needs the gradients.** The optimiser (Adam) changes each weight using the rule new weight = old weight − learning rate × gradient. Without a gradient there is no direction to move in, so the weights stay exactly as they are.
+
+So at inference the model runs only the forward pass: it reads the prompt and produces probabilities. Nothing measures its error, and nothing changes its weights.
 
 ### Why inference needs less memory
 
-Training must keep more than the weights in memory. For every weight it also stores a **gradient** and Adam's two running averages **m** and **v** ([Chapter 2](02-training.md#adam-a-smarter-step)). That is four numbers per weight instead of one.
+Training must keep more than the [weights](02-training.md#three-ideas-weights-prediction-error) in memory. For every weight it also stores a **gradient** and Adam's two running averages **m** and **v** ([Chapter 2](02-training.md#adam-a-smarter-step)). That is four numbers per weight instead of one.
 
 **Worked example** with the base model's 65 million weights, each stored as a 32-bit number of 4 bytes ([Chapter 4](04-quantization.md#number-formats) explains number formats):
 
@@ -69,11 +86,26 @@ Training needs four times as much memory before counting anything else. (Trainin
 
 ### Same input, same output?
 
-With frozen weights and dropout switched off, the forward pass is **deterministic**: the same prompt always gives exactly the same probabilities. Any variety in a model's answers comes only from step 3 of the loop, the decoding rule. If the rule always picks the most likely token, the answer is the same every time; if it picks randomly according to the probabilities, answers can differ. The decoding rules are explained at the end of this chapter.
+With frozen weights and dropout switched off, the [forward pass](#definitions) (one run of the input through the model: token IDs → embeddings → every layer → probabilities for the next token, as shown in [Chapter 1's overview](01-transformers.md#the-big-picture)) is **deterministic**: the same prompt always gives exactly the same probabilities. Any variety in a model's answers comes only from step 3 of the loop, the decoding rule. If the rule always picks the most likely token, the answer is the same every time; if it picks randomly according to the probabilities, answers can differ. The decoding rules are explained at the end of this chapter.
 
 ## Generation step by step
 
-A model writes its answer one token at a time: each new token needs its own forward pass, and each pass can only start once the previous token is chosen. This section follows that loop on the translation example from [Chapter 2](02-training.md#the-translation-example), then shows that chat models such as Claude work the same way.
+This section shows the generation loop from [The big picture](#the-big-picture) at work, token by token, on a real example.
+
+The key point is that a model cannot write its answer in one go. One forward pass produces a prediction for **one** new token only. To write a 4-token answer such as "Ti amo molto `<EOS>`", the model must therefore run 4 forward passes, one after the other:
+
+- **Pass 1** reads the input and predicts the first token, `Ti`.
+- **Pass 2** reads the input **plus** `Ti`, and predicts `amo`.
+- **Pass 3** reads the input plus `Ti amo`, and predicts `molto`.
+- **Pass 4** reads the input plus `Ti amo molto`, and predicts `<EOS>`, which stops the loop.
+
+Pass 2 cannot start before pass 1 has finished, because its input contains the token pass 1 chose. This is why generation is sequential and slower than training, where the whole sentence is known in advance and processed in a single pass ([teacher forcing](02-training.md#why-training-happens-in-one-time-step)).
+
+The section follows this loop for the two kinds of model:
+
+1. **[Encoder–decoder](#encoderdecoder-translating-i-love-you-very-much):** the translation model of [Chapter 2's example](02-training.md#the-translation-example), translating "I love you very much" into "Ti amo molto".
+2. **[Decoder-only](#decoder-only-how-chat-models-generate):** chat models such as Claude, which run the same loop with the prompt and the answer in a single sequence.
+3. **[A comparison of the two](#encoderdecoder-vs-decoder-only-at-inference).**
 
 ### Encoder–decoder: translating "I love you very much"
 
@@ -129,9 +161,21 @@ The same translation, asked as a prompt, looks like the supervised fine-tuning e
 
 The prompt plays the role the encoder played above: it is the information the answer depends on. The causal mask ([Chapter 1](01-transformers.md#what-the-mask-looks-like)) is the same as in training, so each new token sees the prompt and the answer so far, and nothing after it.
 
-The same loop also explains [Chapter 1's logits example](01-transformers.md#from-the-last-vector-back-to-a-word). Given the prompt `YOUR CAT IS A LOVELY`, the last position outputs CAT 0.772, DOG 0.211, IS 0.013, LOVELY 0.004. Taking the most likely token appends `CAT`, and the next pass starts from `YOUR CAT IS A LOVELY CAT`.
-
 In a chat, "the prompt" is the whole conversation so far: earlier messages, the new question, and some special tokens that mark who is speaking. The model generates until it produces its end-of-answer token.
+
+**Example.** The translation continues with a second request:
+
+| Turn | Who | Message |
+| --- | --- | --- |
+| 1 | User | Translate to Italian: I love you very much |
+| 1 | Assistant | Ti amo molto |
+| 2 | User | Now make it more formal. |
+
+To write its second answer, the model does not receive only "Now make it more formal." It receives one sequence that contains the whole conversation, with markers for who is speaking (shown here in words; the real special tokens follow below):
+
+> [start] **user:** Translate to Italian: I love you very much [end of turn] **assistant:** Ti amo molto [end of turn] **user:** Now make it more formal. [end of turn] **assistant:**
+
+The model generates its new answer token by token after the last "assistant:", until it produces the end-of-turn token. The word "it" in "make it more formal" only makes sense because "Ti amo molto" is still part of the input. The model itself remembers nothing between turns: the application sends the full conversation again at every turn, which is also why long conversations become slower and more expensive (see [the KV cache](#the-kv-cache)).
 
 **What a chat looks like as tokens.** Each model family has a fixed **chat template**: special tokens, added to the vocabulary for this purpose, that mark where each message starts and ends and who wrote it. Llama 3's template, for the translation request above, gives this sequence:
 
@@ -169,6 +213,16 @@ The model learns this format during supervised fine-tuning ([Chapter 2](02-train
 ## Prefill vs decode: why the first token is slower
 
 Generation has two phases that use the hardware in very different ways. Knowing them explains two things every chat user notices: there is a pause before the first word appears, and after that the words stream out at a steady pace.
+
+The two phases are **prefill**, a single forward pass that reads the whole prompt and produces the first token, and **decode**, one pass for every token after that. Prefill keeps the GPU busy calculating; decode spends most of its time reading the weights from memory, so its speed is set by memory, not by arithmetic.
+
+This section covers:
+
+1. [Definitions](#definitions_1): prefill, decode, time to first token, tokens per second and FLOPs.
+2. [Prefill works like training](#prefill-works-like-training): why reading the prompt is one fast, parallel pass.
+3. [Why decode is limited by memory, not arithmetic](#why-decode-is-limited-by-memory-not-arithmetic): every new token requires reading every weight.
+4. [Worked example: a 7-billion-weight model](#worked-example-a-7-billion-weight-model): the two phases timed with real numbers.
+5. [What this means in practice](#what-this-means-in-practice): long prompts, streaming speed, serving many users and reasoning models.
 
 ### Definitions
 
@@ -243,6 +297,14 @@ Prefill handled 1,000 tokens in 28 ms; decode would need 1,000 × 7 ms = 7 secon
 ## The KV cache
 
 The KV cache is the main trick that makes generation fast: it stores the keys and values of tokens already processed, so each decode step only computes them for the one new token. It saves a great deal of arithmetic, but it costs memory, and that memory cost shapes how long a conversation can be and how many users a GPU can serve.
+
+This section covers:
+
+1. [The waste it removes](#the-waste-it-removes): without a cache, every step recomputes all earlier tokens.
+2. [What the KV cache is](#what-the-kv-cache-is): the keys and values kept from earlier steps, and what one decode step does with them.
+3. [The cache growing, step by step](#the-cache-growing-step-by-step): the translation example with the cache.
+4. [How much memory the cache needs](#how-much-memory-the-cache-needs): the formula and a worked example.
+5. [The trade-off](#the-trade-off): compute saved against memory spent.
 
 ### The waste it removes
 
@@ -335,6 +397,17 @@ This is why longer conversations cost more to serve, and why model designers try
 ## Choosing the next token
 
 Every decode step ends with a probability for every token in the vocabulary. A **decoding rule** (also called a decoding strategy or sampling method) turns those probabilities into one chosen token. The rule does not change the model at all, yet it decides whether answers are repetitive or varied, safe or creative.
+
+This section covers:
+
+1. [Greedy decoding](#greedy-decoding): always take the most likely token.
+2. [Beam search](#beam-search): keep several candidate answers and choose the best whole sequence.
+3. [Sampling and temperature](#sampling-and-temperature): pick at random according to the probabilities, made sharper or flatter by the temperature.
+4. [Top-k sampling](#top-k-sampling): sample only among the k most likely tokens.
+5. [Top-p (nucleus) sampling](#top-p-nucleus-sampling): sample only among the most likely tokens whose probabilities add up to p.
+6. [How the rules combine](#how-the-rules-combine): the order in which several settings are applied at each step.
+7. [Typical settings](#typical-settings): common values for different tasks.
+8. [Constrained decoding](#constrained-decoding): allow only tokens that keep the answer in a required format.
 
 All the rules below use the same example from [Chapter 1](01-transformers.md#from-the-last-vector-back-to-a-word). After the prompt `YOUR CAT IS A LOVELY`, the model's last position gives these logits (raw scores) and, after softmax, these probabilities. For simplicity, the vocabulary is just these four tokens.
 
@@ -574,6 +647,16 @@ Two cautions:
 ## Stopping
 
 The generation loop has no natural end: after every token, the model can always predict another one. Something must decide when the answer is finished. Three conditions do this, and every generation stops at whichever comes first.
+
+The answer ends when the model chooses its end token, when a maximum number of tokens is reached, or when a chosen stop text appears. Above all of them sits a hard limit, the context window: the prompt and the answer together can never be longer than the model allows.
+
+This section covers:
+
+1. [The three stop conditions](#the-three-stop-conditions): end token, maximum tokens and stop sequence.
+2. [The context window: a hard limit](#the-context-window-a-hard-limit): the maximum length of prompt and answer together.
+3. [How big is a context window?](#how-big-is-a-context-window): context windows in words and pages.
+4. [A bigger window is not a perfect memory](#a-bigger-window-is-not-a-perfect-memory): why models use long inputs unevenly.
+5. [After the loop: from IDs back to text](#after-the-loop-from-ids-back-to-text): turning the chosen token IDs back into text.
 
 ### The three stop conditions
 
