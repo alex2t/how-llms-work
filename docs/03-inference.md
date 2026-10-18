@@ -40,7 +40,12 @@ This section covers:
 ### Definitions
 
 - **Inference:** running a trained model on new input to get an output. In a chat model, it means generating an answer to a prompt.
-- **Frozen weights:** weights that are only read, never changed. After the last training stage, every weight in [E](01-transformers.md#token-embeddings), [W\_Q, W\_K, W\_V](01-transformers.md#where-q-k-and-v-come-from), [W\_O](01-transformers.md#multi-head-attention) and the [feed-forward layers](01-transformers.md#the-feed-forward-network-in-detail) is frozen.
+- **Frozen weights:** weights that are only read, never changed. After the last training stage, every weight of the model is frozen:
+
+    - **E**, the embedding table that turns each token ID into a vector ([token embeddings](01-transformers.md#token-embeddings)).
+    - **W\_Q, W\_K, W\_V**, the three matrices that turn each token's vector into its query, key and value, the vectors attention uses to decide which tokens to look at and what to take from them ([where Q, K and V come from](01-transformers.md#where-q-k-and-v-come-from)).
+    - **W\_O**, the matrix that combines the outputs of the attention heads (the 8 attention calculations that run side by side) back into one vector per token ([multi-head attention](01-transformers.md#multi-head-attention)).
+    - **W₁ and W₂**, the two matrices of the feed-forward network, which processes each token's vector on its own after attention ([the feed-forward network](01-transformers.md#the-feed-forward-network-in-detail)).
 - **Forward pass:** one run of the input through the model, from token IDs to probabilities, as described in [Chapter 1](01-transformers.md#the-big-picture).
 
 ### What is switched off
@@ -69,7 +74,12 @@ So at inference the model runs only the forward pass: it reads the prompt and pr
 
 ### Why inference needs less memory
 
-Training must keep more than the [weights](02-training.md#three-ideas-weights-prediction-error) in memory. For every weight it also stores a **gradient** and Adam's two running averages **m** and **v** ([Chapter 2](02-training.md#adam-a-smarter-step)). That is four numbers per weight instead of one.
+Training must keep more than the [weights](02-training.md#three-ideas-weights-prediction-error) in memory. For every weight it also stores a **gradient** (how much, and in which direction, the loss changes when that weight changes slightly) and the two running averages kept by the **Adam optimiser**, the rule that turns gradients into weight changes ([Adam in Chapter 2](02-training.md#adam-a-smarter-step)):
+
+- **m**, the recent average of the weight's gradient, which smooths out the noise from one batch to the next.
+- **v**, the recent average of the **squared** gradient, which measures how large this weight's gradients usually are, so that Adam can give each weight its own step size.
+
+These averages are updated at every training step, so they must stay in memory for the whole of training. With the weight itself, that is four numbers per weight instead of one.
 
 **Worked example** with the base model's 65 million weights, each stored as a 32-bit number of 4 bytes ([Chapter 4](04-quantization.md#number-formats) explains number formats):
 
@@ -290,7 +300,7 @@ Prefill handled 1,000 tokens in 28 ms; decode would need 1,000 × 7 ms = 7 secon
 ### What this means in practice
 
 - **Long prompts delay the first token.** Prefill time grows with the prompt length, so a 10,000-token document takes about ten times longer to process than a 1,000-token prompt before any answer appears.
-- **Streaming speed depends on memory speed and model size.** Each decode step reads every weight, so a smaller model, or the same model stored in fewer bytes per weight, generates faster. This is a main reason for quantization ([Chapter 4](04-quantization.md#fewer-bytes-also-means-faster-generation)).
+- **Streaming speed depends on memory speed and model size.** Each decode step reads every weight, so a smaller model, or the same model stored in fewer bytes per weight, generates faster. This is a main reason for **quantization**: storing each weight in fewer bits, for example as an 8-bit integer (1 byte) instead of a 16-bit number (2 bytes), which halves the memory to read at every step ([quantization in Chapter 4](04-quantization.md#fewer-bytes-also-means-faster-generation)).
 - **Serving many users at once is efficient.** When several users' decode steps are grouped into one batch, the weights are read once and used for all of them. The memory cost is shared, which is why providers batch requests together.
 - **Reasoning models think before they answer.** Their hidden thinking tokens are decoded like any others: 2,000 of them add about 2,000 × 7 ms = 14 seconds on this model, and grow the KV cache described next ([Chapter 6](06-prompting.md#thinking-tokens-and-test-time-compute)).
 
@@ -642,7 +652,7 @@ Masking is done on the logits, exactly like the causal mask in Chapter 1: the lo
 Two cautions:
 
 - **A valid format is not a correct answer.** Constrained decoding guarantees that the output can be read by the program, not that the label is right; that is what the metrics in Chapter 5 measure.
-- **Measure what you deploy.** Renormalising changes the numbers: here the fraud score rises from 0.55 to 0.647. A threshold chosen on one kind of score (see [Moving the threshold](05-evaluation.md#moving-the-threshold-the-roc-curve-and-auc)) must be applied to the same kind of score in production.
+- **Measure what you deploy.** The application uses the probability of `FRAUD` as a **fraud score**, and flags a transaction when that score reaches a **threshold**, a cut-off chosen by the bank (0.5 in Chapter 5). Renormalising changes the score: here it rises from 0.55 to 0.647. A threshold chosen on one kind of score is therefore wrong for the other: with a threshold of 0.6, this transaction would pass without constrained decoding (0.55) but be flagged with it (0.647). The threshold must be chosen on the same kind of score that runs in production (see [Moving the threshold](05-evaluation.md#moving-the-threshold-the-roc-curve-and-auc)).
 
 ## Stopping
 

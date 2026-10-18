@@ -14,35 +14,7 @@ Legend: `[ ]` waiting · `[x]` approved and applied · `[-]` rejected
 
 ## Waiting for approval
 
-### S-2. Links that replace an explanation `[ ]`
-
-- **Rule:** `CLAUDE.md`, Writing style: "A link never replaces an explanation." The reader must understand the passage without clicking; a link to another chapter only shows where else the topic is discussed.
-- **Checked:** all 189 links between chapters in the text of Chapters 0–6 (Sources and Cheat sheets left out). Most already explain the term next to the link, or only point forward to where a topic is developed ("Chapter 3 covers generation in detail"); those are fine.
-- **Below:** the places still to fix, where a term is named with a link but not explained in the sentence, so a reader who does not click would not understand it.
-- **Proposed change:** for each one, add a short definition (one or two sentences, with a small example where useful) next to the link, and keep the link. Nothing is removed.
-
-| # | Location | Section | Term used without explanation | What to add | Priority |
-| --- | --- | --- | --- | --- | --- |
-| S2-1 | `docs/01-transformers.md:817` | Training and generation | **cross-entropy**, **Adam optimiser** | Cross-entropy: −ln of the probability given to the correct token. Adam: the rule that turns gradients into weight changes, with a separate step size for every weight | Low |
-| S2-2 | `docs/02-training.md:797` | Another training objective: masked language modelling | **encoder-only models** | A model made only of the encoder stack: it reads a whole text at once (both directions) and produces vectors, but does not generate text | Low |
-| S2-3 | `docs/03-inference.md:43` | Inference vs training › Definitions | **E, W\_Q, W\_K, W\_V, W\_O, feed-forward layers** (names only) | One short phrase per matrix, as in `docs/02-training.md:43` | Medium |
-| S2-4 | `docs/03-inference.md:72` | Why inference needs less memory | Adam's **m** and **v** | m: running average of each weight's recent gradients (the direction); v: running average of their squares (how large and noisy they are) | Medium |
-| S2-5 | `docs/03-inference.md:293` | What this means in practice | **quantization** (first use, before Chapter 4) | Storing each weight in fewer bits, for example 1 byte instead of 2, so there is less to read at each step | Low |
-| S2-6 | `docs/03-inference.md:645` | Constrained decoding | **threshold** | The cut-off score above which the application answers `FRAUD` (0.5 in Chapter 5) | Low |
-| S2-7 | `docs/04-quantization.md:382` | How to check a quantized model | **perplexity** | e raised to the average loss; read as "how many tokens the model hesitates between"; lower is better | Medium |
-| S2-8 | `docs/04-quantization.md:434` | Decoder-only | "Chapter 1 described **both stacks**" | Name the two stacks: the encoder reads the input, the decoder generates the output one token at a time | Low |
-
-**Decision:** S2-1 to S2-8 waiting.
-
----
-
-### L1-7. Hands-on exercises `[ ]`
-
-- **Not in the book:** the lecture suggests labs (build a BPE tokenizer, attention from scratch, a mini Transformer). The book is a reading book with worked examples, so this is out of its current scope.
-- **Recommendation:** optional and not needed for completeness. If wanted later, add a short "Try it yourself" box at the end of each chapter pointing to small exercises.
-- **Priority:** Low (your call).
-
-**Decision:**
+No open items.
 
 ---
 
@@ -63,7 +35,6 @@ Reviewed 2026-10-17. Lecture 1 overlaps heavily with the Introduction and Chapte
 
 **Decision:**
 
-#### L1-7. Hands-on exercises: moved to the top of this file, under "Waiting for approval".
 
 ### Lecture 2 — Model families, Mixture of Experts, normalisation, context, decoding, prompting
 

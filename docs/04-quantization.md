@@ -379,7 +379,7 @@ With a fixed memory budget, the choice is often between a small model at 16 bits
 
 Do not rely on the label: measure the quantized model against the original on the same inputs.
 
-1. **Perplexity** on a sample of text ([Chapter 2](02-training.md#perplexity-the-same-number-in-friendlier-units)): a small rise means a small loss of quality. Both models must use the same tokenizer, which is always true here, since quantization never changes the tokenizer.
+1. **Perplexity** on a sample of text: e raised to the model's average loss per token, which can be read as "how many tokens the model hesitates between, on average" (1 for a perfect model; lower is better). Run both models on the same text: if the original has a perplexity of 6.0 and the 4-bit version 6.2 (made-up numbers), the quantized model is only slightly less sure of the next token, a small loss of quality ([perplexity in Chapter 2](02-training.md#perplexity-the-same-number-in-friendlier-units)). Both models must use the same tokenizer, which is always true here, since quantization never changes the tokenizer.
 2. **Task results** on examples from the real use case, such as the fraud labels of [Chapter 5](05-evaluation.md#classification-metrics-the-fraud-example). A model that is "only slightly worse" on average can still be worse exactly where it matters.
 3. **Speed and memory** on the real hardware: the integer formats only pay off if the software and GPU handle them efficiently.
 
@@ -431,7 +431,7 @@ Llama 3 8B, an open model released in 2024, is a typical modern design:
 
 ### Decoder-only
 
-Chapter 1 described both stacks, and [Chapter 3](03-inference.md#decoder-only-how-chat-models-generate) showed how a decoder-only model puts the prompt and the answer in one sequence. Almost every chat model is decoder-only: translation, summarising and answering questions all become "continue this text", so one architecture and one training objective cover everything.
+The original Transformer has two **stacks** of layers: the **encoder**, which reads the whole input at once (for example the English sentence to translate), and the **decoder**, which generates the output one token at a time while looking at the encoder's result. A **decoder-only** model drops the encoder and keeps only the decoder: the prompt and the answer go into one sequence, and the model simply continues it ([decoder-only generation in Chapter 3](03-inference.md#decoder-only-how-chat-models-generate)). Almost every chat model is decoder-only: translation, summarising and answering questions all become "continue this text", so one architecture and one training objective cover everything.
 
 ### Pre-norm
 
