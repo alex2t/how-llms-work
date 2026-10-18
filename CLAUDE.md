@@ -85,6 +85,9 @@ The notes are being checked against Stanford's [CME295: Transformers & Large Lan
    - **Add useful context, inside the passage.** Within the passage the user pointed to, also add any extra information the reader would need to understand it. Changes outside that passage follow rule 9 (ask first).
    - **Existing coverage first.** If the topic is already explained elsewhere in the notes, follow rule 10 (say where and ask) before writing.
    - **Do not apply an incorrect suggestion.** If the user's proposed change is factually wrong, do not make it; explain in the chat why it is incorrect, with evidence, and leave the text as it is.
+13. **Keep `fix.md` a list of open work only.**
+   - **Number every issue.** Every list of issues in `fix.md` is a table whose first column `#` gives each row an ID made of the item and a number (S2-1, S2-2, …), so the user can work down the list and refer to a row by its number. Numbers are never reused or renumbered.
+   - **Remove what is done.** As soon as a fix is implemented, delete its row from the table, and delete the whole item once its last row is done. Do not keep a "done" status or log in `fix.md`; the commit history is the record.
 
 ## Writing style (match Chapter 1)
 
