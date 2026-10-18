@@ -28,7 +28,7 @@ Before a neural network can read a sentence, it must cut the raw text into discr
 
 ### Word, character, subword or byte?
 
-**Why not just use words or characters?** A word vocabulary cannot handle a word it never saw (a typo, a new name, `Trusteer`). A character vocabulary handles anything but makes sequences very long, and attention cost grows with length squared. BPE sits in the middle. It started as a compression algorithm (Gage, 1994) and was adapted for translation by Sennrich et al. (2016). GPT-2 and later models use byte-level BPE: the starting alphabet is the 256 possible bytes, so any text in any language can be encoded with no "unknown" token.
+**Why not just use words or characters?** A word vocabulary cannot handle a word it never saw (a typo, a new name, `ChatGPT`). A character vocabulary handles anything but makes sequences very long, and attention cost grows with length squared. BPE sits in the middle. It started as a compression algorithm (Gage, 1994) and was adapted for translation by Sennrich et al. (2016). GPT-2 and later models use byte-level BPE: the starting alphabet is the 256 possible bytes, so any text in any language can be encoded with no "unknown" token.
 
 A word missing from a word vocabulary is called **out-of-vocabulary (OOV)**. A word-level tokenizer can only replace it with a special unknown token, `[UNK]`, and its meaning is lost. The four possible sizes of token compare as follows:
 
@@ -101,7 +101,7 @@ Once trained, the tokenizer is a **recipe**: the list of merges in the order the
 
 Result: 2 tokens, `low` and `est</w>`. With illustrative IDs, that becomes \[1031, 2754\], which is what the model actually receives.
 
-**Example 2: `newer`.** Split gives `n` `e` `w` `e` `r` `</w>`. None of the 5 merges matches any adjacent pair, so nothing joins. The word stays as 6 single-character tokens. It can still be encoded, just less efficiently: no word is ever "unknown", it simply costs more tokens.
+**Example 2: `newer`.** Split gives `n` `e` `w` `e` `r` `</w>`. None of our 5 toy merges matches any adjacent pair, so nothing joins and the word stays as 6 single-character tokens. This is an effect of the tiny example, not how a real tokenizer behaves. A real tokenizer learns tens of thousands of merges (for example about 50,000 for GPT-2), so a common word like `newer` becomes one or two tokens. Single characters are only the **fallback** for the parts of a word that no learned merge covers, such as a rare name or a typo. This is the key difference from a character vocabulary, which splits **every** word into characters: BPE keeps common words short and still never meets an "unknown" word, because in the worst case it can always fall back to characters.
 
 **Decoding** runs the other way: turn each ID back into its text piece, glue the pieces together, and turn `</w>` into a space. \[1031, 2754\] → `low` + `est</w>` → "lowest ".
 
@@ -114,8 +114,28 @@ Result: 2 tokens, `low` and `est</w>`. With illustrative IDs, that becomes \[103
 
 **Other subword algorithms.** BPE is the most common way to build a subword vocabulary, but two others are widely used:
 
-- **WordPiece** also merges pairs, but chooses the pair with the highest score = frequency of the pair ÷ (frequency of the first part × frequency of the second part), so it favours parts that rarely appear apart. On the corpus above, BPE's first merge is `e` + `s` (9 times); WordPiece's is `i` + `d`, which occurs only 3 times (in `widest` ×3) but never separately: 3 ÷ (3 × 3) = 0.333, against 9 ÷ (17 × 9) = 0.059 for `e` + `s` (since `e` appears 17 times in total across `lower` ×2, `newest` ×6×2 = 12, and `widest` ×3, while `s` appears 9 times). WordPiece marks a piece that continues a word with `##`, for example `play` `##ing`.
-- **Unigram** works the other way round: it starts from a very large vocabulary of candidate pieces and repeatedly removes the pieces whose removal hurts least, until the target size is reached. To encode a word, it picks the most probable of the possible splits.
+- **WordPiece** builds the vocabulary by merging pairs, like BPE. The difference is **which** pair it merges. BPE merges the most **frequent** pair. WordPiece merges the pair whose two parts **belong together most**: parts that are almost always seen side by side, and rarely apart. It measures this with a score:
+
+    $$
+    \text{score}(a, b) = \frac{\text{count of the pair } a\,b}{\text{count of } a \times \text{count of } b}
+    $$
+
+    A pair gets a high score when its parts are rare on their own but often appear together. On the corpus above (`low` ×5, `lower` ×2, `newest` ×6, `widest` ×3):
+
+    | Pair | Pair count | Count of first part | Count of second part | Score | Chosen by |
+    | --- | --- | --- | --- | --- | --- |
+    | `e` + `s` | 9 (newest 6 + widest 3) | `e`: 17 (lower 2 + newest 6 × 2 + widest 3) | `s`: 9 | 9 ÷ (17 × 9) = 0.059 | BPE (highest count) |
+    | `i` + `d` | 3 (widest 3) | `i`: 3 | `d`: 3 | 3 ÷ (3 × 3) = 0.333 | WordPiece (highest score) |
+
+    `e` + `s` is the most frequent pair, but `e` also appears in many other places (`lower`, the first `e` of `newest`), so the pair is diluted. `i` and `d` appear only in `widest`, and every time together, so they are a perfect match. WordPiece also writes a piece that continues a word with a `##` prefix, so the reader can tell where words start: `playing` → `play` `##ing`.
+
+- **Unigram** works the other way round: instead of starting small and adding pieces, it starts big and removes them.
+
+    1. **Start big:** make a very large list of candidate pieces, for example every common substring of the corpus (`l`, `lo`, `low`, `lowe`, `es`, `est`, `west`, …). Each piece gets a probability: how often it is used.
+    2. **Remove the least useful pieces:** for each piece, measure how much worse the vocabulary would describe the corpus without it. Remove the pieces whose loss hurts least (for example `lowe`, which is rarely needed because `low` + `e` covers it).
+    3. **Repeat** until the vocabulary reaches the target size. Single characters are always kept, so every word can still be split.
+
+    To encode a word, Unigram compares the possible splits and picks the one with the highest probability (the product of its pieces' probabilities). With made-up probabilities `low` 0.04, `est` 0.03, `lo` 0.01, `west` 0.005, the word `lowest` scores 0.04 × 0.03 = 0.0012 as `low` · `est`, but only 0.01 × 0.005 = 0.00005 as `lo` · `west`, so Unigram chooses `low` · `est`.
 
 | Algorithm | Builds the vocabulary by | Used by (examples) |
 | --- | --- | --- |
@@ -177,6 +197,23 @@ A token ID carries no meaning, so the model replaces each ID with a list of numb
 - **d\_model:** the length of each token's vector, i.e. how many numbers describe one token. In the paper d\_model = 512. The same size is kept through every layer of the model, which is why it is called the model dimension.
 - **E (the embedding matrix):** "E" is just the name given to this table, short for *Embedding*. It has one row per vocabulary token and d\_model columns, so with a 50,000-token vocabulary it is 50,000 rows × 512 columns of numbers.
 
+**How E is filled and how it changes.** Nobody types the numbers of E. The rows of E are weights, so they are trained exactly like the single neuron in the Introduction's [one training step](00-introduction.md#where-the-weights-and-the-bias-come-from):
+
+1. **Start random.** Before training, every number in E is a small random number, for example between −0.1 and 0.1. At this point `CAT` and `DOG` have unrelated vectors.
+2. **Predict and measure the error.** The model reads a training sentence that contains `CAT`, predicts the next token at each position, and measures how wrong it was with the [loss](02-training.md#the-loss-cross-entropy).
+3. **Compute a gradient for each number.** [Backpropagation](02-training.md#backpropagation-computing-every-gradient-at-once) traces the error backwards through every layer down to E. Only the rows of the tokens that appeared in the sentence receive a gradient; the other rows are untouched in this step.
+4. **Nudge the row.** Each number moves a small step against its gradient: new value = old value − learning rate × gradient ([gradient descent](02-training.md#gradient-descent-taking-the-step)).
+
+**Worked example** (made-up gradient and learning rate). Suppose `CAT`'s row is currently \[0.81, 0.10, −0.52\], backpropagation gives it the gradient \[0.20, −0.10, 0.40\], and the learning rate is 0.1:
+
+| Position | Old value | Gradient | Change (− 0.1 × gradient) | New value |
+| --- | --- | --- | --- | --- |
+| 1 | 0.81 | 0.20 | −0.02 | 0.79 |
+| 2 | 0.10 | −0.10 | +0.01 | 0.11 |
+| 3 | −0.52 | 0.40 | −0.04 | −0.56 |
+
+This repeats over billions of training sentences. `CAT` and `DOG` appear in similar sentences (`I fed the ___`, `the ___ slept`), so their rows receive similar gradients and drift towards similar values. When training ends, E is frozen: the rows no longer change, and the model only reads them. The table below shows where such rows might end up after training.
+
 Putting it together: the token ID tells the model **which row** to read, and E is **the table** it reads from. For `CAT` (ID 6587), the model reads row 6587 of the embedding table E and gets 512 numbers. That list of 512 numbers is the token's embedding.
 
 **Worked example,** using the same token IDs as the sentence above. A real row of E has 512 numbers; here each row is shortened to 3 numbers so it fits on the page. The numbers are made up.
@@ -199,9 +236,8 @@ Follow the words `YOUR CAT IS` through the table:
 3. **Read those rows of E:** row 105 → \[0.12, −0.40, 0.33\]; row 6587 → \[0.81, 0.10, −0.52\]; row 5475 → \[−0.30, 0.66, 0.05\]
 4. **Result:** one vector per word, stacked in sentence order. Here that is 3 words × 3 numbers; in the real model it is 3 words × 512 numbers.
 
-- **Where the numbers come from:** E starts filled with random numbers and is learned during training, like every other weight. After training it is frozen.
+- **Where the numbers come from:** they start random and are learned during training, then frozen (see "How E is filled and how it changes" above).
 - **Why it works:** tokens used in similar contexts get pushed toward similar vectors. In the table, `cat` and `dog` have close vectors even though their IDs mean nothing; that closeness is the learned meaning.
-
 $$
 \text{token} \xrightarrow{\text{tokenizer}} \text{token ID } k \xrightarrow{\text{row } k \text{ of } E} \text{embedding } \in \mathbb{R}^{d_{model}}
 $$
@@ -274,6 +310,19 @@ Dimensions 0–1 change a lot from one word to the next; dimensions 2–3 barely
 - **A regular pattern.** Plotted as position (x-axis) against dimension (y-axis), the values form clear repeating bands, fast at the low dimensions and stretching out at the high ones. A pattern that regular is easy for the model to learn.
 - **Relative positions are easy.** For any fixed offset k, PE(pos + k) is a fixed rotation of PE(pos), so "three words back" looks the same everywhere in the sentence.
 - **Values stay between −1 and 1**, and the formula works for positions longer than any seen in training.
+
+**Why a sine and a cosine together, and not only one of them?** Each wavelength is used twice: once as a sine and once as a cosine. There are two reasons.
+
+1. **One wave alone is ambiguous.** Think of a clock hand turning. If you only know how far right its tip is (the sine), 1 o'clock and 5 o'clock look the same: sin 30° = sin 150° = 0.5. If you also know how far up or down it is (the cosine), they differ: cos 30° = +0.866 (up), cos 150° = −0.866 (down). The pair (sine, cosine) is the exact point on the circle, so every angle within one turn gets its own pair of values. A cosine alone has the same problem, only for other angles.
+2. **Moving k positions becomes a fixed rotation.** This is the reason given in the original paper. The addition rules of trigonometry are:
+
+    $$
+    \sin(a + b) = \sin a \cos b + \cos a \sin b \qquad \cos(a + b) = \cos a \cos b - \sin a \sin b
+    $$
+
+    So the pair for position pos + k is computed from the pair for position pos, using only numbers that depend on k. For example, with the fastest wave (i = 0, divisor 1), position 1 has the pair (sin 1, cos 1) = (0.8415, 0.5403). One position later: sin 2 = 0.8415 × 0.5403 + 0.5403 × 0.8415 = 0.9093 and cos 2 = 0.5403 × 0.5403 − 0.8415 × 0.8415 = −0.4162, which are exactly sin 2 and cos 2. With a sine alone this is impossible: the formula for sin(pos + k) also needs cos(pos). Because the shift is the same simple operation everywhere, the model can learn "look three words back" once and use it at any position.
+
+**Why even and odd dimensions?** It is only a storage convention. Every wavelength needs one sine and one cosine, so the paper stores the pair side by side: dimension 2i holds the sine and dimension 2i + 1 the cosine of the same wave. Putting all the sines in the first half of the vector and all the cosines in the second half works just as well, and some implementations do that. The model does not care about the order, only that it never changes.
 
 ### The encoder input
 

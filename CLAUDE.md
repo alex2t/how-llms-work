@@ -77,9 +77,13 @@ The notes are being checked against Stanford's [CME295: Transformers & Large Lan
 5. **Check every number.** Any worked example must be computed, not guessed. Use a quick Python snippet to verify arithmetic (softmax, log, means, memory sizes) before writing it.
 6. **Keep the navigation in sync.** Every new page must be added to `nav:` in `mkdocs.yml`; never leave a page out of the navigation bar.
 7. **Commit messages:** `chN: <section> — <what changed>`, e.g. `ch2: padding mask — add 2-sentence batch example`.
-8. **Chapter review by the user.** The user reads one chapter at a time and asks for clarifications. Apply each requested clarification **directly, without proposing it first** (this overrides rule 1 during a review; rule 2 still applies: ask before removing a whole paragraph, table, example or section). Run `mkdocs build --strict` after each change. The user's questions only show where the text is unclear: never copy a question into the notes; instead rewrite the passage so that no reader would need to ask it, and answer the question in the chat. **Do not record review changes** in `fix.md`, `plan.md`, `README.md` or anywhere else (this overrides rule 4 during a review), and **do not commit during the review**. Commit, push and deploy once, at the end of that chapter's review. Open decisions stay at the top of `fix.md`, under "Waiting for approval". When applying a requested change:
-   - **Add useful context.** Do not only change what was asked: also add any extra information the reader would need to fully understand that passage in the context of the notes.
-   - **Link to deeper coverage.** If the change touches a topic that another page already explains in more depth, add a link to that page and heading instead of repeating it.
+8. **Never edit files in `gemini/`.** Chapter edits always go to `docs/`, even when the user has a `gemini/` file open or selects lines in it. When the selection is in a `gemini/` file, find the same passage in `docs/` and edit it there. The only file Claude may write in `gemini/` is its own review, `<chapter>_rw_claude.md`, when asked for one.
+9. **Change only what was asked.** Edit only the passage the user pointed to. Any change anywhere else (another paragraph, bullet, table, cheat sheet, Sources, another file) needs the user's permission first.
+10. **Check the notes before adding information.** When the user asks for more information, first search all chapters for it. If it is already explained somewhere, do not write anything: say where (as a clickable `file:line` link) and ask what to do (link to it, move it, or expand it).
+11. **Report every addition as a clickable link.** After adding or changing text, give the exact location as `docs/<file>.md:<line>` so the user can click it.
+12. **Chapter review by the user.** The user reads one chapter at a time and asks for clarifications. Apply each requested clarification **directly, without proposing it first** (this overrides rule 1 during a review; rule 2 still applies: ask before removing a whole paragraph, table, example or section). Run `mkdocs build --strict` after each change. The user's questions only show where the text is unclear: never copy a question into the notes; instead rewrite the passage so that no reader would need to ask it, and answer the question in the chat. **Do not record review changes** in `fix.md`, `plan.md`, `README.md` or anywhere else (this overrides rule 4 during a review), and **do not commit during the review**. Commit, push and deploy once, at the end of that chapter's review. Open decisions stay at the top of `fix.md`, under "Waiting for approval". When applying a requested change:
+   - **Add useful context, inside the passage.** Within the passage the user pointed to, also add any extra information the reader would need to understand it. Changes outside that passage follow rule 9 (ask first).
+   - **Existing coverage first.** If the topic is already explained elsewhere in the notes, follow rule 10 (say where and ask) before writing.
    - **Do not apply an incorrect suggestion.** If the user's proposed change is factually wrong, do not make it; explain in the chat why it is incorrect, with evidence, and leave the text as it is.
 
 ## Writing style (match Chapter 1)
@@ -116,7 +120,7 @@ The notes are being checked against Stanford's [CME295: Transformers & Large Lan
 
 ## Gemini rewrite and Claude review
 
-After the user has reviewed a chapter (rule 8), Gemini (Antigravity) is asked to rewrite it, following its own instructions in `AGENTS.md` (committed, not git-ignored). Claude then compares the rewrite with the original and gives an opinion. The user decides what happens next.
+After the user has reviewed a chapter (rule 12), Gemini (Antigravity) is asked to rewrite it, following its own instructions in `AGENTS.md` (committed, not git-ignored). Claude then compares the rewrite with the original and gives an opinion. The user decides what happens next.
 
 **File names** (all in `gemini/`, which is git-ignored and must never be committed or published):
 
@@ -138,7 +142,7 @@ After the user has reviewed a chapter (rule 8), Gemini (Antigravity) is asked to
 4. **Problems in the rewrite:** factual errors, wrong or unchecked numbers (recompute every number with a script, rule 5), content dropped from the original, broken links or anchors, and departures from the Writing style and Markdown conventions.
 5. **Recommended next step:** the exact changes to make if the user agrees.
 
-Do not change anything in `docs/` while reviewing. The user then decides: replace the chapter with Gemini's version (after fixing the problems found), merge the parts listed, or keep the original. Applying that decision follows rule 8 (one commit, push and deploy at the end).
+Do not change anything in `docs/` while reviewing. The user then decides: replace the chapter with Gemini's version (after fixing the problems found), merge the parts listed, or keep the original. Applying that decision follows rule 12 (one commit, push and deploy at the end).
 
 ## README
 
