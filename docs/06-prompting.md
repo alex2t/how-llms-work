@@ -249,7 +249,7 @@ How does a model learn to reason well? Writing thousands of good reasoning examp
 - **Maths:** compare the final number with the known answer.
 - **Code:** run the program against tests.
 
-The reward is simply 1 for a correct final answer and 0 otherwise. This is called **reinforcement learning with verifiable rewards (RLVR)**. It needs no human labels and no reward model ([Chapter 2](02-training.md#inside-rlhf-training-the-reward-model)), so there is no learned reward model to exploit: a wrong answer cannot be made to look right. The model is free to discover whatever reasoning works; only the result is graded.
+The reward is simply 1 for a correct final answer and 0 otherwise. This is called **reinforcement learning with verifiable rewards (RLVR)**. It needs no human labels and no **reward model**. In ordinary preference training (RLHF), the reward model is a separate neural network trained on people's choices between two answers, which learns to give any answer a score ([Chapter 2](02-training.md#inside-rlhf-training-the-reward-model)). Because it is only an imitation of human judgement, the model being trained can learn to fool it, for example with long, confident answers that score well without being right. A checking program cannot be fooled this way: a wrong answer cannot be made to look right. The model is free to discover whatever reasoning works; only the result is graded.
 
 ### GRPO: learning from a group of answers
 
@@ -266,7 +266,7 @@ $$
 - **mean(r)** is the average reward of the group, and **std(r)** its standard deviation (spread).
 - A positive advantage means better than the group average; negative means worse.
 
-4. Training raises the probability of every token in answers with a positive advantage and lowers it in answers with a negative advantage, with a KL penalty keeping the model close to its reference, as in RLHF ([Chapter 2](02-training.md#inside-rlhf-the-kl-penalty-and-reward-hacking)).
+4. Training raises the probability of every token in answers with a positive advantage and lowers it in answers with a negative advantage, with a **KL penalty** keeping the model close to its **reference**, as in RLHF ([Chapter 2](02-training.md#inside-rlhf-the-kl-penalty-and-reward-hacking)). The reference is a frozen copy of the model taken before this training starts. The KL penalty (from the Kullback–Leibler divergence, a measure of how different two sets of probabilities are) grows as the trained model's probabilities for the next token drift away from the reference's, so the model improves its reasoning without forgetting how to write normal text.
 
 ```mermaid
 flowchart LR
@@ -297,7 +297,7 @@ flowchart LR
 
 The last row shows a practical point: questions that are always solved, or never solved, teach the model nothing. Training sets for reasoning models are therefore chosen to be hard but not impossible for the current model.
 
-The group average replaces the **value model** that PPO uses to judge answers ([Chapter 2](02-training.md#rlhf-vs-dpo-what-each-costs)). With verifiable rewards there is no reward model either, so training needs only the model being trained and its frozen reference, plus a checking program.
+The group average replaces the **value model** of PPO. **PPO** (proximal policy optimisation) is the reinforcement-learning method used in RLHF. To decide whether an answer did better or worse than expected, it needs a baseline: what reward to expect for this question. PPO gets it from a value model, a second neural network about as large as the model being trained, trained alongside it to predict the reward from a question and a partial answer ([Chapter 2](02-training.md#rlhf-vs-dpo-what-each-costs)). GRPO gets the baseline for free: the average reward of the group of answers to the same question, as in the advantage formula above. With verifiable rewards there is no reward model either, so training needs only the model being trained and its frozen reference, plus a checking program.
 
 ### What emerges
 

@@ -71,6 +71,33 @@ Legend: `[ ]` waiting · `[x]` approved and applied · `[-]` rejected
 
 ---
 
+### S-2. Links that replace an explanation `[ ]`
+
+- **Rule:** `CLAUDE.md`, Writing style: "A link never replaces an explanation." The reader must understand the passage without clicking; a link to another chapter only shows where else the topic is discussed.
+- **Checked:** all 189 links between chapters in the text of Chapters 0–6 (Sources and Cheat sheets left out). Most already explain the term next to the link, or only point forward to where a topic is developed ("Chapter 3 covers generation in detail"); those are fine.
+- **Below:** the 13 places where a term is named with a link but not explained in the sentence, so a reader who does not click would not understand it.
+- **Proposed change:** for each one, add a short definition (one or two sentences, with a small example where useful) next to the link, and keep the link. Nothing is removed.
+
+| Location | Section | Term used without explanation | What to add | Priority |
+| --- | --- | --- | --- | --- |
+| `docs/01-transformers.md:817` | Training and generation | **cross-entropy**, **Adam optimiser** | Cross-entropy: −ln of the probability given to the correct token. Adam: the rule that turns gradients into weight changes, with a separate step size for every weight | Low |
+| `docs/02-training.md:797` | Another training objective: masked language modelling | **encoder-only models** | A model made only of the encoder stack: it reads a whole text at once (both directions) and produces vectors, but does not generate text | Low |
+| `docs/03-inference.md:43` | Inference vs training › Definitions | **E, W\_Q, W\_K, W\_V, W\_O, feed-forward layers** (names only) | One short phrase per matrix, as in `docs/02-training.md:43` | Medium |
+| `docs/03-inference.md:72` | Why inference needs less memory | Adam's **m** and **v** | m: running average of each weight's recent gradients (the direction); v: running average of their squares (how large and noisy they are) | Medium |
+| `docs/03-inference.md:293` | What this means in practice | **quantization** (first use, before Chapter 4) | Storing each weight in fewer bits, for example 1 byte instead of 2, so there is less to read at each step | Low |
+| `docs/03-inference.md:645` | Constrained decoding | **threshold** | The cut-off score above which the application answers `FRAUD` (0.5 in Chapter 5) | Low |
+| `docs/04-quantization.md:382` | How to check a quantized model | **perplexity** | e raised to the average loss; read as "how many tokens the model hesitates between"; lower is better | Medium |
+| `docs/04-quantization.md:434` | Decoder-only | "Chapter 1 described **both stacks**" | Name the two stacks: the encoder reads the input, the decoder generates the output one token at a time | Low |
+| `docs/05-evaluation.md:65` | Loss vs metric › Definitions | **gradient** | For each weight, how much and in which direction the loss changes when that weight changes slightly | Low |
+| `docs/05-evaluation.md:478` | Ranking models from votes: Elo ratings | **Bradley–Terry model**, "the same idea as the **reward model**" | Bradley–Terry: gives each model one strength score so that the chance A beats B depends on the difference of their scores; the reward model scores answers the same way from human preferences | Medium |
+| `docs/06-prompting.md:252` | Training with verifiable rewards | **reward model** | A separate model trained on human preferences to score answers; it can be fooled, which a checking program cannot | Medium |
+| `docs/06-prompting.md:269` | GRPO: learning from a group of answers | **KL penalty**, **reference** model | The reference is a frozen copy of the model before this training; the KL penalty grows when the model's probabilities drift away from it | Low |
+| `docs/06-prompting.md:300` | GRPO: learning from a group of answers | **PPO**, **value model** | PPO: the reinforcement-learning method used in RLHF. Value model: a second network that predicts how good an answer is likely to be, used as the baseline that GRPO replaces with the group average | Medium |
+
+**Decision:** Chapters 5 and 6 (5 rows) approved and applied. Chapters 1 to 4 (8 rows) still waiting.
+
+---
+
 ### L1-7. Hands-on exercises `[ ]`
 
 - **Not in the book:** the lecture suggests labs (build a BPE tokenizer, attention from scratch, a mini Transformer). The book is a reading book with worked examples, so this is out of its current scope.

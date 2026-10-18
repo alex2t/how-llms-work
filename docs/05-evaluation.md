@@ -28,6 +28,14 @@ A model can be measured at three levels, and each level answers a different ques
 | 2. Model metrics | Does it do the task well? | Accuracy, precision, recall, F1, AUC; benchmarks; human ratings | Data scientists, ML engineers | 8 of the 10 fraud cases in the sample are caught |
 | 3. Business outcomes | Is it worth it? | Money saved, hours saved, customer complaints, return on investment | Managers, the business owner | Fraud losses fall by half; analysts spend 311 fewer hours a month on reviews |
 
+**Why look at the training loss at all?** Level 1 is not a verdict on the finished model: nobody decides to use a model because its loss is low. It is a health check **while training runs**, which can take days or weeks of expensive hardware. The loss is the only number available at every training step, and it costs nothing extra, because training computes it anyway to adjust the weights ([Chapter 2](02-training.md#the-loss-cross-entropy)). The people training the model watch it to answer three practical questions:
+
+- **Is training working?** The loss should fall steadily towards 0. As a reminder ([Chapter 2](02-training.md#definitions)), the loss at one position is −ln of the probability the model gave to the correct token: 0 would mean the model gave the correct token a probability of 1 every time, and larger values mean worse predictions (probability 0.772 gives 0.259, probability 0.211 gives 1.556). In practice it never reaches 0, because text is never fully predictable: after `YOUR CAT IS A` several words are reasonable, so no model can be certain of the next one. If it stays flat or suddenly jumps up, something is wrong, for example a [learning rate](02-training.md#the-learning-rate-and-the-warm-up-schedule) that is too large or broken training data, and the run is stopped before more time and money are wasted.
+- **When should training stop?** The loss is also measured on held-out text that the model never trains on, called the **validation loss**. While both losses fall, the model is learning patterns that work on new text. When the training loss keeps falling but the validation loss starts to rise, the model is memorising its training examples instead ([overfitting](02-training.md#dropout-forcing-the-model-not-to-rely-on-any-single-number)), and training should stop.
+- **Which training run is better?** Two runs with different settings (data mixture, learning rate) can be compared by their loss long before either model is good enough to test on the real task.
+
+In the fraud example, the team fine-tuning the model checks that the loss on held-out labelled transactions keeps falling. Once it stops falling, fine-tuning ends, and the model is then judged at Level 2 on what matters: how many frauds it catches.
+
 ```mermaid
 flowchart LR
   L1["Level 1: Training loss<br/>Cross-entropy, perplexity<br/>(Is the model learning?)"] --> L2["Level 2: Model metrics<br/>Recall, precision, F1, AUC, benchmarks<br/>(Does it do the task well?)"]
@@ -54,7 +62,7 @@ This section covers:
 
 ### Definitions
 
-- **Loss:** a number the training process makes smaller. It must change smoothly when the weights change slightly, so that a gradient can be computed ([Chapter 2](02-training.md#the-gradient-which-way-to-move-each-weight)). For LLMs it is the [cross-entropy](02-training.md#the-loss-cross-entropy): −ln of the probability given to the correct token.
+- **Loss:** a number the training process makes smaller. It must change smoothly when the weights change slightly, so that a **gradient** can be computed: for each weight, the gradient says in which direction, and how strongly, the loss changes when that weight is nudged slightly, and training then moves every weight a small step in the direction that lowers the loss ([Chapter 2](02-training.md#the-gradient-which-way-to-move-each-weight)). For LLMs it is the [cross-entropy](02-training.md#the-loss-cross-entropy): −ln of the probability given to the correct token.
 - **Metric:** a number that measures what people actually care about, such as the share of correct answers. It does not need to change smoothly, because no gradient is ever computed from it.
 
 ### Worked example: four fraud cases
@@ -68,8 +76,8 @@ Four transactions in the sample are fraud. The model answers `FRAUD` when its fr
 | 3 | 0.55 | 0.598 | FRAUD | Yes |
 | 4 | 0.45 | 0.799 | OK | No |
 
-- **The loss sees every difference.** Transaction 1 (0.95) and transaction 2 (0.60) are both correct, but the loss is ten times lower for the confident one. Raising transaction 4 from 0.45 to 0.46 lowers its loss a little, so training gets a useful signal.
-- **The accuracy metric sees only right or wrong.** Transactions 1 to 3 count the same. Moving transaction 4 from 0.45 to 0.46 changes nothing; moving it from 0.49 to 0.51 suddenly flips it to correct. Such a jumpy number has no useful gradient, so it cannot be trained on directly.
+- **The loss sees every difference.** Transactions 1 and 2 are both answered correctly, but they are not equally good: the model is very sure about transaction 1 (score 0.95) and only just sure about transaction 2 (score 0.60). The loss reflects this, because it is about ten times lower for the confident answer (0.051 against 0.511). The same is true for the wrong answer: if a small change to the weights raises transaction 4's score from 0.45 to 0.46, its loss goes down from 0.799 to 0.777. The answer is still wrong, but the loss shows that the model has moved in the right direction. This is exactly the signal training needs: for every weight, the [gradient](02-training.md#the-gradient-which-way-to-move-each-weight) says whether a small change to that weight makes the loss go up or down, and the optimiser moves the weight in the direction that makes it go down. Because the loss reacts to every small change, the gradient is never silent, and training can improve the model one small step at a time.
+- **The accuracy metric sees only right or wrong.** Accuracy only counts how many answers are correct, here 3 out of 4 (75%). It does not care whether a correct answer was confident or only just above the threshold: transactions 1 to 3 each count as one correct answer, no more and no less. It also ignores progress on the wrong answer: raising transaction 4 from 0.45 to 0.46, or even to 0.49, leaves the answer `OK` and the accuracy at 75%. Then, when the score crosses 0.5 (for example from 0.49 to 0.51), the answer suddenly flips to `FRAUD` and the accuracy jumps to 100%. So accuracy behaves like a staircase: it stays flat for almost every small change of the weights and jumps only at the threshold. On the flat parts the gradient is 0, so it gives the optimiser no direction at all, and at the jump it is not defined. This is why a model cannot be trained on accuracy directly: training uses the smooth loss, and accuracy is only measured afterwards to judge the result.
 
 ```mermaid
 flowchart LR
@@ -91,7 +99,12 @@ The practical rule: watch the loss to check that training works, but decide whet
 
 ## Perplexity
 
-Perplexity is the standard way to report a language model's loss as a number people can picture. It is the main measure used during pre-training and when comparing quantized models with the original ([Chapter 4](04-quantization.md#how-to-check-a-quantized-model)), so it is worth knowing exactly what it means and when it can be compared.
+**Perplexity** measures how well a language model predicts a text it is given: how unsure the model is, on average, about each next token. It was introduced briefly in [Chapter 2](02-training.md#perplexity-the-same-number-in-friendlier-units); this section explains it in full.
+
+- **How it differs from the loss.** Perplexity contains exactly the same information as the cross-entropy loss; only the scale changes. A loss of 0.383 is hard to picture, because it is a logarithm. Perplexity converts it into a count: e^0.383 = 1.47 means the model hesitates, on average, as if it were choosing between about 1.5 equally likely tokens. Lower is better for both, but perplexity starts at 1 (a perfect model) instead of 0.
+- **How it differs from the other metrics.** Accuracy, recall and the other metrics later in this chapter check the model's **answers** to a task, such as "is this transaction fraud?", against the correct answers. Perplexity checks no answer and needs no labels: it only measures how well the model predicts ordinary text, token by token. It therefore belongs to Level 1 in the [three levels](#three-levels-of-evaluation): it tells you whether the model has learned the language, not whether it is useful for a particular task.
+
+It is the main measure used during pre-training, and when checking that a quantized model still predicts as well as the original ([Chapter 4](04-quantization.md#how-to-check-a-quantized-model)), so it is worth knowing exactly what it means and when two values can be compared.
 
 This section covers:
 
@@ -124,7 +137,7 @@ It can be read as **"how many tokens the model is choosing between, on average"*
 | A model guessing evenly among 4 tokens (each 0.25) | −ln 0.25 = 1.386 | e^1.386 = 4.00 | Exactly 4 choices |
 | A perfect model (every correct token gets 1) | 0 | e^0 = 1 | No hesitation |
 
-The third row shows why the reading works: when every one of k choices has probability 1/k, the perplexity is exactly k.
+The third row shows why the reading works. Call **k** the number of tokens the model hesitates between at a position, all equally likely (in the third row, k = 4). Each of them then gets probability 1/k (here 1/4 = 0.25), and the perplexity comes out as exactly k (here 4). So when the perplexity is k, the model is as unsure as if it were picking at random among k equally likely tokens.
 
 !!! note "Refresher: why e^(−ln p) equals 1 / p"
     The exponential function e^x and the natural logarithm ln(x) are inverses: e^(ln x) = x, and with a minus sign in the exponent, e^(−ln p) = 1 / p.
@@ -134,7 +147,9 @@ The third row shows why the reading works: when every one of k choices has proba
 
 ### What a good value is
 
-There is no universal good value: perplexity depends on the model, the text and the tokenizer. A model will have a low perplexity on simple, predictable text and a higher one on technical or unusual text. Perplexity is therefore useful for **comparisons on the same text**: two checkpoints during training, a model before and after fine-tuning, or a quantized model against the original. A lower value on the same text means the model predicts that text better.
+It is tempting to ask what perplexity a "good" model should reach, but there is no such number, because perplexity does not measure the model alone: it measures the model **on a particular text**, cut into tokens by a particular tokenizer. It works like an exam mark, which says as much about how hard the exam was as about the student. The same model will reach a low perplexity on a children's story, where the next word is often obvious (after "Once upon a", almost any model expects "time"), and a much higher one on a legal contract or on source code, where many continuations are possible and rare words are frequent. A perplexity of 10 can therefore be excellent on one text and poor on another, and two values measured on different texts say nothing about which model is better.
+
+The number becomes meaningful only when the text stays the same and only the model changes. Perplexity is therefore used for **comparisons on the same text**: two **checkpoints** (copies of the weights saved at different points of training), to check that training is still improving the model; a model before and after fine-tuning, to check that it has not lost its general knowledge of the language; or a quantized model against the original, to measure how much prediction quality the smaller number format has cost. In each case, the model with the lower perplexity on that shared text is the one that predicts it better.
 
 ### Only comparable with the same tokenizer
 
@@ -147,13 +162,21 @@ Perplexity is an average **per token**, so it depends on how the text was cut in
 
 Model B looks better, but both models assign the text exactly the same probability: B only spreads the same loss over more, smaller tokens. Perplexities can be compared only between models that share a tokenizer. This is always true for a quantized model and its original, because quantization never changes the tokenizer.
 
-**The fix: bits per byte.** To compare models with different tokenizers, divide the total loss by something every tokenizer agrees on: the length of the text in **bytes** (one byte per character for plain English). Converting from natural logarithms to base-2 logarithms (dividing by ln 2 ≈ 0.693, since log₂ x = ln x ÷ ln 2) expresses the result in **bits**, the unit of information:
+**The fix: bits per byte.** The problem with perplexity is the "per token": the same total loss is divided by a different number of tokens for each tokenizer. **Bits per byte (BPB)** solves this by dividing the total loss by something every tokenizer agrees on, the length of the text itself. Two terms are needed to read it:
+
+- A **byte** is the unit computers use to store text. In plain English, one character (a letter, a digit, a space or a punctuation mark) takes one byte, so "CAT IS" is 6 bytes. A text has the same number of bytes whichever tokenizer later cuts it into tokens.
+- A **bit** is the smallest unit of information: the answer to one yes/no question. Saying how surprised a model is, in bits, means saying how many yes/no questions it would need, on average, to pin down the correct text.
+
+The loss is already a measure of surprise, only in a different unit. As a reminder ([Chapter 2](02-training.md#definitions)), the loss at one position is **−ln p**, where p is the probability the model gave to the correct token and ln is the natural logarithm: −ln 1 = 0 (no surprise at all) and the value grows as p gets smaller. Natural logarithms count surprise in a unit called nats; dividing by ln 2 ≈ 0.693 converts it to bits, because log₂ x = ln x ÷ ln 2. For example, a token given probability p = 0.5 costs −ln 0.5 = 0.693, which is exactly 0.693 ÷ 0.693 = 1 bit: a fifty-fifty guess is worth one yes/no question.
+
+Putting the two together, bits per byte is the total surprise of the model over the text, in bits, divided by the length of the text in bytes:
 
 $$
 \text{BPB} = \frac{\text{total loss}}{\ln 2 \times \text{number of bytes}}
 $$
 
 - **total loss** is the sum of −ln p over all the text's tokens (average loss × number of tokens).
+- **ln 2** (≈ 0.693) converts the loss from natural-logarithm units into bits.
 - **number of bytes** is the length of the same text in bytes, which does not depend on the tokenizer.
 
 Suppose the sentence above is 30 bytes long. Both models have the same total loss of 3.0, so:
@@ -171,7 +194,9 @@ Perplexity measures how well a model predicts text, not whether its answers are 
 
 ## Mean squared error (MSE)
 
-Cross-entropy suits answers that are one choice out of many, such as the next token or a fraud label. When the answer is a **number**, such as an amount of money, the usual measure is the mean squared error. This section shows how it works and why it is the wrong tool for next-token prediction.
+**Cross-entropy** is the loss used so far in this chapter. It measures how far the model's predicted probabilities are from the correct answer, and it is computed from one number only: the probability p that the model gave to the correct answer. The loss is −ln p, minus the natural logarithm of that probability. A probability lies between 0 and 1, and the logarithm of such a number is 0 or negative, so the minus sign makes the loss 0 or positive. If the model gave the correct answer a probability of 1, it was certain and right, and the loss is −ln 1 = 0. The less probability it gave the correct answer, the larger the loss: after `YOUR CAT IS A LOVELY`, a model that gave the correct token `CAT` 0.772 pays −ln 0.772 = 0.259, while one that gave it only 0.211 pays −ln 0.211 = 1.556, and a probability close to 0 costs a very large amount. (The same loss is used for training in [Chapter 2](02-training.md#the-loss-cross-entropy).)
+
+Cross-entropy needs the model to give a probability to every possible answer, so it suits answers that are one choice out of a list, such as the next token out of the vocabulary or `FRAUD` versus `OK`. When the answer is a **number**, such as an amount of money, the usual measure is the mean squared error. This section shows how it works and why it is the wrong tool for next-token prediction.
 
 This section covers:
 
@@ -317,10 +342,16 @@ The second form, written with the counts, gives the same value and avoids roundi
 
 ### Moving the threshold: the ROC curve and AUC
 
-The threshold of 0.5 is a choice, not a law. Lowering it flags more transactions: more frauds are caught, but more genuine ones are flagged too. The **ROC curve** (receiver operating characteristic, a name from radar engineering) shows this trade-off for every threshold at once. It plots two rates:
+The model itself never says "fraud" or "not fraud": it gives every transaction a fraud score between 0 and 1. The **threshold** is the cut-off the bank chooses to turn that score into a decision: a transaction is flagged as fraud when its score is at or above the threshold. All the metrics so far used a threshold of 0.5, but 0.5 is a choice, not a law. Lowering the threshold flags more transactions: more frauds are caught, but more genuine customers are flagged too. Raising it does the opposite: fewer false alarms, but more frauds slip through. Each threshold gives a different confusion matrix, so the same model has a different recall and precision at every threshold.
 
-- **True positive rate (TPR)** = recall = TP ÷ 10 real frauds.
-- **False positive rate (FPR)** = FP ÷ 90 genuine transactions: the share of genuine customers wrongly flagged.
+This raises two questions that a single threshold cannot answer. How good is the model's fraud score itself, before anyone picks a threshold? And how can two models be compared fairly, when each might work best at a different threshold? The answer is to look at how well the scores **separate** the two groups. If frauds almost always get higher scores than genuine transactions, some threshold will catch most frauds while flagging few genuine customers, and the model is good. If the scores of frauds and genuine transactions are mixed together, no threshold can do that.
+
+The **ROC curve** shows this separation by trying every threshold and recording, for each one, two rates:
+
+- **True positive rate (TPR)** = TP ÷ 10 real frauds: the share of real frauds that are caught. It is the same as recall. Higher is better.
+- **False positive rate (FPR)** = FP ÷ 90 genuine transactions: the share of genuine customers wrongly flagged. Lower is better.
+
+Both rates run from 0 to 1. Every threshold is a trade between them: a lower threshold raises the TPR (good) and also raises the FPR (bad). The name ROC, **receiver operating characteristic**, comes from radar engineering in the Second World War, where operators had to set how strong a signal on the radar receiver had to be before they called it an enemy aircraft: the same trade between catching real targets and raising false alarms.
 
 The model's results on the sample at several thresholds (made-up but consistent with the matrix above):
 
@@ -334,13 +365,21 @@ The model's results on the sample at several thresholds (made-up but consistent 
 | 0.1 | 10 | 40 | 1.00 | 0.444 | 0.200 |
 | 0.0 (flag everything) | 10 | 90 | 1.00 | 1.000 | 0.100 |
 
-Plotting TPR (up) against FPR (across) for each row gives the ROC curve. It always runs from (0, 0), flag nothing, to (1, 1), flag everything. A good model climbs steeply at first: it catches most frauds while still flagging few genuine customers.
+Each row of the table becomes one point on a chart: its FPR across (genuine customers flagged) and its TPR up (frauds caught). Joining the points gives the ROC curve:
 
-The **AUC** (area under the ROC curve) summarises the whole curve in one number between 0 and 1:
+![ROC curve of the fraud model: the curve rises steeply from (0, 0) to a TPR of 0.8 at an FPR of only 0.067 (threshold 0.5), then flattens and reaches (1, 1); the dashed diagonal shows a random model](images/roc-curve.svg)
 
-- **AUC = 1.0:** a perfect model. Some threshold catches every fraud with no false alarms.
-- **AUC = 0.5:** no better than flipping a coin. The curve is the straight diagonal line from (0, 0) to (1, 1).
-- **A useful reading:** the AUC is the chance that a randomly chosen fraud gets a higher fraud score than a randomly chosen genuine transaction.
+How to read it:
+
+- **The two ends are always the same.** At threshold 1.0 nothing is flagged, so both rates are 0: the point (0, 0). At threshold 0.0 everything is flagged, so both rates are 1: the point (1, 1). The shape in between is what tells models apart.
+- **The dashed diagonal is a model with no skill.** A model that flags transactions at random flags the same share of frauds as of genuine transactions (flag 30% at random and you catch 30% of frauds and annoy 30% of customers), so its TPR always equals its FPR and its points lie on the diagonal.
+- **The closer the curve gets to the top-left corner, the better.** The top-left corner (FPR 0, TPR 1) means catching every fraud without flagging a single genuine customer. The fraud model climbs steeply at first: at threshold 0.5 it already catches 80% of frauds while flagging only 6.7% of genuine customers. After that the curve flattens: catching the last frauds costs many false alarms (at 0.1, all 10 frauds are caught but 44% of genuine customers are flagged).
+
+The **AUC** (area under the ROC curve) turns the whole curve into one number: the share of the chart's 1 × 1 square that lies below the curve (the shaded area in the chart). A curve that hugs the top-left corner leaves almost the whole square below it; a curve close to the diagonal leaves only half. So the AUC lies between 0 and 1, and higher is better:
+
+- **AUC = 1.0:** a perfect model. The curve goes straight up to the top-left corner: some threshold catches every fraud with no false alarms.
+- **AUC = 0.5:** no better than flipping a coin. The curve is the diagonal, which cuts the square in half.
+- **A useful reading:** the AUC is the chance that a randomly chosen fraud gets a higher fraud score than a randomly chosen genuine transaction. Pick one of the 10 frauds and one of the 90 genuine transactions at random: with an AUC of 0.94, the fraud has the higher score about 94 times out of 100. This is why the AUC measures separation directly, without any threshold.
 
 Estimating the area from the seven points above, as a series of trapezoids, gives **AUC ≈ 0.94** (each slice between two adjacent points has area ΔFPR × (TPR\_left + TPR\_right) ÷ 2, giving 0.0022 + 0.0111 + 0.0233 + 0.0850 + 0.2639 + 0.5556 = 0.9411): the model separates fraud from genuine transactions well. The AUC does not depend on any threshold, which makes it good for comparing models; but the business still has to choose one threshold to run the model, and that choice is about costs, as the business section below shows.
 
@@ -450,7 +489,7 @@ After each vote, ratings move toward the result: R\_A ← R\_A + K × (S\_A − 
 1. **Expected result:** E\_A = 1 ÷ (1 + 10^(−100/400)) = 0.640. A is expected to win 64% of comparisons, B 36%.
 2. **An upset:** a voter prefers B's answer. With K = 32, A drops to 1,300 + 32 × (0 − 0.640) = 1,279.5 and B rises to 1,200 + 32 × (1 − 0.360) = 1,220.5.
 
-A surprising result moves the ratings a lot; an expected one moves them little. A gap of 100 points always means a 64% expected win rate, whatever the absolute ratings. (Chatbot Arena now fits all votes at once with the Bradley–Terry model, the same idea as the reward model in [Chapter 2](02-training.md#inside-rlhf-training-the-reward-model), but reports the results on the same Elo-style scale.)
+A surprising result moves the ratings a lot; an expected one moves them little. A gap of 100 points always means a 64% expected win rate, whatever the absolute ratings. Chatbot Arena now uses a variant, the **Bradley–Terry model**. Instead of updating the ratings one vote at a time, in the order the votes arrived, it looks at all the votes together and finds the one strength score per model that best explains them, with the same rule as Elo: the chance that A beats B depends only on the difference between their scores. The result no longer depends on the order of the votes, and it is still reported on the same Elo-style scale. The same rule is used to train the **reward model** of RLHF, a model that learns to give an answer a score from human choices between two answers ([Chapter 2](02-training.md#inside-rlhf-training-the-reward-model)): there, the two "players" are two answers to the same question.
 
 ### LLM-as-judge
 

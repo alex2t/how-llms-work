@@ -105,6 +105,7 @@ The notes are being checked against Stanford's [CME295: Transformers & Large Lan
 - End each chapter with a **Cheat sheet** table and a **Sources** list.
 - Link back to earlier chapters by page and heading instead of repeating them, e.g. `[causal mask](01-transformers.md#what-the-mask-looks-like)`.
 - **Every cross-reference is an anchor link** to the exact heading that explains the topic (`page.md#heading`), never a bare link to the top of a page (`page.md`). Check that the anchor matches an existing heading.
+- **A link never replaces an explanation.** The reader must understand the current passage without clicking any link. When a passage uses a term or idea explained in another chapter, explain it again here, briefly but completely (a definition, plus a small example when useful); the link is only there for a reader who wants to see where else the topic is discussed. Never write "see Chapter N" or "Chapter N explains it in full" instead of explaining.
 
 ## Markdown conventions for MkDocs
 
