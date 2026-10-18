@@ -1067,6 +1067,8 @@ On-policy distillation addresses the weakness of teacher forcing described in [T
 - [Transformer from scratch, slides by Umar Jamil (CC BY-NC 4.0)](https://github.com/hkproj/transformer-from-scratch-notes): `<SOS>`/`<EOS>` shifted-right inputs and training in one time step
 - [Adam: A Method for Stochastic Optimization (Kingma and Ba, 2014)](https://arxiv.org/abs/1412.6980)
 - [Dropout: A Simple Way to Prevent Neural Networks from Overfitting (Srivastava et al., 2014)](https://jmlr.org/papers/v15/srivastava14a.html)
+- [PaLM: Scaling Language Modeling with Pathways (Chowdhery et al., 2022)](https://arxiv.org/abs/2204.02311): pre-training on one pass over the data, without dropout or label smoothing
+- [Llama 2: Open Foundation and Fine-Tuned Chat Models (Touvron et al., 2023)](https://arxiv.org/abs/2307.09288): pre-training settings (AdamW, learning rate schedule, no dropout or label smoothing listed)
 - [Rethinking the Inception Architecture for Computer Vision (Szegedy et al., 2016)](https://arxiv.org/abs/1512.00567): origin of label smoothing
 - [Training language models to follow instructions with human feedback (Ouyang et al., 2022)](https://arxiv.org/abs/2203.02155): InstructGPT, SFT and RLHF
 - [Direct Preference Optimization (Rafailov et al., 2023)](https://arxiv.org/abs/2305.18290)
