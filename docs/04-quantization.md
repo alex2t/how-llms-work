@@ -4,6 +4,14 @@
 
 [Chapter 3](03-inference.md#why-decode-is-limited-by-memory-not-arithmetic) showed that generating text is limited mostly by memory: every decode step reads every weight, and the KV cache grows with every token. This chapter is about making models smaller and faster without making them noticeably worse. The main tool is **quantization**: storing each number with fewer bits.
 
+A trained model stores its weights as **floating-point** numbers (numbers with a decimal point), usually 2 or 4 bytes each. Quantization **replaces** them with small **whole numbers** (integers) of 1 byte or half a byte, plus one shared conversion number, the **scale**, for each group of weights. In short, the process has three steps:
+
+1. **Choose a scale** for a group of weights: the largest weight divided by the largest integer allowed. For 8-bit integers (largest value 127) and a largest weight of 1.30, the scale is 1.30 ÷ 127 = 0.010236.
+2. **Store each weight as a whole number:** divide it by the scale and round. The weight 0.42 becomes 0.42 ÷ 0.010236 = 41.03, stored as **41**, in 1 byte instead of 4.
+3. **Convert back when the weight is used:** multiply the integer by the scale. 41 × 0.010236 = 0.4197, very close to the original 0.42. The small difference, 0.0003, is the **rounding error**: the only price paid for the smaller size.
+
+[How quantization works](#how-quantization-works) goes through this process in detail.
+
 The chapter follows one question, "how many bytes does this model need, and what do we lose by using fewer?":
 
 1. **Why size matters:** memory = number of weights × bytes per weight, and decode speed follows from it.
@@ -29,7 +37,17 @@ flowchart LR
 
 A model's size decides which hardware can run it and how fast it generates. Both follow from one multiplication.
 
-The multiplication is: memory = number of weights × bytes per weight. A 7-billion-weight model needs 14 GB when each weight takes 2 bytes, but only 3.5 GB when each takes half a byte. Because generating each token means reading every weight from memory, a smaller model in memory is also a faster one.
+The multiplication is: memory = number of weights × bytes per weight. For a given model the number of weights is fixed, so the memory depends on one factor only: the **number format** each weight is stored in, which sets its bytes per weight ([Number formats](#number-formats) explains each one). A 7-billion-weight model needs 28 GB in 32-bit floating point (FP32, 4 bytes per weight), 14 GB in 16-bit floating point (FP16 or BF16, 2 bytes), 7 GB in 8-bit integers (INT8, 1 byte) and only 3.5 GB in 4-bit integers (INT4, half a byte). Because generating each token means reading every weight from memory, a smaller model in memory is also a faster one.
+
+**Why this matters in practice: running a model on your own computer.** Tools such as **Ollama**, which run open models on a laptop or desktop, offer each model in several number formats, and the choice decides whether the model fits in your computer's memory. For example, Llama 3.1 8B (8 billion weights) is offered as:
+
+| Ollama tag | Format | File size |
+| --- | --- | --- |
+| `llama3.1:8b-instruct-fp16` | 16-bit floating point | 16 GB |
+| `llama3.1:8b-instruct-q8_0` | 8-bit integers | 8.5 GB |
+| `llama3.1:8b-instruct-q4_K_M` | 4-bit integers | 4.9 GB |
+
+The default tag, `llama3.1` (or `llama3.1:8b`), is the 4-bit `q4_K_M` version: a third of the 16-bit size, so it runs on an ordinary laptop. The names `q8_0` and `q4_K_M` are quantization types of the GGUF file format that Ollama uses; [How: three names you will meet](#how-three-names-you-will-meet) explains them, and [Quality vs speed](#quality-vs-speed) explains what each step down costs in quality.
 
 This section covers:
 
@@ -242,10 +260,13 @@ The step is now 0.0085 instead of 0.0102, because no integer values are wasted. 
 
 ### The outlier problem and group-wise scales
 
-One scale for many weights works well only if the weights have similar sizes. Add a single large weight, 10.0, to the five above and quantize all six to INT4 with one scale:
+The scale is set by the **largest** weight in the group: that weight must fit on the largest integer (7 for INT4). Every other weight is then measured in steps of that size. This works well when all the weights in the group have similar sizes. It fails when one weight is much larger than the others, because that one weight makes the steps very large, and small weights become smaller than half a step and round to 0.
+
+**Example.** Take the five weights above, which in INT4 had a scale of 0.1857 (1.30 ÷ 7). Now add one large weight, 10.0, to the same group and quantize all six to INT4 with one shared scale:
 
 - scale = 10.0 ÷ 7 = 1.43
 - 0.42, 0.053 and −0.317 all round to 0, and −1.30 becomes −1.43.
+- 0.871 becomes 1.43 (0.871 ÷ 1.43 = 0.61, rounded up to 1): an error of 0.56, against 0.058 with the old scale.
 
 Three of the five ordinary weights are wiped out by one **outlier** (a value much larger than the rest). Real models do have such outliers, so quantizing a whole matrix with one scale gives poor results.
 
@@ -341,7 +362,7 @@ Sizes include one 16-bit scale per group of 32 weights (computed as 7 billion ×
 | 3-bit | 3.5 | 3.1 GB | 653 | Noticeably worse |
 | 2-bit | 2.5 | 2.2 GB | 914 | Often badly damaged |
 
-The pattern: going from 16 to 8 bits is almost free, 4 bits is the usual sweet spot, and below 4 bits quality falls quickly, because with 8 or 4 integer levels the rounding errors become a large fraction of every weight (compare the INT8 and INT4 tables in "How quantization works").
+The pattern: going from 16 to 8 bits is almost free, 4 bits is the usual sweet spot, and below 4 bits quality falls quickly, because with 8 or 4 integer levels the rounding errors become a large fraction of every weight (compare the INT8 and INT4 tables in "How quantization works"). Hugging Face's benchmark of Llama 3.1 8B and 70B found the same pattern: 8-bit models stay very close to the 16-bit original, 4-bit models keep relatively high accuracy, and below 4 bits the drop becomes noticeable, especially at 2 bits ([Hugging Face, Selecting a quantization method](https://huggingface.co/docs/transformers/en/quantization/selecting)).
 
 ### When quality drops noticeably
 
@@ -685,6 +706,8 @@ Experts do not usually specialise in human topics such as "law" or "biology"; st
 - [GPTQ: Accurate Post-Training Quantization for Generative Pre-trained Transformers (Frantar et al., 2022)](https://arxiv.org/abs/2210.17323)
 - [AWQ: Activation-aware Weight Quantization for LLM Compression and Acceleration (Lin et al., 2023)](https://arxiv.org/abs/2306.00978)
 - [GGUF file format, ggml documentation](https://github.com/ggml-org/ggml/blob/master/docs/gguf.md)
+- [Selecting a quantization method, Hugging Face Transformers documentation](https://huggingface.co/docs/transformers/en/quantization/selecting): benchmark of 8-bit, 4-bit and sub-4-bit methods against bf16 on Llama 3.1 8B and 70B (accuracy, speed, memory)
+- [Llama 3.1 tags, Ollama library](https://ollama.com/library/llama3.1/tags): the same model offered in fp16, q8\_0 and q4\_K\_M, with file sizes and the default tag
 - [On Layer Normalization in the Transformer Architecture (Xiong et al., 2020)](https://arxiv.org/abs/2002.04745): pre-norm vs post-norm
 - [Root Mean Square Layer Normalization (Zhang and Sennrich, 2019)](https://arxiv.org/abs/1910.07467)
 - [RoFormer: Enhanced Transformer with Rotary Position Embedding (Su et al., 2021)](https://arxiv.org/abs/2104.09864)

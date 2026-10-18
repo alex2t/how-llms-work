@@ -7,7 +7,9 @@ The earlier chapters explained how a model is built ([Chapter 1](01-transformers
 The chapter uses one running example from start to finish:
 
 !!! note "The fraud example"
-    A bank uses an LLM to label card transactions as **fraud** or **not fraud**. For each transaction, the prompt describes it (amount, merchant, country, time) and the model answers `FRAUD` or `OK`. The probability the model gives to the token `FRAUD` ([Chapter 1](01-transformers.md#from-the-last-vector-back-to-a-word)) serves as its **fraud score**, between 0 and 1.
+    A bank uses an LLM to label card transactions as **fraud** or **not fraud**. For each transaction, the prompt describes it (amount, merchant, country, time) and the model answers `FRAUD` or `OK`.
+
+    Before it writes its answer, the model computes a probability for every token in its vocabulary, as for any next word ([Chapter 1](01-transformers.md#from-the-last-vector-back-to-a-word)). The bank reads one of those numbers, the probability of `FRAUD`, and calls it the **fraud score**: a number between 0 and 1 that says how strongly the model leans towards fraud. For example, if the model gives `FRAUD` 0.83, `OK` 0.15 and all other tokens 0.02 together, the fraud score is 0.83. Because it is a number rather than just a yes or no, the bank can choose the cut-off above which a transaction is flagged (0.5 in this chapter).
 
     - **Evaluation sample:** 100 past transactions with known answers, deliberately chosen to contain 10 fraud cases and 90 genuine ones, so there are enough fraud cases to measure.
     - **Real traffic:** 100,000 transactions a month, of which 2% (2,000) are fraud.
