@@ -1,14 +1,14 @@
-# CLAUDE.md — How LLMs Work (MkDocs book)
+# CLAUDE.md — How LLMs Work (MkDocs notes)
 
 This file tells Claude Code how to work on this repository. Read it, `plan.md` and `README.md` at the start of every session.
 
 ## What this project is
 
-A plain-English book that explains how large language models work, written as five chapters with worked numeric examples. It is built with **MkDocs + Material for MkDocs** and published to **GitHub Pages** (`https://alex2t.github.io/how-llms-work/`) by a GitHub Actions workflow on every push to `main`.
+Plain-English notes that explain how large language models work, written as an introduction and six chapters with worked numeric examples. It is built with **MkDocs + Material for MkDocs** and published to **GitHub Pages** (`https://alex2t.github.io/how-llms-work/`) by a GitHub Actions workflow on every push to `main`.
 
 | # | Chapter | File | Status |
 | --- | --- | --- | --- |
-| — | Home page (about the book, how to read it) | `docs/index.md` | Written |
+| — | Home page (about the notes, how to read it) | `docs/index.md` | Written |
 | 0 | Introduction: foundations and history | `docs/00-introduction.md` | Written |
 | 1 | How Transformers Work: BPE, Attention and Q/K/V | `docs/01-transformers.md` | Written |
 | 2 | Training: how the model learns | `docs/02-training.md` | Written |
@@ -55,10 +55,10 @@ Publishing is automatic: push to `main` and the workflow deploys to GitHub Pages
 
 ## CME295 lecture review
 
-The book is being checked against Stanford's [CME295: Transformers & Large Language Models](https://cme295.stanford.edu/syllabus/) (Afshine and Shervine Amidi). The course has 9 lectures; slides appear one a week. Summaries made with a Gemini notebook are in `sources/` (one file per lecture).
+The notes are being checked against Stanford's [CME295: Transformers & Large Language Models](https://cme295.stanford.edu/syllabus/) (Afshine and Shervine Amidi). The course has 9 lectures; slides appear one a week. Summaries made with a Gemini notebook are in `sources/` (one file per lecture).
 
-- **One lecture at a time.** For each lecture, compare every topic with the book and write only the gaps (not the topics already covered) into `fix.md`, section "CME295 gap analysis": what is missing, whether it needs a new chapter or belongs in an existing one (give the chapter and section), and a priority. The user decides each item before anything is written.
-- **Summaries are pointers, not facts.** Verify every claim and number against the original paper or official documentation before it goes into the book.
+- **One lecture at a time.** For each lecture, compare every topic with the notes and write only the gaps (not the topics already covered) into `fix.md`, section "CME295 gap analysis": what is missing, whether it needs a new chapter or belongs in an existing one (give the chapter and section), and a priority. The user decides each item before anything is written.
+- **Summaries are pointers, not facts.** Verify every claim and number against the original paper or official documentation before it goes into the notes.
 - **Paraphrase and credit.** Do not copy slide text or images; credit CME295 in the chapter's Sources when its lecture shaped a section.
 - **`sources/` is git-ignored** and must never be committed or published.
 - **The glossary (Phase 6) waits until Lecture 9 has been reviewed.**
@@ -77,7 +77,10 @@ The book is being checked against Stanford's [CME295: Transformers & Large Langu
 5. **Check every number.** Any worked example must be computed, not guessed. Use a quick Python snippet to verify arithmetic (softmax, log, means, memory sizes) before writing it.
 6. **Keep the navigation in sync.** Every new page must be added to `nav:` in `mkdocs.yml`; never leave a page out of the navigation bar.
 7. **Commit messages:** `chN: <section> — <what changed>`, e.g. `ch2: padding mask — add 2-sentence batch example`.
-8. **Chapter review by the user.** The user reads one chapter at a time and asks for clarifications. Apply each requested clarification **directly, without proposing it first** (this overrides rule 1 during a review; rule 2 still applies: ask before removing a whole paragraph, table, example or section). Run `mkdocs build --strict` after each change. The user's questions only show where the text is unclear: never copy a question into the book; instead rewrite the passage so that no reader would need to ask it, and answer the question in the chat. **Do not record review changes** in `fix.md`, `plan.md`, `README.md` or anywhere else (this overrides rule 4 during a review), and **do not commit during the review**. Commit, push and deploy once, at the end of that chapter's review. Open decisions stay at the top of `fix.md`, under "Waiting for approval".
+8. **Chapter review by the user.** The user reads one chapter at a time and asks for clarifications. Apply each requested clarification **directly, without proposing it first** (this overrides rule 1 during a review; rule 2 still applies: ask before removing a whole paragraph, table, example or section). Run `mkdocs build --strict` after each change. The user's questions only show where the text is unclear: never copy a question into the notes; instead rewrite the passage so that no reader would need to ask it, and answer the question in the chat. **Do not record review changes** in `fix.md`, `plan.md`, `README.md` or anywhere else (this overrides rule 4 during a review), and **do not commit during the review**. Commit, push and deploy once, at the end of that chapter's review. Open decisions stay at the top of `fix.md`, under "Waiting for approval". When applying a requested change:
+   - **Add useful context.** Do not only change what was asked: also add any extra information the reader would need to fully understand that passage in the context of the notes.
+   - **Link to deeper coverage.** If the change touches a topic that another page already explains in more depth, add a link to that page and heading instead of repeating it.
+   - **Do not apply an incorrect suggestion.** If the user's proposed change is factually wrong, do not make it; explain in the chat why it is incorrect, with evidence, and leave the text as it is.
 
 ## Writing style (match Chapter 1)
 
@@ -142,7 +145,7 @@ Do not change anything in `docs/` while reviewing. The user then decides: replac
 `README.md` is the public face of the repository. Write it like the back cover of a book, in a professional tone (not a social-media post), and keep it concise. Sections, in this order:
 
 1. Title, a short description and the link to the live site.
-2. **What the book covers.**
+2. **What the notes cover.**
 3. **Who it is for.**
 4. **Chapters** (number, title, what you will learn).
 5. **How it was made** (course notes, Claude, NotebookLM, Claude Code).

@@ -14,9 +14,9 @@ Read the chapters in order the first time; each one builds on the last. Use the 
 | --- | --- |
 | [0 · Introduction](00-introduction.md) | The maths and machine-learning basics you need, and how text modelling evolved from one-hot vectors and RNNs to Transformers |
 | [1 · Transformers](01-transformers.md) | BPE tokenization, embeddings, positional encoding, where Q, K and V come from, attention, and the full Transformer block |
-| [2 · Training](02-training.md) | How the model learns: batches, padding, the shifted-right decoder input, the loss and backpropagation |
-| [3 · Inference](03-inference.md) | How the model generates text: the KV cache, greedy and beam search, temperature, top-k and top-p |
-| [4 · Quantization](04-quantization.md) | Memory, number formats, quantization, and what changed in Transformers since 2017 |
+| [2 · Training](02-training.md) | How the model learns: pre-training data, batches and padding, the loss and backpropagation, fine-tuning, RLHF and DPO, LoRA and distillation |
+| [3 · Inference](03-inference.md) | How the model generates text: the KV cache, greedy and beam search, temperature, top-k and top-p, and context limits |
+| [4 · Quantization](04-quantization.md) | Memory, number formats, quantization, Mixture of Experts, and what changed in Transformers since 2017 |
 | [5 · Evaluation](05-evaluation.md) | Perplexity, MSE, accuracy, precision, recall, F1, AUC-ROC, and business outcome metrics |
 | [6 · Prompting](06-prompting.md) | In-context learning, chain-of-thought, self-consistency, and how reasoning models are trained |
 

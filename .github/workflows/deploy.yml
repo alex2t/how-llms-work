@@ -1,4 +1,4 @@
-name: Publish book to GitHub Pages
+name: Publish notes to GitHub Pages
 
 on:
   push:
