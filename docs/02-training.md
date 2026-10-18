@@ -7,9 +7,9 @@
 One round of that game is called a **training step**. Each step does the following:
 
 1. **Take a batch.** Pick a group of text examples from the training data and turn them into token IDs with the [tokenizer from Chapter 1](01-transformers.md#bpe-tokenizer-from-text-to-token-ids).
-2. **Prepare inputs and targets.** Make every sequence the same length with padding, and shift the text by one position so that each position has a "correct next token" to predict.
+2. **Prepare inputs and targets.** Make every sequence the same length with [padding](#step-1-pad-the-short-sentences) (filler tokens added to the end of short sentences), and shift the text by one position so that each position has a "correct next token" to predict.
 3. **Forward pass.** Run the whole batch through the model, exactly as in [Chapter 1](01-transformers.md), to get a probability for every vocabulary token at every position.
-4. **Measure the error.** Compare the probabilities with the correct next tokens and compute one number, the **loss**. A low loss means good guesses.
+4. **Measure the error.** Compare the probabilities with the correct next tokens and compute one number, the **loss** ([defined in the Introduction](00-introduction.md#loss-and-training)). A low loss means good guesses. Language models use a loss called [cross-entropy](#the-loss-cross-entropy), explained later in this chapter.
 5. **Backward pass.** Compute, for every weight, which direction to move it to lower the loss.
 6. **Update.** The optimiser moves every weight a small step in that direction.
 
@@ -31,11 +31,29 @@ Training is the process that turns a model full of random numbers into a model t
 
 ### Three ideas: weights, prediction, error
 
-- **Weight (parameter):** one trainable number inside the model. Every entry of E, W\_Q, W\_K, W\_V, W\_O, W₁, W₂ and the layer-normalisation γ and β is a weight. The base model of the original paper has about 65 million of them.
+- **Weight (parameter):** one trainable number inside the model. Every number in the following parts of the model, all described in [Chapter 1](01-transformers.md), is a weight:
+    - **E**, the [embedding table](01-transformers.md#token-embeddings) that turns each token ID into a vector.
+    - **W\_Q, W\_K, W\_V**, the three matrices that turn each token's vector into its [query, key and value](01-transformers.md#where-q-k-and-v-come-from).
+    - **W\_O**, the matrix that combines the outputs of the [attention heads](01-transformers.md#multi-head-attention).
+    - **W₁, W₂**, the two matrices of the [feed-forward network](01-transformers.md#the-feed-forward-network-in-detail).
+    - **γ and β**, the scale and shift numbers of [layer normalisation](01-transformers.md#layer-normalisation-in-detail).
+
+    The base model of the original Transformer paper, [*Attention Is All You Need*](01-transformers.md#attention-is-all-you-need-2017) (Vaswani et al., 2017), has about 65 million of them.
 - **Prediction:** at each position, the model outputs a probability for every token in the vocabulary, as shown in Chapter 1's section "[From the last vector back to a word](01-transformers.md#from-the-last-vector-back-to-a-word)".
 - **Error:** how far that prediction is from the token that really came next in the text. Training only ever tries to make this error smaller.
 
-The training data needs no human labels. The text itself provides the answers: in `YOUR CAT IS A LOVELY CAT`, after `YOUR CAT IS A LOVELY` the correct next token is `CAT`, simply because that is what the text says. This is why models can be trained on huge amounts of ordinary text. This style of learning is called **self-supervised**: the labels come from the data itself.
+The training data needs no human labels. The text itself provides the answers: in `YOUR CAT IS A LOVELY CAT`, after `YOUR CAT IS A LOVELY` the correct next token is `CAT`, simply because that is what the text says (see [how one sentence becomes five training examples](#the-same-idea-in-decoder-only-models)). This is why models can be trained on huge amounts of ordinary text. This style of learning is called **self-supervised**: the labels come from the data itself.
+
+This is the main difference from classic **supervised** machine learning, used in the [task-specific era](00-introduction.md#the-task-specific-era-the-2010s) described in the Introduction. There, a person had to write the correct answer for every training example, for instance marking each product review "positive" or "negative" for a sentiment model:
+
+| | Supervised (classic machine learning) | Self-supervised (LLM pre-training) |
+| --- | --- | --- |
+| Where the correct answer comes from | A person labels each example | The next token in the text itself |
+| Example | Review "Great phone" → label `positive`, written by a person | `YOUR CAT IS A LOVELY` → `CAT`, already in the text |
+| Amount of data | Limited by the cost of labelling, often a few hundred thousand examples | Any amount of text, up to trillions of tokens |
+| What the model learns | One task (here, sentiment) | General knowledge of language, reused for many tasks |
+
+Supervised learning has not disappeared: it returns after pre-training, in [supervised fine-tuning](#stage-2-supervised-fine-tuning-sft), where people write example answers to teach the model to follow instructions.
 
 ### What training changes, and what it does not
 
@@ -97,7 +115,10 @@ Only about one page in nine survives. This is normal: careful filtering of web d
 
 The final training set mixes several **sources** (also called domains): web pages, code, books, scientific papers, maths. The **data mixture** is the share of training tokens taken from each, and it strongly affects what the model is good at: more code improves coding, more maths improves maths, and every extra share for one source is taken from the others.
 
-Testing mixtures on the full model would cost a full training run each time. Instead, teams train many **small proxy models**, each on a different mixture, measure their loss on the kinds of text they care about, and fit a simple model that predicts the loss for any mixture. The predicted best mixture is then used for the large model (methods such as DoReMi and RegMix work this way).
+**Testing a mixture** means: choose the shares (for example 70% web, 20% code, 10% maths), train a model on data drawn in those shares, then measure its loss on held-out text of the kinds the team cares about. The mixture whose model has the lowest loss wins. Doing this with the full model would cost a complete training run, often weeks on thousands of GPUs, for every mixture tried. Instead, teams test mixtures on **small proxy models**: models with the same design but far fewer weights, which train in hours. The best mixture found with the small models is then used for the large one. Two published methods do this:
+
+- **DoReMi** (Xie et al., 2023) first trains a small *reference* model on a default mixture. It then trains a second small model while adjusting the shares during training: a source on which this model's loss is much higher than the reference model's (so there is still a lot to learn) gets a larger share. The average of those shares becomes the mixture for the large model. In the paper, a mixture found with 280-million-weight models made an 8-billion-weight model reach the baseline's accuracy in 2.6 times fewer training steps.
+- **RegMix** (Liu et al., 2024) trains hundreds of tiny models (512 models of about 1 million weights each), each on a different random mixture, and records each one's loss. It then fits a **regression** model (a simple model that learns to predict a number from inputs) that predicts the loss from the shares. That predictor scores a million candidate mixtures in under 10 seconds; the paper averages the 100 mixtures with the lowest predicted loss and uses the result to train a 1-billion-weight model.
 
 Training also often happens in **stages**: most of the tokens come from the broad mixture, and a final stage uses a smaller set of the highest-quality data, with more code, maths and reasoning text, to sharpen those skills.
 
@@ -127,7 +148,7 @@ A **batch** is a small group of training examples that go through the model toge
 - **Step:** one batch in, one weight update out.
 - **Epoch:** one full pass over the whole training data.
 
-Why not one sentence at a time? A GPU can process many sequences in parallel almost as fast as one, so batches use the hardware well. Averaging over many examples also gives a steadier direction for the update: one odd sentence cannot pull the weights too far. The paper built its batches by token count, about 25,000 source tokens and 25,000 target tokens per batch, rather than by a fixed number of sentences.
+Why not one sentence at a time? A GPU can process many sequences in parallel almost as fast as one, so batches use the hardware well. Averaging over many examples also gives a steadier direction for the update: one odd sentence cannot pull the weights too far. [The paper](01-transformers.md#attention-is-all-you-need-2017) built its batches by token count, about 25,000 source tokens and 25,000 target tokens per batch, rather than by a fixed number of sentences.
 
 ### Tensors and shapes
 
@@ -142,7 +163,15 @@ A **tensor** is a block of numbers with several dimensions: a vector has 1 dimen
 | Attention scores, all 8 heads | 2 × 8 × 6 × 6 | 576 |
 | Logits (with a 50,000-token vocabulary) | 2 × 6 × 50,000 | 600,000 |
 
-Every formula from [Chapter 1](01-transformers.md) stays the same; there is simply one extra dimension at the front for the batch.
+Batching does not change any formula from [Chapter 1](01-transformers.md). Chapter 1 followed **one** sentence; a batch simply stacks several sentences, one behind the other, and adds a dimension at the front of every shape that says which sentence a number belongs to. Compare the same step with one sentence and with the batch of 2:
+
+| Step | One sentence (Chapter 1) | Batch of B = 2 | What happens |
+| --- | --- | --- | --- |
+| Input X | 6 × 512 | 2 × 6 × 512 | Two 6 × 512 matrices, one per sentence |
+| Weight matrix W\_Q | 512 × 64 | 512 × 64 (unchanged) | The **same** weights are used for every sentence |
+| Q = X · W\_Q | 6 × 64 | 2 × 6 × 64 | Each sentence's 6 × 512 matrix is multiplied by W\_Q on its own |
+
+The weights have no batch dimension: there is one W\_Q, and every sentence in the batch uses it. The sentences also never mix: sentence 1's tokens attend only to sentence 1's tokens, so the result for sentence 1 is exactly what Chapter 1 would compute for that sentence alone. The GPU just does the two calculations at the same time. (The 4D attention shape in the table above has one more dimension, for the 8 heads of [multi-head attention](01-transformers.md#multi-head-attention); that one also exists for a single sentence.)
 
 !!! note "Refresher: thinking about 3D and 4D tensors in code"
     In programming terms, a tensor is a multi-dimensional array stored as one flat block of memory, where the shape tells you how each index is addressed:
@@ -160,6 +189,26 @@ A tensor must be a perfect rectangle (or box): every row has the same number of 
 | `YOUR CAT IS LOVELY` | \[105, 6587, 5475, 65\] | 4 |
 
 The second row is 2 entries short, so the two rows cannot be stacked into a 2 × 6 tensor, and the GPU cannot run a single matrix multiplication over them. The fix is to fill the short sentence up to the length of the longest one with a special filler token. That is padding, described next.
+
+**What about text longer than one row, such as a whole book?** Every row of a batch has the same fixed number of tokens, **n**, called the **context length**. It is chosen before training, for example n = 4,096 tokens. (It is not d\_model: d\_model is the number of values describing *one* token, while n is the number of *tokens* in one row.) A book is prepared like this:
+
+1. **Tokenize** the whole book into one long list of token IDs, say 120,000 tokens.
+2. **Cut it into rows of n tokens.** This is called **chunking**: 120,000 ÷ 4,096 gives 29 full rows (29 × 4,096 = 118,784 tokens) and a leftover piece of 1,216 tokens.
+3. **Fill the last row with the next document.** After the book's last token comes an end token `<EOS>`, then the beginning of the next book or web page. Joining documents this way is called [packing](#packing-the-alternative-to-padding).
+
+The model therefore never sees the whole book at once, only windows of 4,096 tokens, and it learns relations only between tokens inside the same window. This is why the context length set during training also limits how much text the finished model can read at once: its [context window](03-inference.md#the-context-window-a-hard-limit).
+
+How these terms fit together:
+
+| Term | What it is | Problem it solves |
+| --- | --- | --- |
+| Context length n | The fixed number of tokens in every row | None: it is the target length every row must have |
+| Chunking | Cutting a long text into rows of n tokens | Text **longer** than n |
+| [Padding](#step-1-pad-the-short-sentences) | Filling a short row with `<pad>` tokens up to n | Text **shorter** than n |
+| [Packing](#packing-the-alternative-to-padding) | Joining several short texts, separated by `<EOS>`, into one row of n | Text shorter than n, without the waste of padding |
+| [Context window](03-inference.md#the-context-window-a-hard-limit) | The same limit n, seen when the finished model is used | Prompt and answer together cannot exceed n |
+
+Padding and packing are the two alternatives for short text; chunking handles long text; the context length is the fixed size that all three aim for.
 
 ## Padding and the padding mask
 
@@ -228,7 +277,7 @@ The top-left part is [Chapter 1's triangle](01-transformers.md#what-the-mask-loo
 
 ### Step 4: ignore padding in the loss
 
-The loss (explained later in this chapter) is computed per position and then averaged. Positions whose correct answer is `<pad>` are left out of that average, so the model is never rewarded or punished for predicting filler. In the batch above, 10 positions hold real tokens and 2 hold `<pad>`, so the loss is the sum over the 10 real positions divided by 10, not by 12.
+The loss is the single number that measures how wrong the model's guesses are, as [defined in the Introduction](00-introduction.md#loss-and-training); the version used for language models, [cross-entropy](#the-loss-cross-entropy), is explained later in this chapter, including [how it is averaged over a batch](#from-one-position-to-a-whole-batch). It is computed per position and then averaged. Positions whose correct answer is `<pad>` are left out of that average, so the model is never rewarded or punished for predicting filler. In the batch above, 10 positions hold real tokens and 2 hold `<pad>`, so the loss is the sum over the 10 real positions divided by 10, not by 12.
 
 ### Padding mask vs causal mask
 
@@ -243,7 +292,10 @@ The loss (explained later in this chapter) is computed per position and then ave
 
 ### Packing: the alternative to padding
 
-Padding wastes work: every `<pad>` position goes through the whole model and is then thrown away. In the batch above, 2 of the 12 positions (17%) are padding. With real data the waste can be much larger. If training examples average 1,000 tokens and every sequence is padded to 4,096, about (4,096 − 1,000) ÷ 4,096 ≈ 76% of all positions are padding.
+Padding has a cost. A `<pad>` position goes through every layer of the model exactly like a real token, using the same computation and memory, but its result is discarded: the mask removes it from attention and the loss ignores it. Every padded position is therefore computation spent for nothing. The share of wasted work is the number of padded positions divided by the total number of positions in the batch.
+
+- **In the small batch above:** the batch has 2 rows of 6 positions, so 12 positions in total. Sentence B needed 2 `<pad>` tokens, so 2 ÷ 12 ≈ 17% of the work is wasted.
+- **In a realistic setting:** suppose the context length is 4,096 tokens and the training examples (for instance short question-and-answer pairs) are about 1,000 tokens long on average. Each row then holds about 1,000 real tokens and 4,096 − 1,000 = 3,096 `<pad>` tokens, so about 3,096 ÷ 4,096 ≈ 76% of the computation is wasted. Three quarters of the training budget would be spent on filler.
 
 **Packing** avoids this. Instead of giving each example its own padded row, several examples are joined end to end into one sequence of the fixed length, separated by an end token, and that long sequence is cut into rows. Almost every position then holds a real token.
 
@@ -355,7 +407,14 @@ During training the decoder always reads the correct previous words, never its o
 
 ### What teacher forcing means
 
-**Teacher forcing** means that, during training, the input at each position is the **true** previous token from the training data, not the token the model predicted. The name comes from a teacher who corrects a student after every word, so one mistake cannot lead to a chain of mistakes.
+A [decoder](01-transformers.md#the-full-transformer-block) (the part of the Transformer that generates the output text) builds a sentence one token at a time, and each new token is predicted from the tokens before it. During training, there are two possible sources for those previous tokens:
+
+- **The model's own guesses.** At each position, feed back the token the model has just predicted, exactly as happens when the finished model generates text.
+- **The correct tokens from the training data.** At each position, feed in the token that really comes next in the text, whatever the model predicted.
+
+**Teacher forcing** is the second choice: during training, the input at each position is the **true** previous token from the data, never the model's own prediction. The name comes from a teacher who corrects a student after every word: the student may still make mistakes, but each next word starts again from the correct text, so one mistake cannot lead to a chain of mistakes.
+
+This matters most early in training, when the model's guesses are often wrong. If its own wrong guesses were fed back, every later position would be built on a wrong beginning, and the model would be learning to continue sentences that do not exist in the data. With teacher forcing, every position learns from a correct beginning.
 
 **Example.** Suppose that early in training, at position 1, the model's top guess after `<SOS>` Ti is "adoro" instead of the correct "amo" (made-up numbers for illustration):
 
@@ -404,7 +463,7 @@ flowchart LR
   end
 ```
 
-The same holds at scale: one batch of 25,000 target tokens in the paper gives about 25,000 predictions, all scored in one forward pass. An RNN would have to step through each sentence one token at a time.
+The same holds at scale: one batch of 25,000 target tokens in [the paper](01-transformers.md#attention-is-all-you-need-2017) gives about 25,000 predictions, all scored in one forward pass. An RNN would have to step through each sentence one token at a time.
 
 ### The trade-off: exposure bias
 
@@ -477,7 +536,22 @@ The value 0.383 is the number training tries to reduce. All four positions came 
 
 ## Backpropagation, gradient descent and the optimiser
 
-Once the loss is known, the model must decide how to change each of its millions of weights to make the loss smaller. This section explains the three tools that do it (backpropagation, gradient descent and the Adam optimiser) and two techniques the paper used to stop the model from simply memorising its training data (dropout and label smoothing).
+Once the loss is known, the model must decide how to change each of its millions of weights to make the loss smaller. This section explains the three tools that do it (backpropagation, gradient descent and the Adam optimiser) and two techniques [the paper](01-transformers.md#attention-is-all-you-need-2017) used to stop the model from simply memorising its training data (dropout and label smoothing).
+
+These are not alternatives to choose between. Each one does a different job, and they work together inside every training step:
+
+| Technique | Its job | How it relates to the others |
+| --- | --- | --- |
+| Backpropagation | Computes the gradient of every weight: which direction to move it | Always used; there is no alternative |
+| Gradient descent | The basic update rule: weight − learning rate × gradient | The starting point; replaced by Adam in practice |
+| Adam | A smarter update rule that gives each weight its own step size | Used **instead of** plain gradient descent |
+| Learning rate schedule | How big the steps are, and how that changes during training | Always used; a setting of the update rule |
+| Dropout | Randomly sets numbers to 0 during training | Optional, added on top |
+| Label smoothing | Softens the target so the model does not aim for 100% certainty | Optional, added on top |
+
+One training step runs them in this order: the forward pass computes the predictions (with dropout switched on) and the loss (against smoothed targets, if label smoothing is used); backpropagation computes every gradient; Adam updates every weight, with a step size set by the learning rate schedule. The original Transformer used all of them together, with Adam in place of plain gradient descent.
+
+Dropout and label smoothing are tuning choices, not required parts. They help most when a model could memorise its data, such as a translation model trained many times over a limited set of sentence pairs. Large modern LLMs often see each piece of text only once, so memorisation is less of a risk: PaLM (Google, 2022), for example, was pre-trained on exactly one pass over its data, without dropout and without label smoothing, and the published pre-training settings of Llama 2 (Meta, 2023) list neither.
 
 ### The gradient: which way to move each weight
 
@@ -553,7 +627,7 @@ The probability of the correct token rises from 0.772 to 0.807, and the loss fal
 
 ### Adam: a smarter step
 
-Plain gradient descent uses the same learning rate for every weight. The paper used **Adam** (adaptive moment estimation), an **optimiser** (the rule that turns gradients into weight changes) that adapts the step for each weight. It keeps two running averages per weight:
+Plain gradient descent uses the same learning rate for every weight. [The paper](01-transformers.md#attention-is-all-you-need-2017) used **Adam** (adaptive moment estimation), an **optimiser** (the rule that turns gradients into weight changes) that adapts the step for each weight. It keeps two running averages per weight:
 
 - **m (momentum):** the recent average of the gradient. It smooths out noise from one batch to the next, like a ball rolling downhill that keeps its speed.
 - **v:** the recent average of the **squared** gradient. It measures how large the gradients for this weight usually are.
@@ -567,9 +641,9 @@ $$
 $$
 
 - **t** is the step number and **g\_t** the gradient at step t.
-- **β₁, β₂** control how long the averages remember: the paper used β₁ = 0.9 and β₂ = 0.98.
+- **β₁, β₂** control how long the averages remember: [the paper](01-transformers.md#attention-is-all-you-need-2017) used β₁ = 0.9 and β₂ = 0.98.
 - **m̂, v̂** are the averages corrected for starting at 0 (the "bias correction").
-- **ε** is a tiny number (10⁻⁹ in the paper) to avoid dividing by 0.
+- **ε** is a tiny number (10⁻⁹ in [the paper](01-transformers.md#attention-is-all-you-need-2017)) to avoid dividing by 0.
 
 !!! note "Refresher: exponential moving averages and bias correction"
     A formula like m\_t = 0.9 × m\_{t−1} + 0.1 × g\_t is an **exponential moving average**: at each step it keeps 90% of the previous running average and blends in 10% of the new value g\_t, so older gradients gradually fade away without needing to store a history list.
@@ -591,7 +665,7 @@ The two gradients differ by a factor of 100, yet both weights move by the same a
 
 ### The learning rate and the warm-up schedule
 
-The paper did not keep the learning rate fixed. It used a **schedule**: a formula giving the learning rate at each step.
+[The paper](01-transformers.md#attention-is-all-you-need-2017) did not keep the learning rate fixed. It used a **schedule**: a formula giving the learning rate at each step.
 
 $$
 \eta(\text{step}) = d_{model}^{-0.5} \cdot \min\left(\text{step}^{-0.5},\ \text{step} \cdot \text{warmup}^{-1.5}\right)
@@ -617,19 +691,28 @@ For the first 4,000 steps the second term is smaller, so the learning rate **ris
 
 **Overfitting** means the model memorises its training examples instead of learning patterns that also work on new text. **Dropout** fights it: during training, each number in a vector is set to 0 with probability p, chosen at random again at every step, and the surviving numbers are multiplied by 1 / (1 − p) so the average size of the vector stays the same.
 
-The paper used p = 0.1, applied to the output of every sublayer (before it is added to the residual) and to the sum of embeddings and positional encodings. **Example** with a 4-number vector and p = 0.25 (a larger toy value so that one number drops):
+[The paper](01-transformers.md#attention-is-all-you-need-2017) used p = 0.1, so each number has a 10% chance of being set to 0. Dropout is applied at two kinds of places inside the model:
 
-|  | Value 1 | Value 2 | Value 3 | Value 4 |
-| --- | --- | --- | --- | --- |
-| Before dropout | 0.8 | −0.4 | 1.2 | 0.6 |
-| Random keep (1) or drop (0) | 1 | 1 | 0 | 1 |
-| After dropout, kept values × 1 / (1 − 0.25) = × 1.333 | 1.067 | −0.533 | 0 | 0.800 |
+- **On the output of every sublayer.** A sublayer is one of the two building blocks of a Transformer layer: the attention block or the feed-forward network (see [the pieces inside each layer](01-transformers.md#the-pieces-inside-each-layer)). Each one outputs one vector per token, and dropout is applied to that vector before it is added back to the sublayer's input (the residual connection).
+- **On the input of the first layer**, the sum of each token's embedding and positional encoding.
+
+**Example** at the second place, the input of the first layer, for the token `CAT` in `YOUR CAT IS A LOVELY CAT`. Its embedding is the vector from [Chapter 1's embedding table](01-transformers.md#token-embeddings), \[0.81, 0.10, −0.52\]: 512 numbers in the real model, shortened to 3. For simplicity, the positional encoding that would be added to it is left out. The example uses p = 0.25 instead of 0.1 so that, with only 3 numbers, one of them is dropped:
+
+|  | Value 1 | Value 2 | Value 3 |
+| --- | --- | --- | --- |
+| `CAT`'s embedding, before dropout | 0.81 | 0.10 | −0.52 |
+| Random draw: keep (1) or drop (0) | 1 | 1 | 0 |
+| After dropout: dropped values become 0, kept values × 1 / (1 − 0.25) = × 1.333 | 1.080 | 0.133 | 0 |
+
+The same operation is applied, with a new random draw, to every other token's vector and to the output of every sublayer.
+
+Why multiply the kept values by 1.333? Each number survives only 75% of the time, so without a correction the vector would be smaller on average during training than during use, when nothing is dropped. Multiplying by 1 / 0.75 = 1.333 compensates: for Value 1, the average over many steps is 75% × 1.080 + 25% × 0 = 0.81, its original value. At the next training step, a new random draw drops different numbers.
 
 Because any number can disappear, the model cannot depend on one specific path and has to spread useful information across many. **Dropout is switched off at inference**: every number is kept and nothing is rescaled, so results are repeatable.
 
 ### Label smoothing: do not aim for 100% certainty
 
-With a one-hot target, the loss only reaches 0 when the model gives the correct token probability 1, which pushes the logits towards extreme values and makes the model overconfident. **Label smoothing** softens the target: the correct token gets 1 − ε, and the remaining ε is shared equally among all tokens. The paper used ε = 0.1.
+With a one-hot target, the loss only reaches 0 when the model gives the correct token probability 1, which pushes the logits towards extreme values and makes the model overconfident. **Label smoothing** softens the target: the correct token gets 1 − ε, and the remaining ε is shared equally among all tokens. [The paper](01-transformers.md#attention-is-all-you-need-2017) used ε = 0.1.
 
 $$
 y_k = (1-\varepsilon)\cdot[\,k = \text{correct}\,] + \frac{\varepsilon}{|V|}
@@ -645,7 +728,7 @@ Here \[k = correct\] is 1 for the correct token and 0 otherwise, and |V| is the 
 | LOVELY | 0 | 0.025 | 0.004 | 0.025 × 5.521 = 0.138 |
 | **Loss** | 0.259 |  |  | **0.526** |
 
-The smoothed loss is higher (0.526 instead of 0.259) because tokens with very small probabilities now also cost something. The model can no longer win by pushing the wrong tokens to almost 0, so it stays less overconfident. The paper reports that label smoothing made perplexity slightly worse but improved accuracy and the BLEU translation score.
+The smoothed loss is higher (0.526 instead of 0.259) because tokens with very small probabilities now also cost something. The model can no longer win by pushing the wrong tokens to almost 0, so it stays less overconfident. [The paper](01-transformers.md#attention-is-all-you-need-2017) reports that label smoothing made perplexity slightly worse but improved accuracy and the BLEU translation score.
 
 ## Another training objective: masked language modelling
 
