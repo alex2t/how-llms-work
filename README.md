@@ -42,9 +42,10 @@ The notes grew out of several AI and LLM engineering courses. I took excerpts fr
 
 - **Claude** explained the excerpts I gave it, or went further into a topic when I asked.
 - **NotebookLM (Google Gemini)** summarised lecture videos, used to check which topics were missing.
-- **Claude Code** wrote and edited the pages. I read every chapter and pointed out the passages that were unclear or badly phrased, and Claude Code rewrote them until they were easy to follow. It also checked the arithmetic and built the site.
+- **Claude Code** wrote and edited the pages.
 - **Antigravity CLI (Gemini 4)** then rewrote each chapter to improve the wording and added diagrams and short refreshers on the maths.
 - **Claude Code** reviewed each Gemini rewrite against the original: it rechecked every number, tested the diagrams and links, fixed the errors it found, and replaced the chapter with the improved version.
+- **Manual review:** I then visited each page of the site, read every chapter and requested changes wherever a passage was unclear, badly phrased or missing an explanation. Claude Code rewrote each passage until it was easy to follow, checked the arithmetic with scripts and rebuilt the site.
 
 ## Credits
 
