@@ -70,3 +70,7 @@ mkdocs build --strict # check before committing
 ```
 
 Every push to `main` publishes the site to GitHub Pages through GitHub Actions.
+
+## License
+
+The notes and the code in this repository are released under the [MIT License](LICENSE). The works listed under Credits and in each chapter's Sources remain under their own authors' terms.

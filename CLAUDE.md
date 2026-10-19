@@ -171,5 +171,6 @@ Do not change anything in `docs/` while reviewing. The user then decides: replac
 5. **How it was made** (course notes, Claude, NotebookLM, Claude Code).
 6. **Credits.**
 7. **Build locally.**
+8. **License** (MIT, see `LICENSE`; third-party works stay under their own terms).
 
 No progress log, no status columns, no internal task lists and no one-time setup steps.
