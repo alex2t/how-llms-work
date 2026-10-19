@@ -14,7 +14,9 @@ The notes follow one model's life from start to finish:
 - **Inference:** how text is generated token by token, the KV cache, and the decoding rules (greedy, beam search, temperature, top-k, top-p).
 - **Efficiency:** number formats, quantization, Mixture of Experts, and what has changed in Transformers since 2017.
 - **Evaluation:** perplexity, classification metrics, benchmarks, LLM-as-judge, and how model metrics connect to business outcomes.
-- **Prompting and reasoning:** in-context learning, chain-of-thought, and how reasoning models are trained.
+- **Prompting and reasoning:** clear prompts, in-context learning, chain-of-thought, self-critique, prompt chaining, and how reasoning models are trained.
+- **Retrieval (RAG):** connecting a model to your own documents, from chunking and vector search to citations and evaluation.
+- **Agents:** models that call tools in a loop, the Model Context Protocol, memory, guardrails and multi-agent systems.
 
 A few running examples, such as the sentence `YOUR CAT IS A LOVELY CAT` and a fraud-detection use case, are reused across chapters, so the reader never meets unexplained numbers. Every worked calculation has been checked with a script.
 
@@ -32,9 +34,9 @@ Readers with a technical background, for example a computing degree or a career 
 | 3 | Inference and decoding | The generation loop, KV cache, decoding rules and context limits |
 | 4 | Quantization, efficiency and the modern Transformer | Number formats, quantization, Mixture of Experts and post-2017 changes |
 | 5 | Evaluation: how we measure a model | Perplexity, precision, recall, F1, AUC, benchmarks and business metrics |
-| 6 | Prompting, reasoning and agents | In-context learning, chain-of-thought, self-consistency and reasoning models |
-
-The notes are a work in progress: a section on agents and retrieval will be added to Chapter 6.
+| 6 | Prompting and reasoning | Clear prompts, in-context learning, chain-of-thought, self-critique, prompt chaining and reasoning models |
+| 7 | Retrieval-augmented generation (RAG) | Chunking, embeddings, hybrid search, re-ranking, citations, evaluation, and RAG vs long context or fine-tuning |
+| 8 | Agents | The agent loop, tool calling, MCP, memory, guardrails, agent evaluation and multi-agent systems |
 
 ## How it was made
 
@@ -50,7 +52,8 @@ The notes grew out of several AI and LLM engineering courses. I took excerpts fr
 ## Credits
 
 - Stanford University, [CME295: Transformers & Large Language Models](https://cme295.stanford.edu/syllabus/), by Afshine Amidi and Shervine Amidi (lectures on YouTube, slides on the course site). Used to check which topics the notes should cover; explanations are paraphrased, and no slide content is copied.
-- Google NotebookLM (Gemini) summaries of the CME295 lectures, used as a topic checklist. They are kept locally and not published.
+- Stanford University, [CS230: Deep Learning](https://cs230.stanford.edu/), Lecture 8: Agents, Prompts and RAG (Autumn 2025). Used to plan Chapters 6 to 8; explanations are paraphrased.
+- Google NotebookLM (Gemini) summaries of the CME295 and CS230 lectures, used as a topic checklist. They are kept locally and not published.
 - Vaswani et al., [Attention Is All You Need](https://arxiv.org/abs/1706.03762) (2017).
 - Umar Jamil, [Transformer from scratch](https://github.com/hkproj/transformer-from-scratch-notes) slides (CC BY-NC 4.0), used as a reference for explanations.
 - Written with the help of [Claude](https://claude.ai) and [Claude Code](https://claude.com/claude-code) (Anthropic), and Antigravity CLI (Google Gemini).

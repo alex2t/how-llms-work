@@ -44,6 +44,8 @@ nav:
   - "4 · Quantization": 04-quantization.md
   - "5 · Evaluation": 05-evaluation.md
   - "6 · Prompting": 06-prompting.md
+  - "7 · RAG": 07-rag.md
+  - "8 · Agents": 08-agents.md
 
 markdown_extensions:
   - toc:

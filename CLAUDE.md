@@ -15,7 +15,9 @@ Plain-English notes that explain how large language models work, written as an i
 | 3 | Inference and decoding | `docs/03-inference.md` | Written |
 | 4 | Quantization, efficiency and the modern Transformer | `docs/04-quantization.md` | Written |
 | 5 | Evaluation: how we measure a model | `docs/05-evaluation.md` | Written |
-| 6 | Prompting, reasoning and agents | `docs/06-prompting.md` | Written; agents to come with later lectures |
+| 6 | Prompting and reasoning | `docs/06-prompting.md` | Written |
+| 7 | Retrieval-augmented generation (RAG) | `docs/07-rag.md` | Written |
+| 8 | Agents | `docs/08-agents.md` | Written |
 
 `plan.md` is the single source of truth for what is done and what is left.
 
@@ -36,7 +38,7 @@ Plain-English notes that explain how large language models work, written as an i
 └── docs/
     ├── index.md               # Home page
     ├── 00-introduction.md     # Foundations and history
-    ├── 01-transformers.md … 05-evaluation.md
+    ├── 01-transformers.md … 08-agents.md
     ├── images/                # diagrams (SVG/PNG) used by chapters
     └── javascripts/mathjax.js # LaTeX rendering
 ```
@@ -88,6 +90,11 @@ The notes are being checked against Stanford's [CME295: Transformers & Large Lan
 13. **Keep `fix.md` a list of open work only.**
    - **Number every issue.** Every list of issues in `fix.md` is a table whose first column `#` gives each row an ID made of the item and a number (S2-1, S2-2, …), so the user can work down the list and refer to a row by its number. Numbers are never reused or renumbered.
    - **Remove what is done.** As soon as a fix is implemented, delete its row from the table, and delete the whole item once its last row is done. Do not keep a "done" status or log in `fix.md`; the commit history is the record.
+14. **New chapter checklist.** When a new chapter (a new `.md` file in `docs/`) is created, in the same change:
+   - **Navigation:** add it to `nav:` in `mkdocs.yml`, in chapter order, with the same label style (`"7 · Agents": 07-agents.md`), so the built site shows it in the navigation bar.
+   - **README:** add a row to the **Chapters** section of `README.md` (number, title, what you will learn), and update **What the notes cover** if the scope changed.
+   - **Status table:** add the chapter to the table at the top of this file.
+   - **Check:** run `mkdocs build --strict`, then `mkdocs serve` and confirm the new chapter appears in the navigation bar and opens.
 
 ## Writing style (match Chapter 1)
 
@@ -103,6 +110,8 @@ The notes are being checked against Stanford's [CME295: Transformers & Large Lan
   - Translation: "I love you very much" → "Ti amo molto" (with `<SOS>`, `<EOS>`).
   - Logits: CAT 6.2, DOG 4.9, IS 2.1, LOVELY 1.0 → probabilities 0.772, 0.211, 0.013, 0.004.
   - Fraud example (Chapter 5): an LLM labelling transactions as fraud / not fraud. Evaluation sample of 100 transactions with 10 fraud (TP 8, FN 2, FP 6, TN 84 at threshold 0.5); real traffic 100,000 a month, 2% fraud.
+  - Fraud-policy assistant (Chapter 7): the same bank's RAG assistant over its made-up fraud-policy manual (120 pages, 80,000 tokens, 229 chunks of 400 tokens with 50 overlap). Question: "How many days does a customer have to dispute a card payment?" Answer: 120 days [section 4.2]. Decline code R-17 = suspected fraud, card blocked.
+  - Dispute agent (Chapter 8): the same bank's agent handling the email "I did not make the €2,400 payment at an electronics shop in Lisbon on 12 October. My card ends in 4417." Tools: find_transaction, search_policy, open_dispute, request_approval, send_email; refunds above €1,000 need an analyst's approval.
 - Tables for step-by-step calculations and comparisons; numbered lists for procedures; bullet lists for properties.
 - When the user comments that a part "is not clear": rewrite it with a definition plus a concrete example. Do not just shorten it.
 - End each chapter with a **Cheat sheet** table and a **Sources** list.

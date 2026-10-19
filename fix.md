@@ -14,7 +14,16 @@ Legend: `[ ]` waiting · `[x]` approved and applied · `[-]` rejected
 
 ## Waiting for approval
 
-No open items.
+### C8. Stanford CS230 Lecture 8: additions to Chapters 2, 3 and 5 `[ ]`
+
+Approved in principle (`plan.md`, Phase 8); to be done next session. Rows C8-19 and C8-20 change existing text, so the exact wording is shown to the user before it is applied.
+
+| # | Chapter and place | What to add | Priority |
+| --- | --- | --- | --- |
+| C8-19 | Chapter 3, "A bigger window is not a perfect memory" (`docs/03-inference.md:711`), existing text | Advice for long conversations: summarise earlier turns and start a fresh conversation. The lecture's "about 8 turns" is unverified; use a number only if a source supports it. | Medium |
+| C8-20 | Chapter 5, "LLM-as-judge" (`docs/05-evaluation.md:494`), existing text | Table of the three judge set-ups: pairwise comparison, single-answer grading, reference-guided grading (Zheng et al., 2023, MT-Bench). | Medium |
+| C8-21 | Chapter 5, new subsection "Testing prompts automatically", after "LLM-as-judge" | A fixed test set run on every prompt change, with code checks plus an LLM-as-judge; PromptFoo as an example tool. | Medium |
+| C8-22 | Chapter 2, Stage 2 (SFT), new subsection "What fine-tuning costs" | Catastrophic forgetting (definition and example), the need for labelled data, the risk that a newer base model overtakes the fine-tuned one; link to Chapter 7's decision table. | Medium |
 
 ---
 

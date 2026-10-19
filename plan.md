@@ -151,4 +151,80 @@ Compare the book with each lecture of Stanford's CME295 (summaries in `sources/`
 - [ ] Lecture 7 (when published).
 - [ ] Lecture 8 (when published).
 - [ ] Lecture 9 (when published), then the glossary (Phase 6).
+- [ ] When the CME295 lecture on RAG and agents is reviewed, compare it with Chapters 7 and 8 and add only the gaps (Phase 8, D4).
 - [ ] User read-through, one chapter at a time; rewrite the parts flagged as unclear; one commit, push and deploy per chapter (`CLAUDE.md`, rule 8).
+
+## Phase 8 — Stanford CS230 Lecture 8: Agents, Prompts and RAG
+
+Source: `lecture8.md`, a summary of **CS230: Deep Learning (Autumn 2025), Lecture 8**. This is a different course from CME295, so it gets its own phase. The summary is a pointer, not a fact: verify every claim and number against the original paper or documentation before it goes into the notes; paraphrase and credit CS230 in the Sources of every chapter it shapes.
+
+IDs: `C8-n` (never reused). Priority: **H** high, **M** medium, **L** low.
+
+### Decisions for the user (before writing)
+
+- [x] **D1. Agents: in Chapter 6 or a new Chapter 8?** Modules 5–7 (agents, agent evaluation, multi-agent systems) are as large as RAG. Recommendation: a new **Chapter 8 "Agents"** (`docs/08-agents.md`), written after Chapter 7 because an agent uses retrieval as one of its tools. This changes Chapter 6: its title "Prompting, Reasoning and Agents" becomes "Prompting and Reasoning", and its "Work in progress" note (`docs/06-prompting.md:25`) is replaced by a link to Chapters 7 and 8 (rule 1: needs approval).
+- [x] **D2. Running example for Chapter 7.** Recommendation: continue the bank from Chapter 5. A **fraud-policy assistant** answers analysts' questions from the bank's internal policy documents, e.g. *"How many days does a customer have to dispute a card payment?"*. Documents, chunks and vectors are made up (and labelled so); all arithmetic checked with a script. Once approved, add it to the running examples in `CLAUDE.md`.
+- [x] **D3. `lecture8.md` sits in the repository root, untracked.** Move it into `sources/` (git-ignored), so it is never committed.
+- [x] **D4. CME295 overlap.** CME295's later lectures also cover RAG and agents. Write Chapter 7 now, then compare it with the matching CME295 lecture when it is reviewed (Phase 7) and add only the gaps.
+
+### Already covered (no new text needed)
+
+| Lecture topic | Where in the notes |
+| --- | --- |
+| Zero-shot and few-shot prompting | `docs/06-prompting.md:37` |
+| Chain-of-thought | `docs/06-prompting.md:95` |
+| Needle in a haystack, lost in the middle | `docs/03-inference.md:711`, `docs/05-evaluation.md:428` |
+| Distribution shift (as drift after go-live) | `docs/05-evaluation.md:693` |
+| Control and alignment (preference training) | `docs/02-training.md:886` |
+| LLM-as-judge with a rubric, pairwise position bias | `docs/05-evaluation.md:494` |
+| Larger models as the "horizontal axis" of progress | `docs/00-introduction.md:443` |
+
+### New Chapter 7: Retrieval-augmented generation (`docs/07-rag.md`)
+
+Follow rule 14 of `CLAUDE.md` (nav, README Chapters, status table, build check). One section at a time (rule 3). Sections marked **(beyond the lecture)** are not in CS230 Lecture 8; see "RAG topics beyond the lecture" below.
+
+- [x] C8-1 **(H) Create the chapter**: placeholder page, `nav:` entry `"7 · RAG": 07-rag.md`, README Chapters row, `CLAUDE.md` status table, `mkdocs build --strict`.
+- [x] C8-2 **(H) The big picture**: what RAG is in one paragraph (look facts up, then answer from them); Mermaid diagram of the two phases: indexing (documents → chunks → embeddings → vector index) and answering (question → embedding → top-k chunks → prompt → answer with citations). Original paper: Lewis et al., 2020.
+- [x] C8-3 **(H) Why a model needs outside knowledge** (Module 1): knowledge cutoff (the model knows nothing after its training data ends), private data it never saw, hallucination (define: fluent text that is false, e.g. a made-up citation), no sources to check. The options compared in one table: bigger model, prompting, prompt chaining, RAG, fine-tuning, agents (the lecture's "two axes"), each linked to its section.
+- [x] C8-4 **(H) Chunking** (Module 4, step 1): why documents are cut (embedding models have an input limit; small chunks retrieve precisely); chunk size and overlap with a worked example on a policy document (tokens → number of chunks); splitting on headings and paragraphs instead of fixed lengths. Link to "chunking" for training data (`docs/02-training.md:214`) and say how the two differ.
+- [x] C8-5 **(H) Embeddings for retrieval** (Module 4, step 2) **(partly beyond the lecture)**: an embedding model turns a whole chunk into one vector; how it differs from token embeddings (Chapter 1) and Word2Vec (Introduction); bi-encoder; trained with contrastive learning (pull matching question/passage pairs together, push others apart) at a high level (Sentence-BERT, DPR).
+- [x] C8-6 **(H) Similarity search and vector databases** (Module 4, steps 3–4): cosine similarity vs dot product, worked example with made-up 4-dimensional vectors for one question and three chunks, top-k; what a vector database stores; **(beyond the lecture, M)** exact vs approximate nearest-neighbour search (HNSW) and why exact search is too slow for millions of chunks.
+- [x] C8-7 **(H) Keyword search and hybrid search (beyond the lecture)**: why embeddings miss exact strings (an error code, a policy number); BM25 in plain words; combining both rankings with reciprocal rank fusion, worked example. The lecture's Lab 2 names hybrid search but does not explain it.
+- [x] C8-8 **(H) Re-ranking (beyond the lecture)**: a cross-encoder reads the question and each chunk together and scores them; retrieve 50 cheaply, re-rank, keep 5; cost vs quality.
+- [x] C8-9 **(H) Building the prompt and citing sources** (Module 4, steps 5–6): the prompt template ("answer only from these documents; if the answer is not there, say you do not know"); citations (document, section, page); chunk order and lost in the middle (link `docs/03-inference.md:716`); **(beyond the lecture, H)** prompt injection: a retrieved document that contains instructions, and why the model may follow them.
+- [x] C8-10 **(M) Better retrieval** (Module 4, advanced): query rewriting **(beyond the lecture)**; HyDE (Gao et al., 2022), worked through on the running question; multi-level chunking (a summary vector per document plus vectors per paragraph); **(beyond the lecture)** contextual retrieval (prefix each chunk with a short description of its document; Anthropic, 2024).
+- [x] C8-11 **(H) Evaluating a RAG system (beyond the lecture)**: evaluate retrieval and generation separately. Retrieval: recall@k and mean reciprocal rank, worked example on 5 test questions. Generation: faithfulness (is every claim supported by the retrieved text?) and answer relevance, scored with an LLM-as-judge (link `docs/05-evaluation.md:494`); RAGAS as an example tool.
+- [x] C8-12 **(H) RAG, long context or fine-tuning?** (Module 1 context bottleneck, Module 3, Module 4 "RAG vs infinite context"): worked cost comparison, whole manual in the prompt vs 5 chunks (tokens per question × questions per month; prefill time, link `docs/03-inference.md:223`); decision table: when to prompt, when to retrieve, when to fine-tune (consistent format and specialised vocabulary that prompting cannot fix), and their costs.
+- [x] C8-13 **(L) Beyond basic RAG (beyond the lecture)**: agentic RAG (the model decides when and what to search; bridge to Chapter 8); GraphRAG (Edge et al., 2024) in two paragraphs.
+- [x] C8-14 **(H) Cheat sheet + Sources** (credit CS230 Lecture 8; Lewis 2020, HyDE, Sentence-BERT, DPR, BM25, HNSW, RRF, RAGAS, contextual retrieval, lost in the middle).
+
+### Additions to existing chapters
+
+New sections and subsections can be written directly; changes to existing text need approval first (rule 1).
+
+- [x] C8-15 **(M) Chapter 6 → new section "Writing a clear prompt"** (Module 2), placed before "In-context learning": state the audience, constraints, length and format; role (persona) framing; the system prompt (link to the chat roles example in Chapter 3). Worked before/after prompt on the bank example.
+- [x] C8-16 **(M) Chapter 6 → new section "Self-critique and refinement"** (Module 2), after "Self-consistency": the model drafts, critiques its own draft and rewrites it (Self-Refine, Madaan et al., 2023); its limits (a model that cannot find an error will not fix it).
+- [x] C8-17 **(H) Chapter 6 → new section "Prompt chaining"** (Module 2), before "Reasoning models": split a task into single-purpose prompts; benefits (control, debugging one step, a metric per step); worked example as a 3-step chain. Bridges to agents.
+- [x] C8-18 **(L) Chapter 6 → short note "Where models help and where they fail: the jagged frontier"** (Module 2): Dell'Acqua et al., 2023 (Harvard Business School field experiment with consultants); "centaurs" and "cyborgs" as two ways of working with a model. Verify the numbers in the paper before using any.
+- [ ] C8-19 (moved to `fix.md`, item C8, for the next session) **(M) Chapter 3 → "A bigger window is not a perfect memory"** (`docs/03-inference.md:711`, existing text: propose first): advice for long conversations, summarise earlier turns and start afresh. The lecture's "about 8 turns" is unverified; use it only if a source supports it.
+- [ ] C8-20 (moved to `fix.md`, item C8, for the next session) **(M) Chapter 5 → LLM-as-judge** (`docs/05-evaluation.md:494`, existing text: propose first): table of the three judge set-ups, pairwise comparison, single-answer grading, reference-guided grading (Zheng et al., 2023, MT-Bench).
+- [ ] C8-21 (moved to `fix.md`, item C8, for the next session) **(M) Chapter 5 → new subsection "Testing prompts automatically"** (Module 2): a fixed test set run on every prompt change, with code checks plus an LLM-as-judge; PromptFoo as an example tool.
+- [ ] C8-22 (moved to `fix.md`, item C8, for the next session) **(M) Chapter 2 → Stage 2 (SFT): new subsection "What fine-tuning costs"** (Module 3): catastrophic forgetting (define, with an example), need for labelled data, the risk that a newer base model overtakes the fine-tuned one; link to the decision table in C8-12.
+
+### New Chapter 8: Agents (`docs/08-agents.md`)
+
+Follow rule 14 of `CLAUDE.md`.
+
+- [x] C8-23 **(H) What an agent is** (Module 5): Andrew Ng's "agentic workflow"; the loop: plan, call a tool, read the result, repeat; how this differs from ordinary software (fuzzy outputs, so guardrails and a human fallback).
+- [x] C8-24 **(H) Tools and tool calling** (Module 5): how a model asks for a tool (structured output, link to constrained decoding in Chapter 3); the Model Context Protocol (MCP), verified against the official specification.
+- [x] C8-25 **(H) Memory** (Module 5): working memory (the context window) vs long-term memory (stored outside, often retrieved with RAG, link to Chapter 7).
+- [x] C8-26 **(M) Degrees of autonomy** (Module 5): fixed steps; fixed tools, model chooses the steps; model plans and writes its own tools. Table with an example of each.
+- [x] C8-27 **(H) Evaluating an agent** (Module 6): the customer-support case study as a running example; tracing; end-to-end vs per-step evals; code checks vs LLM-as-judge; cost, latency and success rate per run. Link to Chapter 5.
+- [x] C8-28 **(M) Multi-agent systems** (Module 7): why (parallel work, reusable specialists); orchestrator (hierarchical) vs peer-to-peer; the smart-home example.
+- [x] C8-29 **(H) Cheat sheet + Sources** (credit CS230 Lecture 8).
+
+### Not planned (recommendation: skip)
+
+- **Frontier trends** (Module 7: scaling plateaus, multimodal transfer, unifying learning paradigms, forward-only learning): opinion and research directions, not how LLMs work today. At most one sentence on scaling laws in the Introduction (`docs/00-introduction.md:443`), if the user wants it.
+- **Hands-on labs**: the notes do not include programming exercises.
+- **Efficiency of very large models for small tasks** (Module 1): already covered by distillation (`docs/02-training.md:1065`) and model size (`docs/04-quantization.md:36`).
