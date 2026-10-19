@@ -19,6 +19,8 @@ This file defines Antigravity's role, rules, and workflow for this repository. A
 | `quantization` | `docs/04-quantization.md` | `gemini/quantization_agy.md` | `gemini/quantization_rw_claude.md` | Completed |
 | `evaluation` | `docs/05-evaluation.md` | `gemini/evaluation_agy.md` | `gemini/evaluation_rw_claude.md` | Completed |
 | `prompting` | `docs/06-prompting.md` | `gemini/prompting_agy.md` | `gemini/prompting_rw_claude.md` | Completed |
+| `rag` | `docs/07-rag.md` | `gemini/rag_agy.md` | `gemini/rag_rw_claude.md` | Completed |
+| `agents` | `docs/08-agents.md` | `gemini/agents_agy.md` | `gemini/agents_rw_claude.md` | Pending |
 
 ---
 
