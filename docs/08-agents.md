@@ -57,6 +57,18 @@ The same guide recommends the simplest design that works: workflows are more pre
 
 Most production systems sit at low or medium autonomy. The dispute agent of this chapter is medium: it has a fixed set of five tools and chooses among them.
 
+```mermaid
+flowchart TD
+  subgraph Low["Low autonomy: Workflow (developer fixes the sequence)"]
+    direction LR
+    W1["1. Extract fields"] --> W2["2. Look up transaction"] --> W3["3. Write reply"]
+  end
+  subgraph Med["Medium autonomy: Agent (model chooses next tool in a loop)"]
+    direction LR
+    AM["Model decides next step"] <-->|"picks tool & reads result"| AT["Fixed tool set:<br/>find_transaction, search_policy,<br/>open_dispute, request_approval, send_email"]
+  end
+```
+
 ### What changes for the software engineer
 
 | | Traditional software | Software built around a model |
@@ -67,6 +79,22 @@ Most production systems sit at low or medium autonomy. The dispute agent of this
 | Design | Back-end and front-end components | Roles, like a team: a step that extracts, a step that checks, a step that writes |
 
 Because the logic is uncertain, every step that can fail needs a safety net: a check in code, a limit, or a person who reviews the result (see [Guardrails and human review](#guardrails-and-human-review)). Errors also **compound** over many steps: if each step of a run is right 97% of the time, independently, a 5-step run is fully right only 0.97⁵ ≈ **86%** of the time, and a 10-step run at 95% per step only 0.95¹⁰ ≈ **60%** of the time.
+
+!!! note "Quick refresher: why independent step probabilities multiply ($p^n$), and how checks bend the curve"
+    When a run succeeds only if every single step succeeds, and each of the $n$ steps independently has probability $p$ of being right, the probability that all $n$ steps are right in a row is:
+
+    $$
+    P(\text{all } n \text{ steps right}) = p^n
+    $$
+
+    - **$p$** is the probability that one step is right (for example, 0.97 or 0.95).
+    - **$n$** is the number of sequential steps in the run.
+
+    Multiplying $p$ by itself $n$ times shows how quickly small per-step failure rates add up:
+
+    - **5 steps at $p = 0.97$ (3% failure per step):** $0.97 \times 0.97 \times 0.97 \times 0.97 \times 0.97 = 0.97^5 = 0.8587 \approx \mathbf{86\%}$ right (14% of runs fail).
+    - **10 steps at $p = 0.95$ (5% failure per step):** $0.95^{10} = 0.5987 \approx \mathbf{60\%}$ right (40% of runs fail).
+    - **Effect of a code check:** If a fast check after each step catches and fixes half of that step's mistakes, a 5% failure rate per step drops to 2.5% ($p = 0.975$), and a 10-step run's success rate jumps from $0.95^{10} \approx \mathbf{60\%}$ to $0.975^{10} = 0.7763 \approx \mathbf{78\%}$.
 
 ## The agent loop
 
@@ -102,6 +130,9 @@ The dispute agent has five tools: `find_transaction`, `search_policy` (the RAG s
 | 6 | Everything is done | Final answer: summary for the case file | — |
 
 Two decisions in this run were not written in advance by any developer: checking the 120-day limit, and asking for approval because of the €1,000 threshold found in the policy. That is what the medium level of autonomy buys. The policy rule itself, however, is enforced by the tools, not only by the model's reading of it: `send_email` holds emails about refunds for review whatever the model decides.
+
+!!! tip "Key idea: the model only writes text; the application runs the tools"
+    It is easy to picture an agent "reaching out" to a database, but inside the GPU nothing has changed since [Chapter 3](03-inference.md#generation-step-by-step): each of the six rows in the table is a separate model call (a prefill pass over the whole history, then one decode pass per generated token), and nothing is kept from one call to the next except the text the application sends back. When the model decides to call `find_transaction`, it simply writes the tokens of a JSON object and stops. The surrounding application parses that JSON, runs the SQL query against the bank's database, formats the result as text, appends it to the prompt, and starts the next model call.
 
 ### When the loop stops
 
@@ -175,6 +206,22 @@ A server can offer three kinds of capability:
 
 Messages use **JSON-RPC 2.0**, a simple standard for calling a function on another program with JSON messages. The client asks a server for its tools with a `tools/list` request, which returns each tool's name, description and input schema, and calls one with a `tools/call` request. Because tools are discovered at run time, the bank writes its transaction server once, and any MCP-compatible application can use it. The specification also requires care: tools can run arbitrary code, so applications should ask the user's consent before calling tools and treat tool descriptions from untrusted servers with suspicion.
 
+```mermaid
+flowchart LR
+  subgraph Host["Host application (e.g. Dispute Agent)"]
+    direction TB
+    LLM["LLM + agent loop"]
+    C1["MCP Client 1"]
+    C2["MCP Client 2"]
+    LLM <--> C1 & C2
+  end
+  C1 <-->|"JSON-RPC 2.0<br/>tools/list & tools/call"| S1["MCP Server: Transactions DB<br/>Tools: find_transaction, open_dispute"]
+  C2 <-->|"JSON-RPC 2.0<br/>resources & tools"| S2["MCP Server: Policy Manual<br/>Resource: manual, Tool: search_policy"]
+```
+
+!!! note "Quick refresher: why a standard protocol turns $M \times N$ connectors into $M + N$"
+    Suppose the bank has $M = 3$ AI applications (dispute agent, analyst chat assistant, coding assistant) and $N = 4$ internal systems (transactions database, policy manual, dispute-ticketing system, email service). Without a shared protocol, connecting every application to every system requires writing $M \times N = 3 \times 4 = \mathbf{12}$ custom integrations. With MCP, each application includes one standard MCP client and each backend system is wrapped once in an MCP server: $M + N = 3 + 4 = \mathbf{7}$ pieces of code in total, and a fourth application can plug into all four systems immediately.
+
 ## Memory
 
 A model remembers nothing between calls: its weights are fixed, and everything it "knows" about the current task is in the prompt of each call ([Chapter 3](03-inference.md#decoder-only-how-chat-models-generate)). An agent's memory is therefore something the application builds. This section explains the two kinds of memory and why a long-running agent must manage its context. It matters because an agent that keeps everything soon becomes slow and expensive, and one that keeps too little forgets what it was doing.
@@ -205,6 +252,20 @@ The run reads 13,500 input tokens, 9 times the 1,500 of a single call, and the t
 - **Summarise:** when the history passes a size limit, replace the oldest steps with a short summary of what they found.
 - **Keep large results out:** store a long tool result (a 50-page statement) outside the prompt, and put only a short extract or a reference to it in the context.
 
+!!! note "Quick refresher: why agent input tokens grow with the square of the number of steps"
+    If the initial prompt has $B = 1{,}500$ tokens and each step appends $s = 300$ tokens of tool call and observation, then Call 1 reads $B$ tokens, Call 2 reads $B + s$, Call 3 reads $B + 2s$, and Call $N$ reads $B + (N - 1)s$. Adding all $N$ calls together gives an arithmetic series:
+
+    $$
+    \text{Total input tokens} = N \cdot B + s \cdot \frac{N(N - 1)}{2}
+    $$
+
+    - **$N$** is the number of model calls in the run (here, 6).
+    - **$B$** is the starting prompt size at Call 1 (here, 1,500 tokens).
+    - **$s$** is the number of tokens added after each step (here, 300 tokens).
+    - **$\frac{N(N - 1)}{2}$** is the sum $0 + 1 + 2 + \dots + (N - 1)$ (for $N = 6$, $6 \times 5 \div 2 = 15$).
+
+    Plugging in the numbers for the 6-call dispute run gives $6 \times 1{,}500 + 300 \times 15 = 9{,}000 + 4{,}500 = \mathbf{13{,}500}$ tokens. Because $N(N - 1) \div 2$ contains $N^2$, doubling the run from 6 calls to 12 calls increases the total from 13,500 to $12 \times 1{,}500 + 300 \times (12 \times 11 \div 2) = 18{,}000 + 19{,}800 = \mathbf{37{,}800}$ tokens (nearly 3 times as many tokens for twice as many steps). For the 6-call run, the exact cost at $3 per million tokens is $13{,}500 \times \$3 \div 1{,}000{,}000 = \$0.0405$ per dispute, which across 3,000 disputes is $3{,}000 \times \$0.0405 = \$121.50 \approx \mathbf{\$122}$ per month.
+
 ### Long-term memory: stored outside the model
 
 **Long-term memory** (also called archival memory) is information kept between tasks in an ordinary store: a database, files, or a vector index. The agent reads it with a tool, often with the retrieval methods of [Chapter 7](07-rag.md#similarity-search-and-vector-databases), and can write to it. It can hold far more than any context window, but it must be searched, and the search can miss.
@@ -216,6 +277,16 @@ The run reads 13,500 input tokens, 9 times the 1,500 of a single call, and the t
 | Access | Immediate: the model attends to it | Through a tool: search, then read |
 | Lasts | Until the task ends | Across tasks and conversations |
 | Dispute example | This email, the transaction, the policy sections found | This customer's earlier disputes, their preferred language |
+
+```mermaid
+flowchart LR
+  subgraph WM["Working memory (current prompt, up to context limit)"]
+    direction TB
+    P["System prompt + tools + current email<br/>+ recent tool calls & observations<br/>(oldest steps summarised when full)"]
+  end
+  LLM["Agent model"] <-->|"Direct self-attention<br/>every call"| WM
+  LLM <-->|"Read / write via tools<br/>(search_policy, customer DB)"| LTM["Long-term memory (external stores)<br/>Vector index, SQL database, case files<br/>(persists across tasks)"]
+```
 
 ## Guardrails and human review
 
@@ -275,6 +346,15 @@ A **trace** is the full record of one run: every prompt sent to the model, every
 
 The end-to-end rate says 86%; the per-step table says where to work: applying the policy causes 12 of the 28 failures, so the team looks at those 12 traces first, for example to check whether the right policy section was retrieved ([recall@k](07-rag.md#retrieval-metrics-recall-at-k-and-mean-reciprocal-rank)).
 
+!!! note "Quick refresher: how per-step conditional rates multiply to the end-to-end rate"
+    In the table above, each step's success rate is measured on the runs that reached it, so multiplying the four fractions cancels the intermediate counts and gives the exact end-to-end rate:
+
+    $$
+    \frac{196}{200} \times \frac{190}{196} \times \frac{178}{190} \times \frac{172}{178} = \frac{172}{200} = 0.860 \text{ (86.0\%)}
+    $$
+
+     Equivalently, the failures across the four steps add up to $4 + 6 + 12 + 6 = \mathbf{28}$ failed runs out of 200 ($200 - 28 = 172$ successes). If improving policy retrieval cuts Step 3's failures in half (from 12 down to 6, so 184 of 190 pass Step 3), and Step 4 keeps its $172 \div 178 \approx 96.6\%$ pass rate on those 6 rescued runs, about $6 \times 0.966 \approx 6$ more runs succeed end to end, lifting overall accuracy from $172 \div 200 = \mathbf{86.0\%}$ to about $178 \div 200 \approx \mathbf{89\%}$.
+
 ### Kinds of check
 
 | | Objective | Subjective |
@@ -287,7 +367,7 @@ The end-to-end rate says 86%; the per-step table says where to work: applying th
 | What it gives | Numbers tracked over time | Understanding of why runs fail |
 | Dispute example | Success rate, cost per run ($0.04), time per run, number of steps | An engineer reads 20 failed traces and groups them by cause |
 
-All four are needed. The numbers show whether a change helped; reading traces shows what to change. As in [Chapter 5](05-evaluation.md#comparing-against-a-baseline), the agent is also compared with a baseline, here the current manual process: how long a person takes per dispute, and how often they make mistakes.
+All four are needed. The numbers show whether a change helped; reading traces shows what to change. As in [Chapter 5](05-evaluation.md#comparing-against-a-baseline) (where a new system is always judged against the existing rule or process it would replace), the agent is also compared with a baseline, here the current manual process: how long a person takes per dispute, and how often they make mistakes.
 
 ## Multi-agent systems
 
@@ -312,6 +392,22 @@ This section covers:
 | How it works | The user talks to one **orchestrator** agent, which splits the task, sends sub-tasks to **sub-agents**, and combines their results | Agents send messages and requests to each other directly |
 | Control | Clear: one agent is responsible for the result | Spread out: harder to follow and to debug |
 | Bank example | A dispute orchestrator calls a transaction agent, a policy agent and a customer-message agent | The fraud-monitoring agent asks the policy agent directly when it meets an unusual case |
+
+```mermaid
+flowchart TD
+  subgraph Orch["Orchestrator (hierarchical)"]
+    direction TB
+    O["Dispute Orchestrator"] --> SA1["Transaction Agent"]
+    O --> SA2["Policy Agent"]
+    O --> SA3["Customer-Message Agent"]
+  end
+  subgraph Peer["Peer to peer (flat)"]
+    direction LR
+    P1["Fraud-Monitoring Agent"] <--> P2["Policy Agent"]
+    P2 <--> P3["Dispute Agent"]
+    P1 <--> P3
+  end
+```
 
 The CS230 lecture uses a smart home as its example of the orchestrator design: an orchestrator routes the user's request to specialised agents for climate, energy use, security and shopping. In practice, the orchestrator design is the more common, because it is easier to trace and to test.
 
