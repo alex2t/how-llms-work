@@ -54,7 +54,9 @@ mkdocs build --strict             # must pass with no warnings before every comm
 
 Publishing is automatic: push to `main` and the workflow deploys to GitHub Pages. One-time setup: in the GitHub repo, Settings → Pages → Source = **GitHub Actions**.
 
-**Environment notes (this machine).** Norton Antivirus intercepts HTTPS, so tools that use their own certificate list fail with "unable to get local issuer certificate". Git is fixed for this repository only (`git config --local http.sslBackend schannel`); for `uv` downloads add `--system-certs`.
+**Environment notes (this machine).** Norton Antivirus intercepts HTTPS, so tools that use their own certificate list fail with "unable to get local issuer certificate". Git is fixed for this repository only (`git config --local http.sslBackend schannel`); for `uv` downloads add `--system-certs`; for pip use `pip install --use-feature=truststore -r requirements.txt`; for npm set `NODE_OPTIONS=--use-system-ca`.
+
+**Mermaid is not checked by the build.** Diagrams are drawn in the browser, so `mkdocs build --strict` passes even when a diagram is broken. Before every commit that adds or changes a diagram, parse each ```` ```mermaid ```` block with Mermaid's own parser: in a scratch folder, `npm install mermaid jsdom`, then run `mermaid.parse()` on each block under a jsdom window. Every diagram must parse without error.
 
 ## CME295 lecture review
 
@@ -96,6 +98,8 @@ The notes are being checked against Stanford's [CME295: Transformers & Large Lan
    - **README:** add a row to the **Chapters** section of `README.md` (number, title, what you will learn), and update **What the notes cover** if the scope changed.
    - **Status table:** add the chapter to the table at the top of this file.
    - **Check:** run `mkdocs build --strict`, then `mkdocs serve` and confirm the new chapter appears in the navigation bar and opens.
+15. **Renaming or renumbering a chapter.** Rename with `git mv` so the file keeps its history. Then search for the old file name and for every way the old number is written ("Chapter N", "Chapters … N", "N ·") in `docs/`, `README.md`, `CLAUDE.md`, `AGENTS.md`, `plan.md` and `mkdocs.yml`, and update each one. Add a redirect from the old address (`redirects` plugin in `mkdocs.yml`), because the published URL changes. Run `mkdocs build --strict` and confirm that no message reports a missing anchor.
+16. **Adding a dependency.** Pin its version in `requirements.txt`, check what it installs with it (`pip show <package>`, line "Requires"), and read the whole build output afterwards for new warnings, not only for errors.
 
 ## Writing style (match Chapter 1)
 
@@ -120,6 +124,8 @@ The notes are being checked against Stanford's [CME295: Transformers & Large Lan
 - Link back to earlier chapters by page and heading instead of repeating them, e.g. `[causal mask](01-transformers.md#what-the-mask-looks-like)`.
 - **Every cross-reference is an anchor link** to the exact heading that explains the topic (`page.md#heading`), never a bare link to the top of a page (`page.md`). Check that the anchor matches an existing heading.
 - **A link never replaces an explanation.** The reader must understand the current passage without clicking any link. When a passage uses a term or idea explained in another chapter, explain it again here, briefly but completely (a definition, plus a small example when useful); the link is only there for a reader who wants to see where else the topic is discussed. Never write "see Chapter N" or "Chapter N explains it in full" instead of explaining.
+- **No real product or company names from source summaries** in the examples: use the bank's made-up names. A code example may use a named open-source tool (for example Chroma), labelled as that tool's syntax.
+- **Attribute product behaviour precisely.** A claim about how a product works must come from that product's own documentation. Never apply one product's method to another (for example, Qdrant's filtered-HNSW links are not how Weaviate filters).
 
 ## Markdown conventions for MkDocs
 
@@ -134,6 +140,9 @@ The notes are being checked against Stanford's [CME295: Transformers & Large Lan
 - **Sections and subsections are numbered** (for example 3.2 and 3.2.1 in Chapter 3) so the reader always sees where a passage sits in the chapter's structure. The numbers are added automatically on the site by `docs/javascripts/numbering.js` (chapter number taken from the file name); never type numbers into the headings, because that would change every anchor.
 - Callouts with Material admonitions: `!!! note`, `!!! tip "Key idea"`, `!!! warning`.
 - Diagrams: prefer Mermaid (```` ```mermaid ````) for flows; otherwise put an SVG in `docs/images/` and reference it with a relative path.
+- **No `;` in Mermaid sequence-diagram messages:** a semicolon ends the statement and breaks the whole diagram. Rephrase, or write `#59;`.
+- **Numbered lists stay continuous.** The site ignores a list's starting number, so a list split by a heading or paragraph and continued at 4 is shown starting at 1. Put group labels inside the items instead, for example `4. *In the prompt:* **…**`.
+- **Plugins:** if `mkdocs.yml` has a `plugins:` list, it must include `search`; otherwise the site loses its search box.
 - Sources from the attached slides by Umar Jamil are CC BY-NC 4.0: paraphrase and credit them; do not copy slide images.
 
 ## Gemini rewrite and Claude review
@@ -152,7 +161,7 @@ After the user has reviewed a chapter (rule 12), Gemini (Antigravity) is asked t
 | 5 | `docs/05-evaluation.md` | `gemini/evaluation_agy.md` | `gemini/evaluation_rw_claude.md` |
 | 6 | `docs/06-prompting.md` | `gemini/prompting_agy.md` | `gemini/prompting_rw_claude.md` |
 
-**When asked to review `gemini/<chapter>_agy.md`,** read it and the original in full, then write `gemini/<chapter>_rw_claude.md` with:
+**When asked to review `gemini/<chapter>_agy.md`,** first run `git diff --no-index` between the original and the rewrite (without the CHANGES comment), so the review covers exactly what changed. Parse every Mermaid diagram of the rewrite (see Commands). Read both files in full, then write `gemini/<chapter>_rw_claude.md` with:
 
 1. **Verdict:** one of *replace the chapter*, *keep the original and merge some parts*, or *keep the original*, with the main reasons in two or three sentences.
 2. **Section by section:** a table with each section, which version is better (original, Gemini or equal) and why.
@@ -160,7 +169,7 @@ After the user has reviewed a chapter (rule 12), Gemini (Antigravity) is asked t
 4. **Problems in the rewrite:** factual errors, wrong or unchecked numbers (recompute every number with a script, rule 5), content dropped from the original, broken links or anchors, and departures from the Writing style and Markdown conventions.
 5. **Recommended next step:** the exact changes to make if the user agrees.
 
-Do not change anything in `docs/` while reviewing. The user then decides: replace the chapter with Gemini's version (after fixing the problems found), merge the parts listed, or keep the original. Applying that decision follows rule 12 (one commit, push and deploy at the end).
+Do not change anything in `docs/` while reviewing. The user then decides: replace the chapter with Gemini's version (after fixing the problems found), merge the parts listed, or keep the original. Applying that decision follows rule 12 (one commit, push and deploy at the end). When Gemini's version replaces the chapter, remove its `<!-- CHANGES … -->` comment before copying it into `docs/`.
 
 ## README
 

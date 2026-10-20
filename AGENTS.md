@@ -51,6 +51,7 @@ The goal of each rewrite is to make the chapter **substantially clearer, better 
    - The target reader has a technical/computing degree or enterprise software background, but is **not** a machine-learning specialist, and may have studied university maths many years ago.
    - English may not be their first language.
    - Whenever a concept relies on foundational maths or computer science (e.g., dot products, matrix shapes, exponents, logarithms, $e^x$, derivatives/chain rule, probability distributions, variance/standard deviation, floating-point bits), include a **short, friendly refresher in plain words** right where it is used so the reader never has to stop and look it up elsewhere.
+   - Do not add a refresher that repeats a table or calculation already shown in the same section, or a refresher in another chapter for the same numbers. Add only what is missing.
    - Every reader should understand every paragraph on the first reading.
 
 3. **More visual explanations:**
@@ -82,6 +83,9 @@ The goal of each rewrite is to make the chapter **substantially clearer, better 
 - **Worked examples & verified arithmetic**:
   - Give every important idea a small worked example with real arithmetic. If the numbers are made up for illustration, state that in one short line.
   - **Compute every number with a Python command/script — never guess.** Verify that every result in every table and formula follows from its inputs.
+- **Keep every claim exactly as strong as its evidence**:
+  - Do not strengthen a claim when rewriting it: keep "much the same", "about", "can" and "may" as they are; never turn them into "exactly", "always" or "completely".
+  - Attribute a product's behaviour only to that product, and only as its own documentation describes it. Never apply one product's method to another (for example, Qdrant's filtered-HNSW links are not how Weaviate filters).
 - **Paraphrase and credit sources**:
   - Verify every claim and number against the original paper or official documentation. Paraphrase and credit Stanford CME295 (Afshine and Shervine Amidi) and Umar Jamil's slides (CC BY-NC 4.0) in the chapter's `## Sources` when they shaped a section; never copy slide text or images.
 
@@ -128,6 +132,9 @@ Always reuse the established running examples across chapters (and check the exa
   - Use Material for MkDocs admonitions: `!!! note`, `!!! tip "Key idea"`, `!!! warning` (with 4-space indented body).
 - **Diagrams:**
   - Use Mermaid fenced code blocks (```` ```mermaid ````). Quote node labels that contain parentheses, brackets, or special characters (e.g., `A[" Token (ID 105)"]`).
+  - **Never write `;` in a `sequenceDiagram` message:** a semicolon ends the statement and the whole diagram fails to render. Rephrase the message, or write `#59;`.
+- **Numbered lists:**
+  - Keep every numbered list continuous. Do not split it with bold sub-headings or paragraphs: the site ignores a list's starting number, so items continued at 4 are shown starting at 1. Put group labels inside the items instead, for example `4. *In the prompt:* **…**`.
 - **End of chapter:**
   - Always end with `## Cheat sheet` (summary table) and `## Sources` (bulleted list).
 
