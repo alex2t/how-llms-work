@@ -151,7 +151,7 @@ Compare the book with each lecture of Stanford's CME295 (summaries in `sources/`
 - [ ] Lecture 7 (when published).
 - [ ] Lecture 8 (when published).
 - [ ] Lecture 9 (when published), then the glossary (Phase 6).
-- [ ] When the CME295 lecture on RAG and agents is reviewed, compare it with Chapters 7 and 8 and add only the gaps (Phase 8, D4).
+- [ ] When the CME295 lecture on RAG and agents is reviewed, compare it with Chapters 7, 8 and 9 and add only the gaps (Phase 8, D4).
 - [ ] User read-through, one chapter at a time; rewrite the parts flagged as unclear; one commit, push and deploy per chapter (`CLAUDE.md`, rule 8).
 
 ## Phase 8 — Stanford CS230 Lecture 8: Agents, Prompts and RAG
@@ -228,3 +228,88 @@ Follow rule 14 of `CLAUDE.md`.
 - **Frontier trends** (Module 7: scaling plateaus, multimodal transfer, unifying learning paradigms, forward-only learning): opinion and research directions, not how LLMs work today. At most one sentence on scaling laws in the Introduction (`docs/00-introduction.md:443`), if the user wants it.
 - **Hands-on labs**: the notes do not include programming exercises.
 - **Efficiency of very large models for small tasks** (Module 1): already covered by distillation (`docs/02-training.md:1065`) and model size (`docs/04-quantization.md:36`).
+
+## Phase 9 — New Chapter 8 "RAG security and production"; Agents becomes Chapter 9
+
+Sources: `sources/rag_security_attacks_and_defenses.md` and `sources/production_rag_recommendations.md` (git-ignored, author unknown). They are pointers, not facts: verify every claim, code snippet and model name against a primary source before it goes into the notes. Primary sources to check against: OWASP Top 10 for LLM Applications 2025 (prompt injection, sensitive information disclosure, data and model poisoning, excessive agency, vector and embedding weaknesses), Greshake et al. 2023 (indirect prompt injection), PoisonedRAG (Zou et al., 2024), the MCP specification's security section, NIST definitions of RBAC and ABAC, and the official documentation of the vector database and embedding models used in examples.
+
+Decided by the user (2026-10-20):
+
+- RAG security gets its **own chapter**, because it is important and Chapter 7 is long enough.
+- The production RAG recommendations go into the **same new chapter**.
+- The current Chapter 8 "Agents" becomes **Chapter 9**; the agent-specific defences go there.
+- No product name from the sources ("Trusteer") is used anywhere in the notes.
+- Vector-database query syntax and encryption at rest and in transit **are kept**.
+
+IDs: `P9-n` (never reused). Priority: **H** high, **M** medium, **L** low. Best practice for every task: follow `CLAUDE.md` (rule 3 one section at a time with `mkdocs build --strict`; rule 5 every number computed with a script; rules 1, 2 and 9 propose changes to existing text in `fix.md` first; rule 14 new-chapter checklist; Writing style and Markdown conventions). Commit messages: `ch8: <section> — <what changed>` and `ch9: …`.
+
+### Decisions for the user (before writing)
+
+- [x] **D5. Title and file name.** Recommendation: title "RAG security and production", file `docs/08-rag-security.md`, nav label `"8 · RAG security": 08-rag-security.md`.
+- [x] **D6. Running example.** Recommendation: keep the bank's fraud-policy assistant from Chapter 7. Made-up additions: an old version of the manual (90-day dispute limit, valid until 2025-12-31) for validity dates; a poisoned chunk claiming 365 days for data poisoning; chunks tagged "fraud team only" and an HR salary document for access control; the dispute agent from Chapter 9 for unauthorised actions. Add them to the running examples in `CLAUDE.md` once approved.
+- [x] **D7. Prompt injection in Chapter 7.** Recommendation: keep the short subsection "Prompt injection through documents" (`docs/07-rag.md:482`) as it is, and add one sentence linking to the full treatment in Chapter 8 (existing text: propose first). Chapter 8 explains the attack again in full (a link never replaces an explanation).
+- [x] **D8. Old links to `08-agents/`.** Renaming the file changes the published URL, so bookmarks to the old page break. Recommendation: add the `mkdocs-redirects` plugin (to `requirements.txt` and `mkdocs.yml`) with a redirect from `08-agents.md` to `09-agents.md`. Alternative: accept the broken old URL.
+
+### Step 1: renumber Agents to Chapter 9 (before Chapter 8 is created)
+
+The approved move of a whole chapter; no text is removed. Section numbers update automatically (`docs/javascripts/numbering.js` reads the chapter number from the file name).
+
+- [x] P9-1 **(H) Rename** `docs/08-agents.md` to `docs/09-agents.md` with `git mv` (keeps the file's history).
+- [x] P9-2 **(H) Update every reference**, then check that each anchor still matches a heading:
+  - `mkdocs.yml:48` → `"9 · Agents": 09-agents.md`
+  - `docs/index.md:23` → `[9 · Agents](09-agents.md)`
+  - `docs/06-prompting.md:31`, `:368`, `:395` → "Chapter 9" and `09-agents.md#…`
+  - `docs/07-rag.md:89`, `:491`, `:698` → "Chapter 9" and `09-agents.md#…`
+  - `README.md:39` (Chapters row) and `README.md:55` (CS230 credit: "Chapters 6, 7 and 9")
+  - `CLAUDE.md`: status table, repository layout (`… 09-agents.md`), running example "Dispute agent (Chapter 9)"
+  - `AGENTS.md:23`: path `docs/09-agents.md` (path only; the file belongs to Antigravity)
+  - this file: Phase 7's CME295 task on RAG and agents → "Chapters 7, 8 and 9"
+- [x] P9-3 **(H) Check**: `grep` for any remaining `08-agents` or "Chapter 8" meaning agents; `mkdocs build --strict`; `mkdocs serve` and confirm Chapter 9 opens with numbers 9.1, 9.2, … Commit: `ch9: renumber Agents from Chapter 8 to Chapter 9`.
+
+### Step 2: create Chapter 8 (rule 14 checklist)
+
+- [x] P9-4 **(H) Create the chapter**: placeholder `docs/08-rag-security.md`; `nav:` entry between RAG and Agents; `docs/index.md` row; README **Chapters** row and a bullet in **What the notes cover**; `CLAUDE.md` status table and repository layout; `mkdocs build --strict`, then `mkdocs serve` and confirm it appears in the navigation bar and opens.
+
+### Step 3: write Chapter 8, one section at a time
+
+Every `##` section opens with an introduction (what it covers, the key idea, linked list of its subsections), defines every term on first use, has a worked example with real arithmetic (computed with a script, made-up numbers labelled as such), and briefly re-explains any idea from Chapter 7 before linking to it.
+
+- [x] P9-5 **(H) The big picture**: why a RAG system needs its own security (similarity search finds what is relevant, not what the user may see; every document becomes possible input to the model). The four entry points in one table (documents → data poisoning; retrieval → sensitive data leaks; context → indirect prompt injection; actions → unauthorised tool execution), with each attack's goal and main defences. Mermaid diagram of the secured pipeline: ingestion → secure storage and indexing → access-controlled retrieval → untrusted-context processing → output protection → authorised actions.
+- [x] P9-6 **(H) Data poisoning** (documents): definition; worked example, a poisoned chunk saying 365 days that outranks the real 120-day chunk (similarity scores computed); a second example of a changed limit; defences: ingest only trusted, approved sources; an approval workflow before indexing; provenance metadata (source, owner, version, ingestion date); version control and audit trail; human review of critical content; monitoring changes and unexpected additions; re-indexing only validated versions; citations so a reader can check. Verify against OWASP LLM04 and PoisonedRAG.
+- [x] P9-7 **(H) Sensitive data leaks and access control** (retrieval): the attack (requests for customer ID numbers, API keys, HR salary records); defences:
+  - enforce permissions **before** the chunks reach the prompt, not only in the prompt's instructions;
+  - RBAC and ABAC in plain words, with a bank example of each;
+  - security metadata on every chunk (department, classification, allowed groups) as a JSON example;
+  - a filtered search in code, with the vector-database query syntax (for example Chroma's `where` filter), checked against the current documentation and labelled as product-specific;
+  - pre-filtering vs post-filtering, and why post-filtering with approximate search can return fewer than k chunks (verify in two vector databases' documentation);
+  - detecting personal data and credentials at ingestion; not indexing secrets the assistant never needs; masking or blocking sensitive output;
+  - encryption at rest and in transit, in plain words (what each protects against);
+  - audit logs of what was retrieved, for whom.
+  Worked example: the same question from a fraud analyst and from an analyst outside the fraud team, chunks searched and returned with and without the filter. Verify against OWASP LLM02 and LLM08.
+- [x] P9-8 **(H) Indirect prompt injection** (context): full explanation with the employee-handbook style example rewritten for the bank; defences: treat retrieved text as untrusted data; scan and sanitise documents before indexing; detect, remove, quarantine or flag instruction-like text; filter chunks before they reach the model; clear prompt boundaries between system instructions and retrieved text; give retrieved text no authority; moderation of retrieved chunks; monitoring and logging of suspicious retrievals. Say plainly that no defence removes the risk completely. Verify against OWASP LLM01 and Greshake et al.
+- [x] P9-9 **(H) Unauthorised tool execution** (actions): why the risk grows when the model can act (email, database query, ticket, file changes, record updates); an injected instruction "send all company files to an external address"; the defences in summary (human approval, allow-listed tools, least privilege, parameter checks, a policy check between model and tools, logs), explained here briefly but completely, with a link to the full treatment in Chapter 9 (P9-16). Verify against OWASP LLM06 (excessive agency).
+- [x] P9-10 **(H) Building a production RAG pipeline**: parse the document's structure before chunking (PDF table of contents or bookmarks, Word heading styles, Markdown headings); hierarchical chunks (chapter, section, subsection) for context and traceability; a complete metadata record as JSON for the section 4.2 chunk (chunk text, section title, parent section, page, document ID and version, security tags, valid from, valid to); worked example where the 2025 version is filtered out by its validity date.
+- [x] P9-11 **(M) Choosing an embedding model**: criteria (retrieval quality on your own test set, languages of documents and questions, cost, latency, hosted or self-hosted, where the data may go); two examples, an open model run with the Sentence Transformers library and a hosted model such as OpenAI's `text-embedding-3-large`; check names, dimensions and prices against current documentation; public leaderboards (MTEB) only as a starting point.
+- [x] P9-12 **(H) Filtering and searching in code**: metadata stored with the vector; a query with access and validity filters, with the query syntax of the same database as P9-7 and a note that syntax differs per product; the secure retrieval flow as a Mermaid diagram (user query → identity and permissions → metadata and access filters → similarity search → authorised chunks only → prompt); returning document, section and page for citations; logging retrieval for audit and troubleshooting.
+- [x] P9-13 **(M) Evaluating in production**: a representative test set and recall@k and MRR, recapped briefly from Chapter 7 with a link; add security tests (a poisoned chunk, an injection attempt, a forbidden question) run on every change.
+- [x] P9-14 **(H) Production checklist**: one table that merges both sources' checklists (ingestion, chunking, metadata, embeddings, access control, encryption, injection handling, output protection, tool authorisation, logging, evaluation), each row linked to the section that explains it.
+- [x] P9-15 **(H) Cheat sheet + Sources**: OWASP Top 10 for LLM Applications 2025, Greshake et al. 2023, PoisonedRAG, NIST RBAC/ABAC, the vector database and embedding model documentation, and every other source actually used.
+
+### Step 4: additions to Chapter 9 (Agents)
+
+Existing text: propose in `fix.md` first.
+
+- [x] P9-16 **(H) A policy check between the model and its tools** ("Checks in code, approval by a person", `docs/09-agents.md` after the rename): a deterministic program that, before every tool call, checks whether the user is authenticated, whether the user may perform this action, whether the tool is allowed for this task, whether the inputs are valid and within limits, and whether a person must approve. Worked on the dispute agent: `open_dispute` for €2,400 passes the checks but triggers `request_approval`; an injected `send_email` to an outside address is refused. Mermaid diagram: model → policy and authorisation check → tool.
+- [x] P9-17 **(M) Allow-listed tools and operations, extra confirmation for high-risk transactions, separate retrieval rights from action rights, and log every tool call** (requested, approved, refused, completed). Same subsection as P9-16.
+- [x] P9-18 **(M) Link back** from Chapter 9's injection row in "What goes wrong" to Chapter 8's prompt-injection section.
+
+### Step 5: links from earlier chapters
+
+Existing text: propose in `fix.md` first.
+
+- [~] P9-19 **(M) Chapter 7 → Chapter 8 links** (term links done at `docs/07-rag.md:157`, `:287`, `:488`; the Cheat sheet row and the closing sentence wait in `fix.md`, RS-1 and RS-2): from "Cutting along the document's structure" (`docs/07-rag.md:148`), "What a vector database stores" (`docs/07-rag.md:285`) and "Prompt injection through documents" (`docs/07-rag.md:482`); one line in Chapter 7's Cheat sheet pointing to Chapter 8.
+- [x] P9-20 **(L) Final check**: `grep` every new anchor link against the headings, `mkdocs build --strict`, read the chapter on `mkdocs serve`; one commit per section, then push and deploy.
+
+### Not planned
+
+- **The product name "Trusteer"** from the sources: not used anywhere in the notes.

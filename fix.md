@@ -14,6 +14,19 @@ Legend: `[ ]` waiting · `[x]` approved and applied · `[-]` rejected
 
 ## Waiting for approval
 
+### RS. New Chapter 8 (RAG security and production): follow-up changes outside Chapters 8 and 9 `[ ]`
+
+Chapter 8 is written and Chapter 9 has its new subsection "A policy check before every tool call". Chapter 7 received only term links to Chapter 8 (lines 157, 287 and 488). These changes touch other files or existing text, so they wait for approval.
+
+| # | File and place | Proposed change | Why | Priority |
+| --- | --- | --- | --- | --- |
+| RS-1 | `docs/07-rag.md`, Cheat sheet (line 710) | Add a row: "RAG security \| Poisoning, access filters, prompt injection, tool misuse: see Chapter 8", linked to `08-rag-security.md#the-big-picture` | A reader of Chapter 7's summary should know the security topics continue in Chapter 8 | Medium |
+| RS-2 | `docs/07-rag.md`, "Prompt injection through documents" (line 482) | Add one closing sentence: "Chapter 8 explains the attack in full, with ingestion scanning, output checks and security tests." (D7 in `plan.md`) | Today only the word "Defences" links to Chapter 8 | Low |
+| RS-3 | `docs/06-prompting.md:31` | "Two later chapters build on these techniques" could mention Chapter 8 in one clause: "and Chapter 8 shows how to secure such a system" | The sentence lists Chapters 7 and 9 only; still correct, but skips Chapter 8 | Low |
+| RS-4 | `requirements.txt` and the build banner | `mkdocs-redirects` 1.2.3 (added for D8) depends on the `properdocs` package, which prints a large "MkDocs 2" warning at every build. The build still passes. Options: (a) pin `mkdocs-redirects==1.2.2` if that version has no such dependency (check first); (b) set `DISABLE_MKDOCS_2_WARNING=true` in the deploy workflow; (c) leave it | Keeps the build log readable; the banner may also worry a reader of the GitHub Actions log | Medium |
+| RS-5 | `CLAUDE.md`, Environment notes | Add: "pip downloads fail behind Norton; use `pip install --use-feature=truststore -r requirements.txt`" | Found while installing `mkdocs-redirects` | Low |
+| RS-6 | `README.md`, Credits (line 54) | Credit the OWASP Top 10 for LLM Applications 2025 as the reference list of risks behind Chapter 8 | Chapter 8 is organised around it; the README credits other main sources | Low |
+
 ### C8. Stanford CS230 Lecture 8: additions to Chapters 2, 3 and 5 `[ ]`
 
 Approved in principle (`plan.md`, Phase 8); to be done next session. Rows C8-19 and C8-20 change existing text, so the exact wording is shown to the user before it is applied.
