@@ -1,0 +1,18 @@
+/* Wrap the chapter tabs onto several rows, so that every chapter stays visible however many there are. */
+.md-tabs__list {
+  flex-wrap: wrap;
+  white-space: normal;
+}
+
+.md-tabs__item {
+  height: 1.8rem;
+}
+
+.md-tabs__link {
+  margin-top: 0.5rem;
+}
+
+/* Stop anchor targets below the header, whose height grows with the number of tab rows (see header-offset.js). */
+.md-header--lifted ~ .md-container .md-typeset :target {
+  --md-scroll-margin: var(--header-height, 6rem);
+}
