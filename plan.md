@@ -151,7 +151,7 @@ Compare the book with each lecture of Stanford's CME295 (summaries in `sources/`
 - [ ] Lecture 7 (when published).
 - [ ] Lecture 8 (when published).
 - [ ] Lecture 9 (when published), then the glossary (Phase 6).
-- [ ] When the CME295 lecture on RAG and agents is reviewed, compare it with Chapters 7, 8 and 9 and add only the gaps (Phase 8, D4).
+- [ ] When the CME295 lecture on RAG and agents is reviewed, compare it with Chapters 7, 8, 10, 11 and 12 and add only the gaps (Phase 8, D4).
 - [ ] User read-through, one chapter at a time; rewrite the parts flagged as unclear; one commit, push and deploy per chapter (`CLAUDE.md`, rule 8).
 
 ## Phase 8 — Stanford CS230 Lecture 8: Agents, Prompts and RAG

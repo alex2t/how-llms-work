@@ -21,7 +21,7 @@ This file defines Antigravity's role, rules, and workflow for this repository. A
 | `prompting` | `docs/06-prompting.md` | `gemini/prompting_agy.md` | `gemini/prompting_rw_claude.md` | Completed |
 | `rag` | `docs/07-rag.md` | `gemini/rag_agy.md` | `gemini/rag_rw_claude.md` | Completed |
 | `rag_security` | `docs/08-rag-security.md` | `gemini/rag_security_agy.md` | `gemini/rag_security_rw_claude.md` | Completed |
-| `agents` | `docs/09-agents.md` | `gemini/agents_agy.md` | `gemini/agents_rw_claude.md` | Completed |
+| `agents` | `docs/12-agents.md` | `gemini/agents_agy.md` | `gemini/agents_rw_claude.md` | Completed |
 
 ---
 

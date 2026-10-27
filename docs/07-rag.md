@@ -44,6 +44,8 @@ This chapter covers:
 10. [RAG, long context or fine-tuning?](#rag-long-context-or-fine-tuning): the costs compared, and when to choose each.
 11. [Beyond basic RAG](#beyond-basic-rag): agentic RAG and GraphRAG.
 
+[Chapter 10](10-advanced-rag.md#the-big-picture) continues where this chapter stops: what to add when this pipeline is still not good enough. [Chapter 11](11-future-of-rag.md#the-big-picture) then looks at what the evidence says about claims that long context windows or agents will replace RAG.
+
 ## Why a model needs outside knowledge
 
 A model's knowledge is fixed in its weights at the end of training. This section explains what it therefore cannot know, why it still answers as if it did, and which tools exist to fix that. It matters because choosing the wrong tool (for example, fine-tuning to add facts that change every month) is expensive and often does not work.
@@ -86,7 +88,7 @@ There are two directions for getting better answers. One is a **bigger, newer mo
 | Prompt chaining | One large task becomes a sequence of small prompts | [Chapter 6](06-prompting.md#prompt-chaining) |
 | RAG | The prompt receives the relevant passages of your documents | This chapter |
 | Fine-tuning | The weights, trained further on your examples | [Chapter 2](02-training.md#stage-2-supervised-fine-tuning-sft) |
-| Agents | The model works in a loop, calling tools such as search | [Chapter 9](09-agents.md#the-big-picture) |
+| Agents | The model works in a loop, calling tools such as search | [Chapter 12](12-agents.md#the-big-picture) |
 
 These are not alternatives to choose one from: a real assistant usually combines a clear prompt, RAG and sometimes an agent loop. [The last sections](#rag-long-context-or-fine-tuning) compare RAG with fine-tuning and with simply putting everything in a long prompt.
 
@@ -145,6 +147,8 @@ The choice of size is a trade-off:
 
 The best size depends on the documents and the questions, so it is chosen by measuring retrieval on a test set ([Evaluating a RAG system](#evaluating-a-rag-system)), not guessed.
 
+Splitting where the topic changes (semantic chunking), and whether it is worth its cost, is covered in [Chapter 10](10-advanced-rag.md#semantic-chunking-splitting-where-the-topic-changes).
+
 ### Cutting along the document's structure
 
 Cutting every 350 tokens ignores the document's own structure: a chunk can start in the middle of a sentence and end in the middle of a table. Most systems therefore cut along natural boundaries:
@@ -155,6 +159,8 @@ Cutting every 350 tokens ignores the document's own structure: a chunk can start
 4. Store with each chunk its **metadata**: the document name, the section title and the page. Metadata is data about the chunk rather than the chunk's text; it is needed later for citations, and for filters such as "only documents valid in 2026" or "only documents this user is allowed to read".
 
 The last point matters in a company: if the index holds documents with different access rights, the search must [filter on those rights](08-rag-security.md#sensitive-data-leaks-and-access-control) before anything reaches the prompt. Otherwise the assistant can quote a document to someone who is not allowed to read it.
+
+When a table is too long to stay in one piece, each row can be rewritten as a self-contained sentence and indexed on its own; code can be cut at its functions. Both are shown in [Chapter 10](10-advanced-rag.md#tables-and-code).
 
 ### Chunking for retrieval vs chunking for training
 
@@ -419,6 +425,8 @@ A **cross-encoder** is a Transformer encoder that receives the question and one 
 | Speed | Searches millions of chunks in milliseconds | About one forward pass per candidate chunk |
 | Quality of ranking | Good | Better |
 
+A third design, **late interaction** (ColBERT), sits between the two: it keeps one small vector per token, so that it can still be prepared in advance yet match exact details such as a decline code. [Chapter 10](10-advanced-rag.md#late-interaction-colbert) works through it on the R-17 question.
+
 ### Retrieve many, re-rank, keep few
 
 The two are combined in two stages:
@@ -488,7 +496,7 @@ Models use information at the start and at the end of a long prompt more reliabl
 [Defences](08-rag-security.md#defences-in-layers) reduce the risk but none removes it completely:
 
 1. Index only trusted sources, or mark untrusted text clearly in the prompt and tell the model that text inside it is data to report, never instructions to follow.
-2. Give the model no power to act on its own (sending emails, approving disputes) based on retrieved text; keep a person in the loop for actions. [Chapter 9](09-agents.md#guardrails-and-human-review) returns to this for agents.
+2. Give the model no power to act on its own (sending emails, approving disputes) based on retrieved text; keep a person in the loop for actions. [Chapter 12](12-agents.md#guardrails-and-human-review) returns to this for agents.
 3. Check outputs with a program, for example by blocking answers that claim an approval when no approval record exists.
 
 ```mermaid
@@ -540,6 +548,8 @@ A question and its answer are different kinds of text: a question is short and a
 
 **Example.** For the running question, the model writes: *"Customers can dispute a card transaction within 60 days of the statement date by contacting the bank."* The number is wrong for this bank, but the passage reads like the manual's section 4.2: it talks about disputes, a time limit and a starting date. Its vector is closer to chunk A than the question's vector is, and the wrong number does no harm, because it is the **real** chunk A that goes into the prompt, not the hypothetical passage. The paper reports that HyDE, with no training on relevance labels, performed close to retrievers fine-tuned on such labels. The cost is one extra model call before every search.
 
+The mirror image, generating at indexing time the questions each chunk answers and indexing them too, avoids that extra call per question; see [Chapter 10](10-advanced-rag.md#synthetic-questions-indexing-what-a-chunk-answers).
+
 ### Multi-level chunking
 
 A collection of thousands of documents can have many chunks that look alike: every product's terms and conditions has a "time limits" paragraph. **Multi-level** (hierarchical) chunking indexes the collection at two levels:
@@ -548,6 +558,8 @@ A collection of thousands of documents can have many chunks that look alike: eve
 2. One vector per **chunk**, as before.
 
 The search first finds the few most relevant documents (here, the fraud-policy manual rather than the mortgage terms), then searches only those documents' chunks. A related idea retrieves small chunks for precision but gives the model the larger section around each one, so that the answer has its context.
+
+**RAPTOR** builds this kind of hierarchy automatically, with as many levels of summaries as the collection needs; see [Chapter 10](10-advanced-rag.md#raptor-a-tree-of-summaries).
 
 ### Contextual retrieval
 
@@ -647,6 +659,8 @@ Assume the analysts ask 20,000 questions a month, the instructions and the quest
 
 The whole-manual prompt is 35 times longer (80,300 ÷ 2,300 ≈ 34.9) and costs 35 times more, every time. It also suffers from [lost in the middle](03-inference.md#a-bigger-window-is-not-a-perfect-memory) and gives no natural citations. Two things narrow the gap: **prompt caching**, offered by several providers, stores the KV cache of a prompt prefix that repeats (here, the manual) so it is not processed again at every question, and charges much less for it; and some documents are small enough that RAG is not worth building. Anthropic's guidance, for example, is that a knowledge base under about 200,000 tokens can often be put in the prompt whole, with prompt caching. A bank's full document collection, with millions of pages, fits in no context window, so at that scale retrieval is needed anyway.
 
+Cost is only half of the comparison. [Chapter 11](11-future-of-rag.md#claim-1-long-context-windows-will-make-rag-unnecessary) reviews the benchmarks on how well models actually use very long prompts, and a method that routes each question to RAG or to long context.
+
 !!! tip "Key idea: why quadratic self-attention makes long-context prefill even slower than 35×"
     The 0.028 ms per token in the table counts only the work that grows **linearly** with the number of tokens: multiplying each token's vector by the weight matrices $W_Q, W_K, W_V, W_O, W_1$ and $W_2$. Inside self-attention, however, every token also computes a dot product with every earlier token ([Chapter 1](01-transformers.md#the-cost-of-attention)), which grows with the **square** of the prompt length. Because 80,300 tokens is 34.91 times longer than 2,300 tokens, the attention step performs $34.91^2 \approx \mathbf{1{,}219}$ times as many token-to-token comparisons. At a few thousand tokens that quadratic term is small next to the weight multiplications, but at 80,000 tokens it dominates prefill time unless the KV cache of the manual is pre-computed and reused via prompt caching.
 
@@ -695,7 +709,9 @@ flowchart TD
 
 In **agentic RAG**, search is a **tool** the model can call: the model decides whether to search, writes the search query itself, reads the results, and searches again if they are not enough.
 
-**Example.** *"Has the dispute deadline for R-17 declines changed since last year?"* needs two look-ups: the current rule and last year's version of the manual. A fixed pipeline runs one search with the question as written; an agent searches for the current rule, sees that it needs the old version, searches the 2025 manual, and then compares the two. The price is several model calls per question and less predictable behaviour. [Chapter 9](09-agents.md#the-big-picture) explains how such agents work.
+**Example.** *"Has the dispute deadline for R-17 declines changed since last year?"* needs two look-ups: the current rule and last year's version of the manual. A fixed pipeline runs one search with the question as written; an agent searches for the current rule, sees that it needs the old version, searches the 2025 manual, and then compares the two. The price is several model calls per question and less predictable behaviour. [Chapter 12](12-agents.md#the-big-picture) explains how such agents work.
+
+[Chapter 11](11-future-of-rag.md#claim-2-agentic-search-replaces-rag) compares this with the agentic search used by coding assistants, and asks whether either replaces RAG.
 
 ### GraphRAG
 
@@ -706,6 +722,8 @@ Some questions are about a whole collection, not about one passage: *"What are t
 3. A question about the whole collection is answered from these summaries rather than from individual chunks.
 
 Indexing is much more expensive than for ordinary RAG, because a model reads every chunk at least once, so GraphRAG is used when the "whole collection" questions are worth that cost.
+
+[Chapter 10](10-advanced-rag.md#graphrag-local-and-global-search) adds the two ways of querying the graph, local and global search, with their costs, and two further ways of checking what was retrieved before answering: Corrective RAG and Self-RAG.
 
 ## Cheat sheet
 

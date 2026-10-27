@@ -28,7 +28,7 @@ flowchart LR
 
 Seen together, these seven techniques form a single progression. Every step addresses a specific limit of predicting one token at a time: first by removing ambiguity in the input (techniques 1 and 2), then by giving the model more forward passes to work out intermediate steps, compare candidates, review its draft, or divide the work across a pipeline (techniques 3 to 6), and finally by training the model itself to generate and verify its own multi-step working before it commits to an answer (technique 7).
 
-Two later chapters build on these techniques. [Chapter 7](07-rag.md#the-big-picture) adds **retrieval**: the application looks up relevant documents and puts them in the prompt, so the model can answer from facts it never saw in training. [Chapter 9](09-agents.md#the-big-picture) covers **agents**: a model that works in a loop, calling tools such as a search or a database and reading their results until the task is done.
+Two later chapters build on these techniques. [Chapter 7](07-rag.md#the-big-picture) adds **retrieval**: the application looks up relevant documents and puts them in the prompt, so the model can answer from facts it never saw in training. [Chapter 12](12-agents.md#the-big-picture) covers **agents**: a model that works in a loop, calling tools such as a search or a database and reading their results until the task is done.
 
 ## Writing a clear prompt
 
@@ -365,7 +365,7 @@ The critique works because checking a short list of rules against a finished tex
 
 ## Prompt chaining
 
-A single prompt that asks for everything at once (read the case, find the facts, check the bank's rules, write the summary) is hard to get right and hard to fix: when the answer is wrong, there is no way to tell which part failed. **Prompt chaining** splits the task into a sequence of small prompts, each with one job, where the output of one step becomes the input of the next. It matters because it turns one unpredictable prompt into a short pipeline whose steps can each be tested, measured and improved on their own. It is also the first step towards agents ([Chapter 9](09-agents.md#the-big-picture)).
+A single prompt that asks for everything at once (read the case, find the facts, check the bank's rules, write the summary) is hard to get right and hard to fix: when the answer is wrong, there is no way to tell which part failed. **Prompt chaining** splits the task into a sequence of small prompts, each with one job, where the output of one step becomes the input of the next. It matters because it turns one unpredictable prompt into a short pipeline whose steps can each be tested, measured and improved on their own. It is also the first step towards agents ([Chapter 12](12-agents.md#the-big-picture)).
 
 This section covers:
 
@@ -392,7 +392,7 @@ flowchart LR
   S3 --> OUT["Summary for the agent"]
 ```
 
-Between the steps, ordinary code can check the output before it moves on: here, that step 1 returned every field, and that the amount is a number. Each step's output can also be forced into an exact format with [constrained decoding](03-inference.md#constrained-decoding). A chain like this, where the steps are fixed in advance by the developer, is the simplest kind of system built around a model; Chapter 9 shows what changes when the model chooses the steps itself.
+Between the steps, ordinary code can check the output before it moves on: here, that step 1 returned every field, and that the amount is a number. Each step's output can also be forced into an exact format with [constrained decoding](03-inference.md#constrained-decoding). A chain like this, where the steps are fixed in advance by the developer, is the simplest kind of system built around a model; Chapter 12 shows what changes when the model chooses the steps itself.
 
 ### Why chains are easier to improve
 
