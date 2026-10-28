@@ -18,9 +18,9 @@ Plain-English notes that explain how large language models work, written as an i
 | 6 | Prompting and reasoning | `docs/06-prompting.md` | Written |
 | 7 | Retrieval-augmented generation (RAG) | `docs/07-rag.md` | Written |
 | 8 | RAG security and production | `docs/08-rag-security.md` | Written |
-| 10 | Advanced RAG | `docs/10-advanced-rag.md` | Written |
-| 11 | The future of RAG | `docs/11-future-of-rag.md` | Written |
-| 12 | Agents | `docs/12-agents.md` | Written |
+| 9 | Advanced RAG | `docs/09-advanced-rag.md` | Written |
+| 10 | The future of RAG | `docs/10-future-of-rag.md` | Written |
+| 11 | Agents | `docs/11-agents.md` | Written |
 
 `plan.md` is the single source of truth for what is done and what is left.
 
@@ -41,7 +41,7 @@ Plain-English notes that explain how large language models work, written as an i
 └── docs/
     ├── index.md               # Home page
     ├── 00-introduction.md     # Foundations and history
-    ├── 01-transformers.md … 12-agents.md   # no Chapter 9: Agents moved to 12 after 10 Advanced RAG and 11 The future of RAG
+    ├── 01-transformers.md … 11-agents.md
     ├── images/                # diagrams (SVG/PNG) used by chapters
     └── javascripts/mathjax.js # LaTeX rendering
 ```
@@ -118,8 +118,8 @@ The notes are being checked against Stanford's [CME295: Transformers & Large Lan
   - Logits: CAT 6.2, DOG 4.9, IS 2.1, LOVELY 1.0 → probabilities 0.772, 0.211, 0.013, 0.004.
   - Fraud example (Chapter 5): an LLM labelling transactions as fraud / not fraud. Evaluation sample of 100 transactions with 10 fraud (TP 8, FN 2, FP 6, TN 84 at threshold 0.5); real traffic 100,000 a month, 2% fraud.
   - Fraud-policy assistant (Chapter 7): the same bank's RAG assistant over its made-up fraud-policy manual (120 pages, 80,000 tokens, 229 chunks of 400 tokens with 50 overlap). Question: "How many days does a customer have to dispute a card payment?" Answer: 120 days [section 4.2]. Decline code R-17 = suspected fraud, card blocked.
-  - Securing the assistant (Chapter 8): the same fraud-policy assistant in production. An old 2025 version of the manual gave 90 days (valid until 2025-12-31); a poisoned chunk claims 365 days; some chunks are tagged "fraud team only"; an HR salary document sits in the same index; the dispute agent (Chapter 12) shows unauthorised tool calls. All made up.
-  - Dispute agent (Chapter 12): the same bank's agent handling the email "I did not make the €2,400 payment at an electronics shop in Lisbon on 12 October. My card ends in 4417." Tools: find_transaction, search_policy, open_dispute, request_approval, send_email; refunds above €1,000 need an analyst's approval.
+  - Securing the assistant (Chapter 8): the same fraud-policy assistant in production. An old 2025 version of the manual gave 90 days (valid until 2025-12-31); a poisoned chunk claims 365 days; some chunks are tagged "fraud team only"; an HR salary document sits in the same index; the dispute agent (Chapter 11) shows unauthorised tool calls. All made up.
+  - Dispute agent (Chapter 11): the same bank's agent handling the email "I did not make the €2,400 payment at an electronics shop in Lisbon on 12 October. My card ends in 4417." Tools: find_transaction, search_policy, open_dispute, request_approval, send_email; refunds above €1,000 need an analyst's approval.
 - Tables for step-by-step calculations and comparisons; numbered lists for procedures; bullet lists for properties.
 - When the user comments that a part "is not clear": rewrite it with a definition plus a concrete example. Do not just shorten it.
 - End each chapter with a **Cheat sheet** table and a **Sources** list.

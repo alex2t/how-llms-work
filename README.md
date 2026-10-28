@@ -40,9 +40,9 @@ Readers with a technical background, for example a computing degree or a career 
 | 6 | Prompting and reasoning | Clear prompts, in-context learning, chain-of-thought, self-critique, prompt chaining and reasoning models |
 | 7 | Retrieval-augmented generation (RAG) | Chunking, embeddings, hybrid search, re-ranking, citations, evaluation, and RAG vs long context or fine-tuning |
 | 8 | RAG security and production | Data poisoning, access control, prompt injection, unauthorised tool calls, metadata filtering and a production checklist |
-| 10 | Advanced RAG | Semantic chunking, synthetic questions, ColBERT, ColPali, decomposition, RAPTOR, GraphRAG, CRAG and Self-RAG |
-| 11 | The future of RAG | Long context vs RAG, agentic search, agentic RAG and context engineering, claim by claim against the evidence |
-| 12 | Agents | The agent loop, tool calling, MCP, memory, guardrails, agent evaluation and multi-agent systems |
+| 9 | Advanced RAG | Semantic chunking, synthetic questions, ColBERT, ColPali, decomposition, RAPTOR, GraphRAG, CRAG and Self-RAG |
+| 10 | The future of RAG | Long context vs RAG, agentic search, agentic RAG and context engineering, claim by claim against the evidence |
+| 11 | Agents | The agent loop, tool calling, MCP, memory, guardrails, agent evaluation and multi-agent systems |
 
 ## How it was made
 
@@ -58,7 +58,7 @@ The notes grew out of several AI and LLM engineering courses. I took excerpts fr
 ## Credits
 
 - Stanford University, [CME295: Transformers & Large Language Models](https://cme295.stanford.edu/syllabus/), by Afshine Amidi and Shervine Amidi (lectures on YouTube, slides on the course site). Used to check which topics the notes should cover; explanations are paraphrased, and no slide content is copied.
-- Stanford University, [CS230: Deep Learning](https://cs230.stanford.edu/), Lecture 8: Agents, Prompts and RAG (Autumn 2025). Used to plan Chapters 6, 7 and 12; explanations are paraphrased.
+- Stanford University, [CS230: Deep Learning](https://cs230.stanford.edu/), Lecture 8: Agents, Prompts and RAG (Autumn 2025). Used to plan Chapters 6, 7 and 11; explanations are paraphrased.
 - Google NotebookLM (Gemini) summaries of the CME295 and CS230 lectures, used as a topic checklist. They are kept locally and not published.
 - Vaswani et al., [Attention Is All You Need](https://arxiv.org/abs/1706.03762) (2017).
 - Umar Jamil, [Transformer from scratch](https://github.com/hkproj/transformer-from-scratch-notes) slides (CC BY-NC 4.0), used as a reference for explanations.

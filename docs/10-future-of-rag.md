@@ -4,7 +4,7 @@
 
 Each time a model with a larger context window is released, or a popular agent turns out not to use a vector database, commentators announce that RAG is dead. Others answer that "agentic RAG" is the future. Each side quotes sources. This chapter takes the three main claims one at a time, sets out what each one rests on, and compares it with the published evidence, using the bank's numbers. It matters because the bank, like any company, must decide where to invest, and because the right answer depends on the question, the collection and the rules around it, not on the latest announcement.
 
-**The running example of this chapter.** The bank's fraud-policy assistant of [Chapter 7](07-rag.md#the-big-picture), [Chapter 8](08-rag-security.md#the-big-picture) and [Chapter 10](10-advanced-rag.md#the-big-picture) is in production. It answers analysts' questions from the 120-page fraud-policy manual: 80,000 tokens, cut into 229 chunks of 400 tokens. For each question it finds the best chunks with hybrid search (vector search plus keyword search), re-ranks them, and applies access-control filters, so that a user only sees chunks they are allowed to read. On Chapter 7's small test set it reaches recall@3 = 0.8: for 4 questions out of 5, the right chunk is among the top 3.
+**The running example of this chapter.** The bank's fraud-policy assistant of [Chapter 7](07-rag.md#the-big-picture), [Chapter 8](08-rag-security.md#the-big-picture) and [Chapter 9](09-advanced-rag.md#the-big-picture) is in production. It answers analysts' questions from the 120-page fraud-policy manual: 80,000 tokens, cut into 229 chunks of 400 tokens. For each question it finds the best chunks with hybrid search (vector search plus keyword search), re-ranks them, and applies access-control filters, so that a user only sees chunks they are allowed to read. On Chapter 7's small test set it reaches recall@3 = 0.8: for 4 questions out of 5, the right chunk is among the top 3.
 
 The bank's management has read two things. One is that million-token context windows make RAG unnecessary. The other is that "agentic RAG is the future". They want to know whether to keep investing in retrieval.
 
@@ -144,7 +144,7 @@ Anthropic's engineering guide *Effective context engineering for AI agents* (Sep
 - **Access rights per user.** `grep` knows nothing about rights unless the tool enforces them.
 - **Volume and speed.** Thousands of simple questions a day, each expected in a second or two.
 
-The cost alone differs by an order of magnitude. Apply [Chapter 12's formula](12-agents.md#working-memory-the-context-window) for the tokens of an agent run. Take N = 5 model calls, a starting prompt of B = 1,500 tokens, and s = 2,000 tokens added per step (each search returns about five chunks):
+The cost alone differs by an order of magnitude. Apply [Chapter 11's formula](11-agents.md#working-memory-the-context-window) for the tokens of an agent run. Take N = 5 model calls, a starting prompt of B = 1,500 tokens, and s = 2,000 tokens added per step (each search returns about five chunks):
 
 $$
 N \cdot B + s \cdot \frac{N(N - 1)}{2} = 5 \times 1{,}500 + 2{,}000 \times 10 = 27{,}500 \text{ tokens}
@@ -156,13 +156,13 @@ The bank's version of agentic search is therefore not `grep` over raw files. It 
 
 ## Claim 3: agentic RAG is the future
 
-**What it rests on.** In **agentic RAG**, retrieval is one or more tools, and the model decides when to search, what to search for, and whether the results are enough ([Chapter 7](07-rag.md#agentic-rag), [Chapter 12](12-agents.md#the-agent-loop)). The evidence behind it comes in three kinds:
+**What it rests on.** In **agentic RAG**, retrieval is one or more tools, and the model decides when to search, what to search for, and whether the results are enough ([Chapter 7](07-rag.md#agentic-rag), [Chapter 11](11-agents.md#the-agent-loop)). The evidence behind it comes in three kinds:
 
 - **Surveys.** The survey by Singh and colleagues (2025) describes how agentic design patterns enter the retrieval pipeline: reflection, planning, tool use and several agents working together. It proposes a taxonomy of architectures. It is a review of existing systems, with no new experiments, so it describes a trend rather than measuring it.
 - **Models trained to search.** **Search-R1** (Jin and colleagues, 2025) uses **reinforcement learning**: instead of copying example answers, the model is trained by reward, receiving a reward only when its final answer is right. Through this training, it learns to write search queries in the middle of its reasoning and to search again when needed. The authors report gains over RAG baselines on seven question-answering datasets, for example 41% for a 7-billion-weight Qwen2.5 model.
-- **Multi-agent research systems.** Anthropic reported that an orchestrator with sub-agents outperformed a single agent by 90.2% on its internal research evaluation. It also reported that it used about 15 times the tokens of a chat ([Chapter 12](12-agents.md#what-it-costs)).
+- **Multi-agent research systems.** Anthropic reported that an orchestrator with sub-agents outperformed a single agent by 90.2% on its internal research evaluation. It also reported that it used about 15 times the tokens of a chat ([Chapter 11](11-agents.md#what-it-costs)).
 
-**What it costs.** Every gain above is on questions that need several look-ups. Every one of them is paid for in model calls, tokens and waiting time. It also adds the risks of [Chapter 8](08-rag-security.md#unauthorised-tool-execution): retrieved text can now steer actions, so every tool call needs the policy check of [Chapter 12](12-agents.md#a-policy-check-before-every-tool-call).
+**What it costs.** Every gain above is on questions that need several look-ups. Every one of them is paid for in model calls, tokens and waiting time. It also adds the risks of [Chapter 8](08-rag-security.md#unauthorised-tool-execution): retrieved text can now steer actions, so every tool call needs the policy check of [Chapter 11](11-agents.md#a-policy-check-before-every-tool-call).
 
 Most of the bank's daily questions, such as *"How many days to dispute a payment?"*, need one look-up. For them, an agent adds cost and unpredictability and no quality.
 
@@ -195,11 +195,11 @@ A million-token prompt and an autonomous agent both still need these. In regulat
 
 The direction the field is taking is often called **context engineering**: deciding, for every model call, what goes into the context window and what stays out. Anthropic's guide describes it as finding the smallest set of high-signal tokens that gets the job done. In that view, RAG is not a product to keep or abandon, but one tool among several for filling the context. Five trends follow from the evidence above. They are directions to watch, not certainties:
 
-1. **Routing per question.** A cheap first step decides between no retrieval, one-shot RAG, long context or an agent, as Self-Route does, and as Self-RAG's `[Retrieve]` token does: Self-RAG is a model fine-tuned to write that token when it decides a search is needed ([Chapter 10](10-advanced-rag.md#self-rag-a-model-that-critiques-itself)). The bank's assistant could answer 85% of questions with one RAG call, and pass the rest to an agent.
-2. **Retrieval as tools.** The same search becomes callable by any agent through a standard protocol such as MCP ([Chapter 12](12-agents.md#the-model-context-protocol-mcp)). Different retrievers sit side by side: hybrid search for the manual, SQL for transactions, ColPali for scanned pages.
+1. **Routing per question.** A cheap first step decides between no retrieval, one-shot RAG, long context or an agent, as Self-Route does, and as Self-RAG's `[Retrieve]` token does: Self-RAG is a model fine-tuned to write that token when it decides a search is needed ([Chapter 9](09-advanced-rag.md#self-rag-a-model-that-critiques-itself)). The bank's assistant could answer 85% of questions with one RAG call, and pass the rest to an agent.
+2. **Retrieval as tools.** The same search becomes callable by any agent through a standard protocol such as MCP ([Chapter 11](11-agents.md#the-model-context-protocol-mcp)). Different retrievers sit side by side: hybrid search for the manual, SQL for transactions, ColPali for scanned pages.
 3. **Models trained to retrieve.** Search behaviour is learned in training (Search-R1), not only written into prompts.
 4. **Long context as the reading step.** Retrieval narrows millions of chunks down to 50 or 100 candidates. A long-context model then reads all of them, instead of only the top 5.
-5. **Retrieval beyond text.** Pages are searched as images (ColPali, [Chapter 10](10-advanced-rag.md#retrieving-pages-as-images-colpali)), and the same late-interaction idea, one small vector per token or image patch instead of one per passage, extends to other media.
+5. **Retrieval beyond text.** Pages are searched as images (ColPali, [Chapter 9](09-advanced-rag.md#retrieving-pages-as-images-colpali)), and the same late-interaction idea, one small vector per token or image patch instead of one per passage, extends to other media.
 
 ## Cheat sheet
 

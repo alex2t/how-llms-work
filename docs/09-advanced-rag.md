@@ -2,9 +2,9 @@
 
 ## The big picture
 
-[Chapter 7](07-rag.md#the-big-picture) built a retrieval-augmented generation (RAG) pipeline. It cuts documents into chunks, embeds each chunk as a vector, and finds the best chunks with hybrid search and re-ranking. It then puts those chunks in the prompt and answers with citations. [Chapter 8](08-rag-security.md#the-big-picture) made that pipeline safe to run, and [Chapter 12](12-agents.md#the-big-picture) covers models that work in a loop with tools.
+[Chapter 7](07-rag.md#the-big-picture) built a retrieval-augmented generation (RAG) pipeline. It cuts documents into chunks, embeds each chunk as a vector, and finds the best chunks with hybrid search and re-ranking. It then puts those chunks in the prompt and answers with citations. [Chapter 8](08-rag-security.md#the-big-picture) made that pipeline safe to run, and [Chapter 11](11-agents.md#the-big-picture) covers models that work in a loop with tools.
 
-This chapter covers the techniques teams add when that pipeline is still not good enough. It matters because each technique costs something. Much of what is written about them mixes real evidence with marketing, and choosing well means being able to tell the two apart. The debate about where retrieval is going, including the claim that "RAG is dead", is the subject of [Chapter 11](11-future-of-rag.md#the-big-picture).
+This chapter covers the techniques teams add when that pipeline is still not good enough. It matters because each technique costs something. Much of what is written about them mixes real evidence with marketing, and choosing well means being able to tell the two apart. The debate about where retrieval is going, including the claim that "RAG is dead", is the subject of [Chapter 10](10-future-of-rag.md#the-big-picture).
 
 **The running example of this chapter.** The bank's fraud-policy assistant of [Chapter 7](07-rag.md#the-big-picture) and [Chapter 8](08-rag-security.md#the-big-picture) is now in production. It answers analysts' questions from the 120-page fraud-policy manual (229 chunks of 400 tokens). It uses hybrid search, re-ranking and access-control filters. On Chapter 7's small test set it reaches recall@3 = 0.8: for 4 questions out of 5, the right chunk is among the top 3.
 
@@ -26,7 +26,7 @@ The bank now wants more from it. All of the following are made up for illustrati
 | One question hides several (2025 and 2026; deadline and fee) | Sub-query decomposition | [Breaking a question into parts](#breaking-a-question-into-parts) |
 | The question is about the whole collection, not one passage | RAPTOR; GraphRAG local and global search | [Whole collection](#questions-about-a-whole-collection) |
 | The search found nothing useful, but the model answers anyway | Corrective RAG (CRAG); Self-RAG | [Checking retrieval](#checking-retrieval-before-answering) |
-| "Why not put everything in the prompt, or let an agent search?" | The evidence on long context, agentic search and agentic RAG | [Chapter 11](11-future-of-rag.md#three-claims) |
+| "Why not put everything in the prompt, or let an agent search?" | The evidence on long context, agentic search and agentic RAG | [Chapter 10](10-future-of-rag.md#three-claims) |
 
 Most of these techniques change the **index**, which is paid for once per document. The others change what happens at **question time**, which is paid for on every question:
 
@@ -405,15 +405,15 @@ A single search with the whole question would most likely have returned a mix of
 
 ### Decomposition, multi-query and agents compared
 
-| | Multi-query ([Chapter 7](07-rag.md#query-rewriting)) | Sub-query decomposition | Agentic RAG ([Chapter 7](07-rag.md#agentic-rag), [Chapter 12](12-agents.md#the-agent-loop)) |
+| | Multi-query ([Chapter 7](07-rag.md#query-rewriting)) | Sub-query decomposition | Agentic RAG ([Chapter 7](07-rag.md#agentic-rag), [Chapter 11](11-agents.md#the-agent-loop)) |
 | --- | --- | --- | --- |
 | What the searches contain | The **same** question, reworded | **Different** questions, one per need | Whatever the model decides, one step at a time |
 | When the plan is made | Before searching | Before searching, in one step | After each result, step by step |
-| Autonomy ([Chapter 12](12-agents.md#degrees-of-autonomy)) | Low: a fixed workflow | Low: a fixed workflow | Medium |
+| Autonomy ([Chapter 11](11-agents.md#degrees-of-autonomy)) | Low: a fixed workflow | Low: a fixed workflow | Medium |
 | Model calls per question | 1 rewrite + 1 answer | 1 split + 1 answer | Several (one per step) |
 | Good for | Vocabulary gaps | Questions whose parts are known in advance | Questions whose next step depends on what was found |
 
-Decomposition is a **workflow** in Chapter 12's sense: the developer fixes the steps, and the model only fills them in. That makes it predictable and cheap. When the second search depends on the first answer (*"find the merchant of this dispute, then check its other disputes"*), the plan cannot be made in advance, and an agent is needed.
+Decomposition is a **workflow** in Chapter 11's sense: the developer fixes the steps, and the model only fills them in. That makes it predictable and cheap. When the second search depends on the first answer (*"find the merchant of this dispute, then check its other disputes"*), the plan cannot be made in advance, and an agent is needed.
 
 ## Questions about a whole collection
 
@@ -483,7 +483,7 @@ flowchart BT
 
 This section adds how the graph is stored and the two ways of querying it.
 
-**Triples.** Each relation is stored as a **triple**, subject → relation → object. From the dispute case of [Chapter 12](12-agents.md#worked-example-one-dispute-step-by-step), for example:
+**Triples.** Each relation is stored as a **triple**, subject → relation → object. From the dispute case of [Chapter 11](11-agents.md#worked-example-one-dispute-step-by-step), for example:
 
 - *Customer C-104 → disputed → transaction T-88231*;
 - *T-88231 → was made at → merchant M-77 (electronics shop, Lisbon)*;
@@ -630,7 +630,7 @@ This section covers:
 | Multi-part questions are only partly answered | One search for several needs | Sub-query decomposition | Agentic RAG |
 | Whole-collection questions are answered from a few anecdotes | No view of the whole collection | RAPTOR (collapsed tree) | GraphRAG global search, for a few high-value questions |
 | Confident answers to questions the manual does not cover | Irrelevant chunks are passed on | An "I don't know" instruction ([Chapter 7](07-rag.md#the-prompt-template)) plus a re-ranker score threshold | A CRAG-style evaluator |
-| The collection is small (under about 200,000 tokens) and stable, with one access level | Retrieval may not be needed | Whole collection in the prompt, with prompt caching | Self-Route if quality drops: every question goes through RAG first, and only those RAG cannot answer get the whole collection ([Chapter 11](11-future-of-rag.md#claim-1-long-context-windows-will-make-rag-unnecessary)) |
+| The collection is small (under about 200,000 tokens) and stable, with one access level | Retrieval may not be needed | Whole collection in the prompt, with prompt caching | Self-Route if quality drops: every question goes through RAG first, and only those RAG cannot answer get the whole collection ([Chapter 10](10-future-of-rag.md#claim-1-long-context-windows-will-make-rag-unnecessary)) |
 
 ### What each technique adds in cost and risk
 
@@ -646,7 +646,7 @@ This section covers:
 | GraphRAG | At least 1 per chunk, plus 1 per community; many per global question | Indexing and question time | Relations extracted from untrusted text; costly global queries | Provenance per triple; global search for selected users |
 | CRAG | 1 small-model pass per retrieved chunk (or none, reusing the re-ranker) | Question time | The paper's web fallback brings in untrusted text | Fallback only to approved sources, or "I don't know" |
 | Self-RAG | None extra, but needs a fine-tuned model | Training, then question time | The bank must train and host its own model | — |
-| Agentic RAG | Several per question | Question time | Excessive agency; injected text in tool results | Policy check before every tool call ([Chapter 12](12-agents.md#a-policy-check-before-every-tool-call)) |
+| Agentic RAG | Several per question | Question time | Excessive agency; injected text in tool results | Policy check before every tool call ([Chapter 11](11-agents.md#a-policy-check-before-every-tool-call)) |
 
 ### Measuring before and after
 

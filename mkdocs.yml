@@ -46,16 +46,19 @@ nav:
   - "6 · Prompting": 06-prompting.md
   - "7 · RAG": 07-rag.md
   - "8 · RAG security": 08-rag-security.md
-  - "10 · Advanced RAG": 10-advanced-rag.md
-  - "11 · The future of RAG": 11-future-of-rag.md
-  - "12 · Agents": 12-agents.md
+  - "9 · Advanced RAG": 09-advanced-rag.md
+  - "10 · The future of RAG": 10-future-of-rag.md
+  - "11 · Agents": 11-agents.md
 
 plugins:
   - search
   - redirects:
       redirect_maps:
-        08-agents.md: 12-agents.md   # Agents was Chapter 8 until the RAG security chapter was added
-        09-agents.md: 12-agents.md   # Agents was Chapter 9 until the Advanced RAG chapters were added
+        08-agents.md: 11-agents.md   # Agents was Chapter 8 until the RAG security chapter was added
+        09-agents.md: 11-agents.md   # Agents was Chapter 9 until the Advanced RAG chapters were added
+        12-agents.md: 11-agents.md   # Chapters 10 to 12 moved down by one to close the gap at Chapter 9
+        11-future-of-rag.md: 10-future-of-rag.md
+        10-advanced-rag.md: 09-advanced-rag.md
 
 markdown_extensions:
   - toc:
