@@ -24,6 +24,7 @@ Read the chapters in order the first time; each one builds on the last. Use the 
 | [9 · Advanced RAG](09-advanced-rag.md) | Techniques beyond basic RAG: better chunks and index entries, late interaction (ColBERT), page images (ColPali), question decomposition, RAPTOR and GraphRAG, CRAG and Self-RAG, and how to choose and measure them |
 | [10 · The future of RAG](10-future-of-rag.md) | The "RAG is dead" debate against the evidence: long context windows, agentic search, agentic RAG, and context engineering |
 | [11 · Agents](11-agents.md) | Models that work in a loop with tools: tool calling, MCP, memory, guardrails, evaluating agents, and multi-agent systems |
+| [12 · Deploying agents](12-deploying-agents.md) | Taking an agent from demo to production in a bank: choosing the use case, the agent charter, clean data, testing, staged rollout, tracing and drift, adoption, the business case and the month-three review |
 
 ## Running examples
 

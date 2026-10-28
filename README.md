@@ -43,6 +43,7 @@ Readers with a technical background, for example a computing degree or a career 
 | 9 | Advanced RAG | Semantic chunking, synthetic questions, ColBERT, ColPali, decomposition, RAPTOR, GraphRAG, CRAG and Self-RAG |
 | 10 | The future of RAG | Long context vs RAG, agentic search, agentic RAG and context engineering, claim by claim against the evidence |
 | 11 | Agents | The agent loop, tool calling, MCP, memory, guardrails, agent evaluation and multi-agent systems |
+| 12 | Deploying AI agents in the enterprise | Use-case scoring, agent charters, testing and pass bars, staged rollout, tracing, drift, adoption and the business case |
 
 ## How it was made
 

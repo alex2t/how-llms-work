@@ -49,6 +49,7 @@ nav:
   - "9 · Advanced RAG": 09-advanced-rag.md
   - "10 · The future of RAG": 10-future-of-rag.md
   - "11 · Agents": 11-agents.md
+  - "12 · Deploying agents": 12-deploying-agents.md
 
 plugins:
   - search

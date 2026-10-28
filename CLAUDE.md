@@ -21,6 +21,7 @@ Plain-English notes that explain how large language models work, written as an i
 | 9 | Advanced RAG | `docs/09-advanced-rag.md` | Written |
 | 10 | The future of RAG | `docs/10-future-of-rag.md` | Written |
 | 11 | Agents | `docs/11-agents.md` | Written |
+| 12 | Deploying AI agents in the enterprise | `docs/12-deploying-agents.md` | Written |
 
 `plan.md` is the single source of truth for what is done and what is left.
 
@@ -41,7 +42,7 @@ Plain-English notes that explain how large language models work, written as an i
 └── docs/
     ├── index.md               # Home page
     ├── 00-introduction.md     # Foundations and history
-    ├── 01-transformers.md … 11-agents.md
+    ├── 01-transformers.md … 12-deploying-agents.md
     ├── images/                # diagrams (SVG/PNG) used by chapters
     └── javascripts/mathjax.js # LaTeX rendering
 ```
