@@ -8,7 +8,7 @@ The main message is simple. **A working demo is a small part of the job.** Pract
 
 The chapter follows one running example from start to finish: a bank that wants an agent to help its fraud analysts triage alerts. The bank's fraud system raises 600,000 card alerts a year. Most of them turn out to be harmless, but every one has to be looked at by an analyst.
 
-Chapter 13 covers the other half of a regulated deployment: trust, governance and compliance, which is how the same agent gets past the bank's risk committee.
+Chapter 14 covers the other half of a regulated deployment: trust, governance and compliance, which is how the same agent gets past the bank's risk committee.
 
 !!! tip "Key idea: why a working demo is only around 20% of an enterprise deployment"
     A demo succeeds if the model produces a convincing answer on a handful of clean examples chosen by the developer. An enterprise deployment succeeds only if the whole socio-technical system stays safe, accurate, and cost-effective across hundreds of thousands of messy real-world cases:
@@ -202,7 +202,7 @@ Procedures live in wikis, shared drives and PDFs, and old versions are rarely de
 
 ### Wrong permissions
 
-If the agent connects with one powerful account that can see every customer, it can pull another customer's data into a case note by mistake. The agent should only see what the analyst it is helping is allowed to see. Chapter 13 explains how to set this up.
+If the agent connects with one powerful account that can see every customer, it can pull another customer's data into a case note by mistake. The agent should only see what the analyst it is helping is allowed to see. Chapter 14 explains how to set this up.
 
 The practical lesson: **budget more time for data clean-up than for prompts.** In practitioners' experience, preparing and cleaning data often takes longer than building the agent; this is a common observation, not a measured figure.
 
@@ -346,7 +346,7 @@ There is an open standard for this: the **OpenTelemetry GenAI semantic conventio
 | `gen_ai.usage.input_tokens`, `gen_ai.usage.output_tokens` | Tokens used by a model call |
 | `gen_ai.client.operation.duration` (metric) | How long each call took |
 
-Using a standard means your traces work with most monitoring tools instead of being locked to one vendor. Two cautions. First, the conventions are still being written: the core model-call attributes are close to stable, but the agent and tool attributes are still at the "development" stage and may be renamed (OpenObserve, 2026). The conventions have also recently moved to their own repository. Check the current version before you build. Second, recording the full text of prompts and answers is switched off by default, because it can contain customer data (Newton-King, 2026). In a bank, turning it on is a privacy decision, covered in Chapter 13.
+Using a standard means your traces work with most monitoring tools instead of being locked to one vendor. Two cautions. First, the conventions are still being written: the core model-call attributes are close to stable, but the agent and tool attributes are still at the "development" stage and may be renamed (OpenObserve, 2026). The conventions have also recently moved to their own repository. Check the current version before you build. Second, recording the full text of prompts and answers is switched off by default, because it can contain customer data (Newton-King, 2026). In a bank, turning it on is a privacy decision, covered in Chapter 14.
 
 ```mermaid
 flowchart TD

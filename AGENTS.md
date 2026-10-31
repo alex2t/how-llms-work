@@ -23,6 +23,7 @@ This file defines Antigravity's role, rules, and workflow for this repository. A
 | `rag_security` | `docs/08-rag-security.md` | `gemini/rag_security_agy.md` | `gemini/rag_security_rw_claude.md` | Completed |
 | `agents` | `docs/11-agents.md` | `gemini/agents_agy.md` | `gemini/agents_rw_claude.md` | Completed |
 | `deploying_agents` | `docs/12-deploying-agents.md` | `gemini/deploying_agents_agy.md` | `gemini/deploying_agents_rw_claude.md` | Completed |
+| `fine_tuning` | `docs/13-fine-tuning.md` | `gemini/fine_tuning_agy.md` | `gemini/fine_tuning_rw_claude.md` | Completed |
 
 ---
 

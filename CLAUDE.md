@@ -22,6 +22,7 @@ Plain-English notes that explain how large language models work, written as an i
 | 10 | The future of RAG | `docs/10-future-of-rag.md` | Written |
 | 11 | Agents | `docs/11-agents.md` | Written |
 | 12 | Deploying AI agents in the enterprise | `docs/12-deploying-agents.md` | Written |
+| 13 | Fine-tuning: when it is worth changing the weights | `docs/13-fine-tuning.md` | Written |
 
 `plan.md` is the single source of truth for what is done and what is left.
 
@@ -42,7 +43,7 @@ Plain-English notes that explain how large language models work, written as an i
 └── docs/
     ├── index.md               # Home page
     ├── 00-introduction.md     # Foundations and history
-    ├── 01-transformers.md … 12-deploying-agents.md
+    ├── 01-transformers.md … 13-fine-tuning.md
     ├── images/                # diagrams (SVG/PNG) used by chapters
     └── javascripts/mathjax.js # LaTeX rendering
 ```

@@ -313,3 +313,12 @@ Existing text: propose in `fix.md` first.
 ### Not planned
 
 - **The product name "Trusteer"** from the sources: not used anywhere in the notes.
+
+## Phase 10 — New Chapter 13 "Fine-tuning"
+
+Requested by the user (2026-10-31), from a YouTube tutorial. The tutorial's claims are pointers: each was checked against primary sources, and several were corrected in the chapter.
+
+- [x] FT-1: `docs/13-fine-tuning.md`, all sections plus Cheat sheet and Sources; rule 14 checklist (nav, `docs/index.md`, README, status table).
+- [ ] FT-2: the user supplies the tutorial's title and URL, so that the chapter's Sources can credit it by name.
+- [ ] FT-3: decide the follow-ups in `fix.md`, item FT.
+- [ ] FT-5: write Chapter 14 (trust, governance and compliance), as promised in `docs/12-deploying-agents.md:11`, `:205` and `:349`: agent permissions, privacy of recorded prompts, and getting the agent past the bank's risk committee.

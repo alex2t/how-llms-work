@@ -14,6 +14,16 @@ Legend: `[ ]` waiting · `[x]` approved and applied · `[-]` rejected
 
 ## Waiting for approval
 
+### FT. New Chapter 13 (Fine-tuning): follow-up changes in other chapters `[ ]`
+
+Chapter 13 is written. These changes touch existing text, so they wait for approval.
+
+| # | File and place | Proposed change | Why | Priority |
+| --- | --- | --- | --- | --- |
+| FT-2 | `docs/07-rag.md:679`, end of "When to use which" | Add one sentence linking to `13-fine-tuning.md#when-to-fine-tune-the-decision-order` | The decision is now treated in full in Chapter 13 | Low |
+| FT-3 | `docs/02-training.md`, "Cheap fine-tuning: LoRA" (line 1007) | Add one sentence linking to `13-fine-tuning.md#modern-fine-tuning-techniques` | Points the reader from how LoRA works to when to use it | Low |
+| FT-4 | This file, row C8-22 | Remove the row: "What fine-tuning costs" (catastrophic forgetting, labelled data, being overtaken by a newer model) is now covered in Chapter 13 | Avoids explaining it twice | Low |
+
 ### RS. New Chapter 8 (RAG security and production): follow-up changes outside Chapters 8 and 9 `[ ]`
 
 Chapter 8 is written and Chapter 9 has its new subsection "A policy check before every tool call". Chapter 7 received only term links to Chapter 8 (lines 157, 287 and 488). These changes touch other files or existing text, so they wait for approval.
