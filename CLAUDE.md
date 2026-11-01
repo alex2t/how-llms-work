@@ -23,6 +23,7 @@ Plain-English notes that explain how large language models work, written as an i
 | 11 | Agents | `docs/11-agents.md` | Written |
 | 12 | Deploying AI agents in the enterprise | `docs/12-deploying-agents.md` | Written |
 | 13 | Fine-tuning: when it is worth changing the weights | `docs/13-fine-tuning.md` | Written |
+| 14 | AI governance, compliance and enterprise deployment | `docs/14-ai-governance.md` | Written |
 
 `plan.md` is the single source of truth for what is done and what is left.
 
@@ -43,7 +44,7 @@ Plain-English notes that explain how large language models work, written as an i
 └── docs/
     ├── index.md               # Home page
     ├── 00-introduction.md     # Foundations and history
-    ├── 01-transformers.md … 13-fine-tuning.md
+    ├── 01-transformers.md … 14-ai-governance.md
     ├── images/                # diagrams (SVG/PNG) used by chapters
     └── javascripts/mathjax.js # LaTeX rendering
 ```
@@ -164,6 +165,7 @@ After the user has reviewed a chapter (rule 12), Gemini (Antigravity) is asked t
 | 4 | `docs/04-quantization.md` | `gemini/quantization_agy.md` | `gemini/quantization_rw_claude.md` |
 | 5 | `docs/05-evaluation.md` | `gemini/evaluation_agy.md` | `gemini/evaluation_rw_claude.md` |
 | 6 | `docs/06-prompting.md` | `gemini/prompting_agy.md` | `gemini/prompting_rw_claude.md` |
+| 14 | `docs/14-ai-governance.md` | `gemini/ai_governance_agy.md` | `gemini/ai_governance_rw_claude.md` |
 
 **When asked to review `gemini/<chapter>_agy.md`,** first run `git diff --no-index` between the original and the rewrite (without the CHANGES comment), so the review covers exactly what changed. Parse every Mermaid diagram of the rewrite (see Commands). Read both files in full, then write `gemini/<chapter>_rw_claude.md` with:
 

@@ -26,6 +26,7 @@ Read the chapters in order the first time; each one builds on the last. Use the 
 | [11 · Agents](11-agents.md) | Models that work in a loop with tools: tool calling, MCP, memory, guardrails, evaluating agents, and multi-agent systems |
 | [12 · Deploying agents](12-deploying-agents.md) | Taking an agent from demo to production in a bank: choosing the use case, the agent charter, clean data, testing, staged rollout, tracing and drift, adoption, the business case and the month-three review |
 | [13 · Fine-tuning](13-fine-tuning.md) | What fine-tuning is, why general models took over much of its job, the evidence from two case studies, when it is still worth doing, and how LoRA, distillation and reinforcement fine-tuning work |
+| [14 · AI governance](14-ai-governance.md) | The rules a regulated bank must meet to run AI: the EU AI Act, security and DORA, GDPR, the system lifecycle, monitoring and audit, accountability, explainability, and risk management. |
 
 ## Running examples
 

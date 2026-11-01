@@ -51,6 +51,7 @@ nav:
   - "11 · Agents": 11-agents.md
   - "12 · Deploying agents": 12-deploying-agents.md
   - "13 · Fine-tuning": 13-fine-tuning.md
+  - "14 · AI governance": 14-ai-governance.md
 
 plugins:
   - search

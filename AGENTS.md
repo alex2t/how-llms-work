@@ -24,6 +24,7 @@ This file defines Antigravity's role, rules, and workflow for this repository. A
 | `agents` | `docs/11-agents.md` | `gemini/agents_agy.md` | `gemini/agents_rw_claude.md` | Completed |
 | `deploying_agents` | `docs/12-deploying-agents.md` | `gemini/deploying_agents_agy.md` | `gemini/deploying_agents_rw_claude.md` | Completed |
 | `fine_tuning` | `docs/13-fine-tuning.md` | `gemini/fine_tuning_agy.md` | `gemini/fine_tuning_rw_claude.md` | Completed |
+| `ai_governance` | `docs/14-ai-governance.md` | `gemini/ai_governance_agy.md` | `gemini/ai_governance_rw_claude.md` | Completed |
 
 ---
 

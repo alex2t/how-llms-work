@@ -321,4 +321,13 @@ Requested by the user (2026-10-31), from a YouTube tutorial. The tutorial's clai
 - [x] FT-1: `docs/13-fine-tuning.md`, all sections plus Cheat sheet and Sources; rule 14 checklist (nav, `docs/index.md`, README, status table).
 - [x] FT-2: credit the tutorial by name in the chapter's Sources: "Is Fine-Tuning Still Needed? LLMs, RAG, & LoRA" (IBM Technology).
 - [ ] FT-3: decide the follow-ups in `fix.md`, item FT.
-- [ ] FT-5: write Chapter 14 (trust, governance and compliance), as promised in `docs/12-deploying-agents.md:11`, `:205` and `:349`: agent permissions, privacy of recorded prompts, and getting the agent past the bank's risk committee.
+- [~] FT-5: Chapter 14 is written (`docs/14-ai-governance.md`). Two promises in Chapter 12 are still open: see GOV-2 and GOV-3 in Phase 11.
+
+## Phase 11 — New Chapter 14 "AI governance"
+
+Built from a corrected NotebookLM summary, rewritten by Gemini, then reviewed and fixed by Claude against primary sources.
+
+- [x] GOV-1: `docs/14-ai-governance.md`, all sections plus Cheat sheet and Sources; rule 14 checklist (nav, `docs/index.md`, README, status table).
+- [ ] GOV-2: `docs/12-deploying-agents.md:205` says Chapter 14 explains how to limit the agent to what the analyst it helps may see. Chapter 14 does not yet explain this.
+- [ ] GOV-3: `docs/12-deploying-agents.md:349` says Chapter 14 covers the privacy decision on recording prompts and answers. Chapter 14 does not yet cover this.
+- [ ] GOV-4: finish simplifying the language of Chapter 14 (review item S3), and verify the items left open: the ISO catalogue links, the Sweeney Governor attribution, and the COPPA and GDPR claim.

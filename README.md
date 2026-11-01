@@ -21,6 +21,7 @@ The notes follow one model's life from start to finish:
 - **The future of RAG:** what the evidence says about long context windows, agentic search and agentic RAG.
 - **Agents:** models that call tools in a loop, the Model Context Protocol, memory, guardrails and multi-agent systems.
 - **Fine-tuning:** when changing a model's weights is still worth it after prompting, RAG and agent skills, and how LoRA, distillation and reinforcement fine-tuning work.
+- **AI governance:** the EU AI Act, security and resilience, privacy, the system lifecycle, monitoring and audit, accountability, explainability and risk management in a regulated bank.
 
 A few running examples, such as the sentence `YOUR CAT IS A LOVELY CAT` and a fraud-detection use case, are reused across chapters, so the reader never meets unexplained numbers. Every worked calculation has been checked with a script.
 
@@ -46,6 +47,7 @@ Readers with a technical background, for example a computing degree or a career 
 | 11 | Agents | The agent loop, tool calling, MCP, memory, guardrails, agent evaluation and multi-agent systems |
 | 12 | Deploying AI agents in the enterprise | Use-case scoring, agent charters, testing and pass bars, staged rollout, tracing, drift, adoption and the business case |
 | 13 | Fine-tuning: when it is worth changing the weights | The decision order, agent skills, the legal and finance case studies, break-even cost, LoRA, distillation and reinforcement fine-tuning |
+| 14 | AI governance, compliance and enterprise deployment | The EU AI Act risk tiers, OWASP and DORA, GDPR, lifecycle stage gates, drift and audit, RACI and traceability, SHAP, and a readiness assessment |
 
 ## How it was made
 
