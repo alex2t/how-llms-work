@@ -14,6 +14,15 @@ Legend: `[ ]` waiting · `[x]` approved and applied · `[-]` rejected
 
 ## Waiting for approval
 
+### GOV. New Chapter 14 (AI governance): promises made in Chapter 12 `[ ]`
+
+Chapter 14 now explains both topics. Chapter 12 still refers to it in plain words ("Chapter 14 explains…"), without an anchor link.
+
+| # | File and place | Proposed change | Why | Priority |
+| --- | --- | --- | --- | --- |
+| GOV-2 | `docs/12-deploying-agents.md:205` | Turn "Chapter 14 explains how to set this up" into a link to `14-ai-governance.md#deployment-for-banks-and-multi-layered-agent-guardrails` | Every cross-reference must be an anchor link | M |
+| GOV-3 | `docs/12-deploying-agents.md:349` | Turn "covered in Chapter 14" into a link to `14-ai-governance.md#deployment-for-banks-pii-masking-and-article-22-safeguards` | Every cross-reference must be an anchor link | M |
+
 ### FT. New Chapter 13 (Fine-tuning): follow-up changes in other chapters `[ ]`
 
 Chapter 13 is written. These changes touch existing text, so they wait for approval.
